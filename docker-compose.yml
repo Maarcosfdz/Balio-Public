@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:18.1-bookworm
+    container_name: balio-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: balio
+      POSTGRES_USER: balio
+      POSTGRES_PASSWORD: baliopass
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
