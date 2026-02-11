@@ -1,27 +1,41 @@
 package Balio.web.model.entities;
 
-public class Filters {
-    private String category;
-    private String dateRange;
+import jakarta.persistence.*;
+import java.util.UUID;
 
-    public Filters(String category, String dateRange) {
-        this.category = category;
-        this.dateRange = dateRange;
+@Entity
+@Table(name = "filters")
+public class Filter {
+
+    @Id
+    @GeneratedValue
+    private UUID id;
+
+    @Column(nullable = false, length = 80)
+    private String name;
+
+    @Column(columnDefinition = "jsonb", nullable = false)
+    private String definition;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    protected Filter() {}
+
+    public Filter(String name, String definition, User user) {
+        this.name = name;
+        this.definition = definition;
+        this.user = user;
     }
 
-    public String getCategory() {
-        return category;
-    }
+    public UUID getId() { return id; }
 
-    public void setCategory(String category) {
-        this.category = category;
-    }
+    public void setName(String name) { this.name = name; }
+    public String getName() { return name; }
 
-    public String getDateRange() {
-        return dateRange;
-    }
+    public void setDefinition(String definition) { this.definition = definition; }
+    public String getDefinition() { return definition; }
 
-    public void setDateRange(String dateRange) {
-        this.dateRange = dateRange;
-    }
+    public User getUser() { return user; }
 }

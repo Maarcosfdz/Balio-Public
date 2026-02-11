@@ -25,9 +25,7 @@ public class Goal {
     @JoinColumn(name = "user_id")
     private User user;
 
-    protected Goal() {
-        // Constructor vacío requerido por JPA
-    }
+    protected Goal() {}
 
     public Goal(String name, BigDecimal targetAmount, User user) {
         this.name = name;
