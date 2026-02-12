@@ -18,3 +18,12 @@ mvn spring-boot:run
 # Mirar a bd
 
 docker exec -it balio-postgres psql -U balio -d balio -c 
+
+
+
+
+
+######
+
+bd con coker e postgree
+migracions con flyway
