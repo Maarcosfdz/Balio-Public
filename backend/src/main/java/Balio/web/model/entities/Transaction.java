@@ -26,6 +26,7 @@ public class Transaction {
     @Column(nullable = false)
     private boolean affectsBalance = true;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private TransactionType type; // EXPENSE / INCOME
 
@@ -50,7 +51,7 @@ public class Transaction {
             String name,
             BigDecimal amount,
             LocalDate date,
-            String type,
+            TransactionType type,
             User user
     ) {
         this.name = name;
@@ -94,10 +95,10 @@ public class Transaction {
         this.affectsBalance = affectsBalance;
     }
 
-    public String getType() {
+    public TransactionType getType() {
         return type;
     }
-    public void setType(String type) {
+    public void setType(TransactionType type) {
         this.type = type;
     }
 

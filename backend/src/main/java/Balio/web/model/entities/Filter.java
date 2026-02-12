@@ -31,11 +31,11 @@ public class Filter {
 
     public UUID getId() { return id; }
 
-    public void setName(String name) { this.name = name; }
     public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public void setDefinition(String definition) { this.definition = definition; }
     public String getDefinition() { return definition; }
+    public void setDefinition(String definition) { this.definition = definition; }
 
     public User getUser() { return user; }
 }
