@@ -1,14 +1,12 @@
 name: CI
 
-# Controls when the workflow will run
 on:
-  #Triggers
-   push:
-    branches: [ "**" ]
+  push:
+    branches:
+      - "**"
   pull_request:
-    branches: [ "**" ]
-
-  # Allows you to run this workflow manually from the Actions tab
+    branches:
+      - "**"
   workflow_dispatch:
 
 jobs:
