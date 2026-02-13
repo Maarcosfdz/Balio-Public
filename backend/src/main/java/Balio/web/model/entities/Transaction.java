@@ -1,7 +1,16 @@
 package Balio.web.model.entities;
 
 import Balio.web.enums.TransactionType;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -47,13 +56,7 @@ public class Transaction {
     protected Transaction() {
     }
 
-    public Transaction(
-            String name,
-            BigDecimal amount,
-            LocalDate date,
-            TransactionType type,
-            User user
-    ) {
+    public Transaction(String name, BigDecimal amount, LocalDate date, TransactionType type, User user) {
         this.name = name;
         this.amount = amount;
         this.date = date;
@@ -66,10 +69,11 @@ public class Transaction {
     public UUID getId() {
         return id;
     }
-    
+
     public String getName() {
         return name;
     }
+
     public void setName(String name) {
         this.name = name;
     }
@@ -77,6 +81,7 @@ public class Transaction {
     public BigDecimal getAmount() {
         return amount;
     }
+
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }
@@ -84,6 +89,7 @@ public class Transaction {
     public LocalDate getDate() {
         return date;
     }
+
     public void setDate(LocalDate date) {
         this.date = date;
     }
@@ -91,6 +97,7 @@ public class Transaction {
     public boolean isAffectsBalance() {
         return affectsBalance;
     }
+
     public void setAffectsBalance(boolean affectsBalance) {
         this.affectsBalance = affectsBalance;
     }
@@ -98,6 +105,7 @@ public class Transaction {
     public TransactionType getType() {
         return type;
     }
+
     public void setType(TransactionType type) {
         this.type = type;
     }
@@ -105,6 +113,7 @@ public class Transaction {
     public User getUser() {
         return user;
     }
+
     public void setUser(User user) {
         this.user = user;
     }
@@ -112,6 +121,7 @@ public class Transaction {
     public Account getAccount() {
         return account;
     }
+
     public void setAccount(Account account) {
         this.account = account;
     }
@@ -119,6 +129,7 @@ public class Transaction {
     public Category getCategory() {
         return category;
     }
+
     public void setCategory(Category category) {
         this.category = category;
     }
