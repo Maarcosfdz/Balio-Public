@@ -4,6 +4,7 @@ import Balio.web.enums.TransactionType;
 import Balio.web.model.Exceptions.AccountInvalidException;
 import Balio.web.model.entities.Transaction;
 
+import javax.management.InstanceNotFoundException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -24,8 +25,11 @@ public interface TransactionService {
                                                                                      AccountInvalidException;
 
     Transaction updateTransaction(UUID userId, UUID transactionId, UUID accountId, UUID categoryId, TransactionType type, String name,
-                                  BigDecimal amount, LocalDate date, Boolean affectsBalance);
+                                  BigDecimal amount, LocalDate date, Boolean affectsBalance) throws
+                                                                                                InstanceNotFoundException,
+                                                                                                AccountInvalidException;
 
-    void deleteTransaction(UUID userId, UUID transactionId);
+    void deleteTransaction(UUID userId, UUID transactionId, boolean revertBalance) throws
+                                                                                   InstanceNotFoundException;
 
 }
