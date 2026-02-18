@@ -2,6 +2,7 @@ package Balio.web.model.services;
 
 import Balio.web.enums.TransactionType;
 import Balio.web.model.Exceptions.AccountInvalidException;
+import Balio.web.model.Exceptions.UserNotFoundException;
 import Balio.web.model.entities.Transaction;
 
 import javax.management.InstanceNotFoundException;
@@ -18,16 +19,18 @@ public interface TransactionService {
 
     Transaction addExpense(UUID userId, UUID accountId, UUID categoryId, String name,
                            BigDecimal amount, LocalDate date, Boolean affectsBalance) throws
-                                                                                      AccountInvalidException;
+                                                                                      AccountInvalidException,
+                                                                                      UserNotFoundException;
 
     Transaction addIncome(UUID userId, UUID accountId, UUID categoryId, String name,
                           BigDecimal amount, LocalDate date, Boolean affectsBalance) throws
-                                                                                     AccountInvalidException;
+                                                                                     AccountInvalidException,
+                                                                                     UserNotFoundException;
 
     Transaction updateTransaction(UUID userId, UUID transactionId, UUID accountId, UUID categoryId, TransactionType type, String name,
                                   BigDecimal amount, LocalDate date, Boolean affectsBalance) throws
-                                                                                                InstanceNotFoundException,
-                                                                                                AccountInvalidException;
+                                                                                             InstanceNotFoundException,
+                                                                                             AccountInvalidException;
 
     void deleteTransaction(UUID userId, UUID transactionId, boolean revertBalance) throws
                                                                                    InstanceNotFoundException;

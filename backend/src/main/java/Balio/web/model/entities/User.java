@@ -4,6 +4,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 import java.util.UUID;
@@ -24,6 +26,10 @@ public class User {
 
     @Column(nullable = false, length = 255)
     private String password;
+
+    @OneToOne
+    @JoinColumn(name = "default_account_id")
+    private Account defaultAccount;
 
     protected User() {}
 
@@ -60,4 +66,13 @@ public class User {
     public void setPassword(String password) {
         this.password = password;
     }
+
+    public Account getDefaultAccount() {
+        return defaultAccount;
+    }
+
+    public void setDefaultAccount(Account defaultAccount) {
+        this.defaultAccount = defaultAccount;
+    }
+
 }

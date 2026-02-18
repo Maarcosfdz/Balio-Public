@@ -75,4 +75,6 @@ public class Account {
     public void setBalance(BigDecimal balance) {
         this.balance = balance;
     }
+
+    public User getUser() {return user;}
 }

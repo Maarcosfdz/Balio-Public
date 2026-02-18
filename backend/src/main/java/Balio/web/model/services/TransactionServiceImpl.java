@@ -2,6 +2,7 @@ package Balio.web.model.services;
 
 import Balio.web.enums.TransactionType;
 import Balio.web.model.Exceptions.AccountInvalidException;
+import Balio.web.model.Exceptions.UserNotFoundException;
 import Balio.web.model.entities.Account;
 import Balio.web.model.entities.AccountDao;
 import Balio.web.model.entities.Category;
@@ -38,17 +39,21 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public Transaction addExpense(UUID userId, UUID accountId, UUID categoryId, String name,
                                   BigDecimal amount, LocalDate date, Boolean affectsBalance) throws
-                                                                                             AccountInvalidException {
+                                                                                             AccountInvalidException,
+                                                                                             UserNotFoundException {
 
-        return addTransaction(userId, accountId, categoryId, name, amount, date, affectsBalance, TransactionType.EXPENSE);
+        return addTransaction(userId, accountId, categoryId, name, amount, date, affectsBalance,
+                              TransactionType.EXPENSE);
     }
 
     @Override
     public Transaction addIncome(UUID userId, UUID accountId, UUID categoryId, String name,
                                  BigDecimal amount, LocalDate date, Boolean affectsBalance) throws
-                                                                                            AccountInvalidException {
+                                                                                            AccountInvalidException,
+                                                                                            UserNotFoundException {
 
-        return addTransaction(userId, accountId, categoryId, name, amount, date, affectsBalance, TransactionType.INCOME);
+        return addTransaction(userId, accountId, categoryId, name, amount, date, affectsBalance,
+                              TransactionType.INCOME);
     }
 
     @Override
@@ -114,7 +119,8 @@ public class TransactionServiceImpl implements TransactionService {
 
     private Transaction addTransaction(UUID userId, UUID accountId, UUID categoryId, String name,
                                        BigDecimal amount, LocalDate date, Boolean affectsBalance, TransactionType type) throws
-                                                                                                                        AccountInvalidException {
+                                                                                                                        AccountInvalidException,
+                                                                                                                        UserNotFoundException {
 
         Account account = null;
 
@@ -131,7 +137,7 @@ public class TransactionServiceImpl implements TransactionService {
         }
 
         User user = userDao.findById(userId)
-                .orElseThrow(() -> new AccountInvalidException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         // Category is optional
         Category category = null;
@@ -159,18 +165,19 @@ public class TransactionServiceImpl implements TransactionService {
 
     /**
      * Adjusts the account balance based on transaction type.
+     *
      * @param revert if true, reverses the effect (used for deletes and updates)
      */
     private void applyBalance(Account account, BigDecimal amount, TransactionType type, boolean revert) {
 
         if ( type == TransactionType.INCOME ) {
             account.setBalance(revert
-                    ? account.getBalance().subtract(amount)
-                    : account.getBalance().add(amount));
+                                       ? account.getBalance().subtract(amount)
+                                       : account.getBalance().add(amount));
         } else {
             account.setBalance(revert
-                    ? account.getBalance().add(amount)
-                    : account.getBalance().subtract(amount));
+                                       ? account.getBalance().add(amount)
+                                       : account.getBalance().subtract(amount));
         }
     }
 }
