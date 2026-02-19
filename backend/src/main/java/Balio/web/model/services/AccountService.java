@@ -5,6 +5,7 @@ import Balio.web.model.Exceptions.InstanceNotFoundException;
 import Balio.web.model.entities.Account;
 import Balio.web.model.entities.User;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -52,5 +53,17 @@ public interface AccountService {
      * @throws Balio.web.model.Exceptions.UserNotFoundException if the user does not exist (unchecked)
      */
     User clearDefaultAccount(UUID userId);
+
+    /**
+     * Returns all accounts belonging to the user, ordered by name.
+     */
+    List<Account> findAllByUserId(UUID userId);
+
+    /**
+     * Returns a single account belonging to the user.
+     *
+     * @throws InstanceNotFoundException if the account does not exist or does not belong to the user
+     */
+    Account findByIdAndUserId(UUID accountId, UUID userId) throws InstanceNotFoundException;
 
 }

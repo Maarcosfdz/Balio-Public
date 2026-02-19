@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -131,5 +132,18 @@ public class AccountServiceImpl implements AccountService {
         userDao.save(user);
 
         return user;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Account> findAllByUserId(UUID userId) {
+        return accountDao.findAllByUserIdOrderByNameAsc(userId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Account findByIdAndUserId(UUID accountId, UUID userId) throws InstanceNotFoundException {
+        return accountDao.findByIdAndUserId(accountId, userId)
+                .orElseThrow(() -> new InstanceNotFoundException("Account", accountId));
     }
 }
