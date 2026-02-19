@@ -27,4 +27,14 @@ public class TransactionConverter {
 
         return dto;
     }
+
+    public TransactionSummaryDto toSummaryDto(Transaction transaction) {
+        TransactionSummaryDto dto = new TransactionSummaryDto();
+        dto.setId(transaction.getId().toString());
+        dto.setName(transaction.getName());
+        dto.setType(transaction.getType());
+        dto.setAmount(transaction.getAmount());
+        dto.setDate(transaction.getDate());
+        return dto;
+    }
 }

@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.management.InstanceNotFoundException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -179,5 +180,25 @@ public class TransactionServiceImpl implements TransactionService {
                                        ? account.getBalance().add(amount)
                                        : account.getBalance().subtract(amount));
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Transaction> findAllByUserId(UUID userId) {
+        return transactionDao.findAllByUserIdOrderByDateDesc(userId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Transaction findByIdAndUserId(UUID transactionId, UUID userId) throws InstanceNotFoundException {
+        return transactionDao.findByIdAndUserId(transactionId, userId)
+                .orElseThrow(InstanceNotFoundException::new);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Transaction> findFiltered(UUID userId, TransactionType type, UUID accountId,
+                                          UUID categoryId, LocalDate startDate, LocalDate endDate) {
+        return transactionDao.findFiltered(userId, type, accountId, categoryId, startDate, endDate);
     }
 }

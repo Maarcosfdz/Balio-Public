@@ -1,12 +1,16 @@
 package Balio.web.rest.controllers;
 
 import java.net.URI;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -18,15 +22,16 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import Balio.web.enums.TransactionType;
 import Balio.web.model.Exceptions.AccountInvalidException;
+import javax.management.InstanceNotFoundException;
 import Balio.web.model.Exceptions.UserNotFoundException;
 import Balio.web.model.entities.Transaction;
 import Balio.web.model.services.TransactionService;
 import Balio.web.rest.dtos.TransactionConverter;
 import Balio.web.rest.dtos.TransactionDto;
 import Balio.web.rest.dtos.TransactionResponseDto;
-
-import javax.management.InstanceNotFoundException;
+import Balio.web.rest.dtos.TransactionSummaryDto;
 
 @RestController
 @RequestMapping("/transaction")
@@ -34,11 +39,46 @@ public class TransactionController {
 
     private final TransactionService transactionService;
     private final TransactionConverter transactionConverter;
-    
+
     public TransactionController(TransactionService transactionService, TransactionConverter transactionConverter) {
-            this.transactionService = transactionService;
-            this.transactionConverter = transactionConverter;
+        this.transactionService = transactionService;
+        this.transactionConverter = transactionConverter;
     }
+
+    // ── LIST (summary, optional filters) ─────────────────────────────────
+
+    @GetMapping
+    public List<TransactionSummaryDto> getAllTransactions(
+            @RequestAttribute UUID userId,
+            @RequestParam(required = false) TransactionType type,
+            @RequestParam(required = false) UUID accountId,
+            @RequestParam(required = false) UUID categoryId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
+        List<Transaction> transactions;
+
+        if (type != null || accountId != null || categoryId != null || startDate != null || endDate != null) {
+            transactions = transactionService.findFiltered(userId, type, accountId, categoryId, startDate, endDate);
+        } else {
+            transactions = transactionService.findAllByUserId(userId);
+        }
+
+        return transactions.stream()
+                .map(transactionConverter::toSummaryDto)
+                .toList();
+    }
+
+    // ── DETAIL (all fields) ──────────────────────────────────────────────
+
+    @GetMapping("/{transactionId}")
+    public TransactionResponseDto getTransaction(@RequestAttribute UUID userId,
+                                                 @PathVariable UUID transactionId) throws InstanceNotFoundException {
+        Transaction transaction = transactionService.findByIdAndUserId(transactionId, userId);
+        return transactionConverter.toResponseDto(transaction);
+    }
+
+    // ── CREATE EXPENSE ───────────────────────────────────────────────────
 
     @PostMapping("/expense")
     public ResponseEntity<TransactionResponseDto> addExpense(
@@ -57,6 +97,8 @@ public class TransactionController {
         return ResponseEntity.created(location).body(transactionConverter.toResponseDto(transaction));
     }
 
+    // ── CREATE INCOME ────────────────────────────────────────────────────
+
     @PostMapping("/income")
     public ResponseEntity<TransactionResponseDto> addIncome(
             @RequestAttribute UUID userId,
@@ -74,6 +116,8 @@ public class TransactionController {
         return ResponseEntity.created(location).body(transactionConverter.toResponseDto(transaction));
     }
 
+    // ── UPDATE ───────────────────────────────────────────────────────────
+
     @PutMapping("/{transactionId}")
     public TransactionResponseDto updateTransaction(
             @RequestAttribute UUID userId,
@@ -88,6 +132,8 @@ public class TransactionController {
         return transactionConverter.toResponseDto(transaction);
     }
 
+    // ── DELETE ────────────────────────────────────────────────────────────
+
     @DeleteMapping("/{transactionId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteTransaction(
@@ -98,5 +144,4 @@ public class TransactionController {
 
         transactionService.deleteTransaction(userId, transactionId, revertBalance);
     }
-
 }

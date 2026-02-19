@@ -8,6 +8,7 @@ import Balio.web.model.entities.Transaction;
 import javax.management.InstanceNotFoundException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 /*
@@ -34,5 +35,23 @@ public interface TransactionService {
 
     void deleteTransaction(UUID userId, UUID transactionId, boolean revertBalance) throws
                                                                                    InstanceNotFoundException;
+
+    /**
+     * Returns all transactions belonging to the user, ordered by date descending.
+     */
+    List<Transaction> findAllByUserId(UUID userId);
+
+    /**
+     * Returns a single transaction belonging to the user.
+     *
+     * @throws InstanceNotFoundException if the transaction does not exist or does not belong to the user
+     */
+    Transaction findByIdAndUserId(UUID transactionId, UUID userId) throws InstanceNotFoundException;
+
+    /**
+     * Returns transactions matching optional filters. All filter parameters are optional.
+     */
+    List<Transaction> findFiltered(UUID userId, TransactionType type, UUID accountId,
+                                   UUID categoryId, LocalDate startDate, LocalDate endDate);
 
 }
