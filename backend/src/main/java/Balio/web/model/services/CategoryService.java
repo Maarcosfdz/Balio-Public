@@ -4,6 +4,7 @@ import Balio.web.enums.TransactionType;
 import Balio.web.model.Exceptions.InstanceNotFoundException;
 import Balio.web.model.entities.Category;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -38,5 +39,17 @@ public interface CategoryService {
      */
     Category modifyCategory(UUID userId, UUID categoryId, String name, TransactionType type)
             throws InstanceNotFoundException;
+
+    /**
+     * Returns all categories belonging to the user, ordered by name.
+     */
+    List<Category> findAllByUserId(UUID userId);
+
+    /**
+     * Returns a single category belonging to the user.
+     *
+     * @throws InstanceNotFoundException if the category does not exist or does not belong to the user
+     */
+    Category findByIdAndUserId(UUID categoryId, UUID userId) throws InstanceNotFoundException;
 
 }

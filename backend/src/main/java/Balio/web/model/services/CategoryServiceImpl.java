@@ -11,6 +11,7 @@ import Balio.web.model.entities.UserDao;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -72,5 +73,18 @@ public class CategoryServiceImpl implements CategoryService {
 
         categoryDao.save(category);
         return category;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Category> findAllByUserId(UUID userId) {
+        return categoryDao.findAllByUserIdOrderByNameAsc(userId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Category findByIdAndUserId(UUID categoryId, UUID userId) throws InstanceNotFoundException {
+        return categoryDao.findByIdAndUserId(categoryId, userId)
+                .orElseThrow(() -> new InstanceNotFoundException("Category", categoryId));
     }
 }
