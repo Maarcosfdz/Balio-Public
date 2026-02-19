@@ -1,6 +1,7 @@
 package Balio.web.model.services;
 
 import Balio.web.enums.TransactionType;
+import Balio.web.model.Exceptions.CategoryInvalidException;
 import Balio.web.model.Exceptions.InstanceNotFoundException;
 import Balio.web.model.Exceptions.UserNotFoundException;
 import Balio.web.model.entities.Category;
@@ -30,6 +31,13 @@ public class CategoryServiceImpl implements CategoryService {
         User user = userDao.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
+        if (name == null || name.isBlank()) {
+            throw new CategoryInvalidException("Category name cannot be blank");
+        }
+        if (type == null) {
+            throw new CategoryInvalidException("Category type is required");
+        }
+
         Category category = new Category(name, type, user);
         categoryDao.save(category);
 
@@ -53,6 +61,9 @@ public class CategoryServiceImpl implements CategoryService {
                 .orElseThrow(() -> new InstanceNotFoundException("Category", categoryId));
 
         if (name != null) {
+            if (name.isBlank()) {
+                throw new CategoryInvalidException("Category name cannot be blank");
+            }
             category.setName(name);
         }
         if (type != null) {

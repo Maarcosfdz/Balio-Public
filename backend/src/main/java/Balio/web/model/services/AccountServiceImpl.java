@@ -87,12 +87,18 @@ public class AccountServiceImpl implements AccountService {
                 .orElseThrow(() -> new InstanceNotFoundException("Account", accountId));
 
         if (name != null) {
+            if (name.isBlank()) {
+                throw new AccountInvalidException("Account name cannot be blank");
+            }
             account.setName(name);
         }
         if (type != null) {
             account.setType(type);
         }
         if (currency != null) {
+            if (currency.isBlank()) {
+                throw new AccountInvalidException("Currency cannot be blank");
+            }
             account.setCurrency(currency);
         }
 
