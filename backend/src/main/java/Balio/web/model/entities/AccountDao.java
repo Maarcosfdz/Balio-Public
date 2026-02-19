@@ -9,4 +9,6 @@ public interface AccountDao extends JpaRepository<Account, UUID> {
 
     Optional<Account> findByIdAndUserId(UUID id, UUID userId);
 
+    long countByUserId(UUID userId);
+
 }

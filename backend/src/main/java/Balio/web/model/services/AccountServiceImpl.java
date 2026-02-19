@@ -1,6 +1,8 @@
 package Balio.web.model.services;
 
 import Balio.web.enums.AccountType;
+import Balio.web.model.Exceptions.AccountInvalidException;
+import Balio.web.model.Exceptions.InstanceNotFoundException;
 import Balio.web.model.Exceptions.UserNotFoundException;
 import Balio.web.model.entities.Account;
 import Balio.web.model.entities.AccountDao;
@@ -14,7 +16,9 @@ import java.util.UUID;
 
 @Service
 @Transactional
-public class AccountServiceImpl {
+public class AccountServiceImpl implements AccountService {
+
+    private static final int MAX_ACCOUNTS_PER_USER = 5;
 
     private final UserDao userDao;
     private final AccountDao accountDao;
@@ -25,45 +29,101 @@ public class AccountServiceImpl {
     }
 
     @Override
-    public Account createAccount(UUID userId, String name, AccountType type, String currency, Boolean setDefault) { //que me revise se vai bn
+    public Account createAccount(UUID userId, String name, AccountType type, String currency, Boolean setDefault) {
 
-        User user = null;
+        User user = userDao.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        if ( userId != null ) {
-            user = userDao
-                    .findById(userId)
-                    .orElseThrow(() -> new UserNotFoundException("User not found"));
+        // Enforce maximum number of accounts per user
+        long currentCount = accountDao.countByUserId(userId);
+        if (currentCount >= MAX_ACCOUNTS_PER_USER) {
+            throw new AccountInvalidException(
+                    "Maximum number of accounts (" + MAX_ACCOUNTS_PER_USER + ") reached");
         }
 
-        if ( name == null ) {
-            name = UUID.randomUUID().toString();
+        if (name == null || name.isBlank()) {
+            name = "Account " + (currentCount + 1);
         }
-        if ( type == null ) {
+        if (type == null) {
             type = AccountType.CASH;
+        }
+        if (currency == null || currency.isBlank()) {
+            currency = "EUR";
         }
 
         Account account = new Account(name, type, currency, BigDecimal.ZERO, user);
-        if ( setDefault ) {
-            user.setDefaultAccount(account);
-        }
-        userDao.save(user);
         accountDao.save(account);
+
+        if (Boolean.TRUE.equals(setDefault)) {
+            user.setDefaultAccount(account);
+            userDao.save(user);
+        }
 
         return account;
     }
 
     @Override
-    public void deleteAccount(UUID userId, UUID accountId) {
+    public void deleteAccount(UUID userId, UUID accountId) throws InstanceNotFoundException {
 
+        Account account = accountDao.findByIdAndUserId(accountId, userId)
+                .orElseThrow(() -> new InstanceNotFoundException("Account", accountId));
+
+        // If this account is the user's default, clear it
+        User user = account.getUser();
+        if (user.getDefaultAccount() != null
+                && user.getDefaultAccount().getId().equals(accountId)) {
+            user.setDefaultAccount(null);
+            userDao.save(user);
+        }
+
+        accountDao.delete(account);
     }
 
     @Override
-    public Account modifyAccount(UUID userId, UUID accountId, String name, AccountType type, String currency, Boolean setDefault) {
+    public Account modifyAccount(UUID userId, UUID accountId, String name, AccountType type, String currency)
+            throws InstanceNotFoundException {
 
+        Account account = accountDao.findByIdAndUserId(accountId, userId)
+                .orElseThrow(() -> new InstanceNotFoundException("Account", accountId));
+
+        if (name != null) {
+            account.setName(name);
+        }
+        if (type != null) {
+            account.setType(type);
+        }
+        if (currency != null) {
+            account.setCurrency(currency);
+        }
+
+        accountDao.save(account);
+        return account;
     }
 
     @Override
-    public Account setDefaultAccount(UUID userId, UUID accountId, Boolean setDefault) {
+    public User setDefaultAccount(UUID userId, UUID accountId) throws InstanceNotFoundException {
 
+        User user = userDao.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        Account account = accountDao.findByIdAndUserId(accountId, userId)
+                .orElseThrow(() -> new InstanceNotFoundException("Account", accountId));
+
+        user.setDefaultAccount(account);
+        userDao.save(user);
+
+        return user;
+    }
+
+    @Override
+    public User clearDefaultAccount(UUID userId) {
+
+        User user = userDao.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        user.setDefaultAccount(null);
+        userDao.save(user);
+
+        return user;
     }
 }
