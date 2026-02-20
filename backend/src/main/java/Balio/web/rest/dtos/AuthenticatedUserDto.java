@@ -5,15 +5,18 @@ public class AuthenticatedUserDto {
     private String id;
     private String nickname;
     private String email;
-    private String token;
+    private String accessToken;
+    private String refreshToken;
 
     public AuthenticatedUserDto() {}
 
-    public AuthenticatedUserDto(String id, String nickname, String email, String token) {
+    public AuthenticatedUserDto(String id, String nickname, String email,
+                                String accessToken, String refreshToken) {
         this.id = id;
         this.nickname = nickname;
         this.email = email;
-        this.token = token;
+        this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
     }
 
     public String getId() { return id; }
@@ -25,6 +28,9 @@ public class AuthenticatedUserDto {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
-    public String getToken() { return token; }
-    public void setToken(String token) { this.token = token; }
+    public String getAccessToken() { return accessToken; }
+    public void setAccessToken(String accessToken) { this.accessToken = accessToken; }
+
+    public String getRefreshToken() { return refreshToken; }
+    public void setRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
 }

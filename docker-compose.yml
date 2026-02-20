@@ -3,13 +3,15 @@ services:
     image: postgres:18.1-bookworm
     container_name: balio-postgres
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: balio
-      POSTGRES_USER: balio
-      POSTGRES_PASSWORD: baliopass
+      POSTGRES_DB: ${DB_NAME:-balio}
+      POSTGRES_USER: ${DB_USERNAME:-balio}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-baliopass}
       PGDATA: /var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

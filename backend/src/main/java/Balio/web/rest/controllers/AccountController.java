@@ -2,13 +2,14 @@ package Balio.web.rest.controllers;
 
 import Balio.web.model.Exceptions.InstanceNotFoundException;
 import Balio.web.model.entities.Account;
-import Balio.web.model.entities.User;
 import Balio.web.model.services.AccountService;
 import Balio.web.rest.dtos.AccountConverter;
 import Balio.web.rest.dtos.AccountDto;
 import Balio.web.rest.dtos.AccountResponseDto;
 import Balio.web.rest.dtos.AccountSummaryDto;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -31,6 +32,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/account")
 public class AccountController {
+
+    private static final Logger log = LoggerFactory.getLogger(AccountController.class);
 
     private final AccountService accountService;
     private final AccountConverter accountConverter;
@@ -67,6 +70,8 @@ public class AccountController {
         Account account = accountService.createAccount(
                 userId, dto.getName(), dto.getType(), dto.getCurrency(), dto.getSetDefault());
 
+        log.info("Account created: accountId={}, userId={}, type={}", account.getId(), userId, dto.getType());
+
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest().path("/{id}")
                 .buildAndExpand(account.getId()).toUri();
@@ -94,6 +99,7 @@ public class AccountController {
     public void deleteAccount(@RequestAttribute UUID userId,
                               @PathVariable UUID accountId) throws InstanceNotFoundException {
         accountService.deleteAccount(userId, accountId);
+        log.info("Account deleted: accountId={}, userId={}", accountId, userId);
     }
 
     // ── SET / CLEAR DEFAULT ACCOUNT ──────────────────────────────────────

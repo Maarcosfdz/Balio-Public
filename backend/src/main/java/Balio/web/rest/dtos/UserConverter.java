@@ -7,12 +7,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class UserConverter {
 
-    public AuthenticatedUserDto toAuthenticatedUserDto(User user, String token) {
+    public AuthenticatedUserDto toAuthenticatedUserDto(User user, String accessToken, String refreshToken) {
         return new AuthenticatedUserDto(
                 user.getId().toString(),
                 user.getNickname(),
                 user.getEmail(),
-                token
+                accessToken,
+                refreshToken
         );
     }
 

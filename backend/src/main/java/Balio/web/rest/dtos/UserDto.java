@@ -2,6 +2,7 @@ package Balio.web.rest.dtos;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class UserDto {
@@ -21,7 +22,12 @@ public class UserDto {
     private String email;
 
     @NotBlank(groups = AllValidations.class)
-    @Size(min = 6, max = 255, groups = AllValidations.class)
+    @Size(min = 8, max = 255, groups = AllValidations.class)
+    @Pattern(
+        regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).+$",
+        message = "Password must contain at least one uppercase letter, one lowercase letter, and one digit",
+        groups = AllValidations.class
+    )
     private String password;
 
     public String getId() { return id; }

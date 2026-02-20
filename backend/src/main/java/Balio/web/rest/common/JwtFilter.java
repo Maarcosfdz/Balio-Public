@@ -33,6 +33,15 @@ public class JwtFilter extends OncePerRequestFilter {
         if (header != null && header.startsWith("Bearer ")) {
             try {
                 String token = header.substring(7);
+
+                // Only accept access tokens, reject refresh tokens
+                String tokenType = jwtGenerator.extractTokenType(token);
+                if (!"access".equals(tokenType)) {
+                    SecurityContextHolder.clearContext();
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
                 UUID userId = jwtGenerator.extractUserId(token);
 
                 request.setAttribute("userId", userId);
@@ -42,7 +51,6 @@ public class JwtFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
             } catch (Exception e) {
-                // Token inválido → se deja pasar sin autenticación
                 SecurityContextHolder.clearContext();
             }
         }

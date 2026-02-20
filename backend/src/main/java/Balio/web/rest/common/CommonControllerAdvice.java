@@ -9,6 +9,8 @@ import Balio.web.model.Exceptions.InstanceNotFoundException;
 import Balio.web.model.Exceptions.PermissionException;
 import Balio.web.model.Exceptions.UserNotFoundException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -22,6 +24,8 @@ import java.util.stream.Collectors;
 
 @ControllerAdvice
 public class CommonControllerAdvice {
+
+    private static final Logger log = LoggerFactory.getLogger(CommonControllerAdvice.class);
 
     private static final String INSTANCE_NOT_FOUND_EXCEPTION_CODE = "project.exceptions.InstanceNotFoundException";
     private static final String DUPLICATE_INSTANCE_EXCEPTION_CODE = "project.exceptions.DuplicateInstanceException";
@@ -133,5 +137,26 @@ public class CommonControllerAdvice {
                     fe.getDefaultMessage() != null ? fe.getDefaultMessage() : "Invalid value"))
             .collect(Collectors.toList());
         return Map.of("code", "project.exceptions.ValidationException", "fieldErrors", fieldErrors);
+    }
+
+    // --- IllegalArgumentException (e.g. invalid refresh token) ---
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public Map<String, String> handleIllegalArgumentException(IllegalArgumentException exception) {
+        return Map.of("code", "project.exceptions.IllegalArgumentException",
+                       "message", exception.getMessage() != null ? exception.getMessage() : "Invalid request");
+    }
+
+    // --- Generic exception handler (catch-all, never expose internals) ---
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ResponseBody
+    public Map<String, String> handleGenericException(Exception exception) {
+        log.error("Unexpected error", exception);
+        return Map.of("code", "project.exceptions.InternalServerError",
+                       "message", "An unexpected error occurred. Please try again later.");
     }
 }

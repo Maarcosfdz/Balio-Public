@@ -3,6 +3,8 @@ package Balio.web.rest.controllers;
 import java.net.URI;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -20,14 +22,18 @@ import Balio.web.model.Exceptions.DuplicateInstanceException;
 import Balio.web.model.Exceptions.IncorrectLoginException;
 import Balio.web.model.Exceptions.IncorrectPasswordException;
 import Balio.web.model.Exceptions.PermissionException;
+import Balio.web.model.entities.RefreshToken;
 import Balio.web.model.entities.User;
+import Balio.web.model.services.RefreshTokenService;
 import Balio.web.model.services.UserService;
 import Balio.web.rest.common.JwtGenerator;
 import Balio.web.rest.dtos.AuthenticatedUserDto;
 import Balio.web.rest.dtos.ChangePasswordParamsDto;
 import Balio.web.rest.dtos.LoginParamsDto;
+import Balio.web.rest.dtos.RefreshTokenRequestDto;
 import Balio.web.rest.dtos.UserConverter;
 import Balio.web.rest.dtos.UserDto;
+import Balio.web.rest.common.LoginRateLimiter;
 
 import javax.management.InstanceNotFoundException;
 
@@ -35,14 +41,22 @@ import javax.management.InstanceNotFoundException;
 @RequestMapping("/user")
 public class UserController {
 
+    private static final Logger log = LoggerFactory.getLogger(UserController.class);
+
     private final UserService userService;
+    private final RefreshTokenService refreshTokenService;
     private final JwtGenerator jwtGenerator;
     private final UserConverter userConverter;
+    private final LoginRateLimiter loginRateLimiter;
 
-    public UserController(UserService userService, JwtGenerator jwtGenerator, UserConverter userConverter) {
+    public UserController(UserService userService, RefreshTokenService refreshTokenService,
+                          JwtGenerator jwtGenerator, UserConverter userConverter,
+                          LoginRateLimiter loginRateLimiter) {
         this.userService = userService;
+        this.refreshTokenService = refreshTokenService;
         this.jwtGenerator = jwtGenerator;
         this.userConverter = userConverter;
+        this.loginRateLimiter = loginRateLimiter;
     }
 
     @PostMapping("/signUp")
@@ -53,23 +67,62 @@ public class UserController {
         userService.signUp(userDto.getNickname(), userDto.getEmail(), userDto.getPassword());
 
         User user = userService.login(userDto.getEmail(), userDto.getPassword());
-        String token = jwtGenerator.generateToken(user.getId());
+        String accessToken = jwtGenerator.generateAccessToken(user.getId());
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+
+        log.info("User signed up: userId={}", user.getId());
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest().path("/{id}")
                 .buildAndExpand(user.getId()).toUri();
 
-        return ResponseEntity.created(location).body(userConverter.toAuthenticatedUserDto(user, token));
+        return ResponseEntity.created(location)
+                .body(userConverter.toAuthenticatedUserDto(user, accessToken, refreshToken.getToken()));
     }
 
     @PostMapping("/login")
     public AuthenticatedUserDto login(@Validated @RequestBody LoginParamsDto params)
             throws IncorrectLoginException {
 
-        User user = userService.login(params.getEmail(), params.getPassword());
-        String token = jwtGenerator.generateToken(user.getId());
+        if (loginRateLimiter.isBlocked(params.getEmail())) {
+            long remaining = loginRateLimiter.getRemainingBlockSeconds(params.getEmail());
+            log.warn("Login blocked due to rate limiting: email={}, remaining={}s", params.getEmail(), remaining);
+            throw new IncorrectLoginException("Too many failed attempts. Try again in " + remaining + " seconds.");
+        }
 
-        return userConverter.toAuthenticatedUserDto(user, token);
+        try {
+            User user = userService.login(params.getEmail(), params.getPassword());
+            String accessToken = jwtGenerator.generateAccessToken(user.getId());
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+
+            loginRateLimiter.registerSuccessfulLogin(params.getEmail());
+            log.info("User logged in: userId={}", user.getId());
+
+            return userConverter.toAuthenticatedUserDto(user, accessToken, refreshToken.getToken());
+        } catch (IncorrectLoginException e) {
+            loginRateLimiter.registerFailedAttempt(params.getEmail());
+            log.warn("Failed login attempt: email={}", params.getEmail());
+            throw e;
+        }
+    }
+
+    @PostMapping("/refreshToken")
+    public AuthenticatedUserDto refreshToken(@Validated @RequestBody RefreshTokenRequestDto params) {
+
+        RefreshToken rotated = refreshTokenService.rotateRefreshToken(params.getRefreshToken());
+        User user = rotated.getUser();
+        String accessToken = jwtGenerator.generateAccessToken(user.getId());
+
+        log.debug("Token refreshed for userId={}", user.getId());
+
+        return userConverter.toAuthenticatedUserDto(user, accessToken, rotated.getToken());
+    }
+
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout(@RequestAttribute UUID userId) {
+        refreshTokenService.revokeAllUserTokens(userId);
+        log.info("User logged out: userId={}", userId);
     }
 
     @PutMapping("/{id}")
@@ -83,6 +136,7 @@ public class UserController {
         }
 
         User user = userService.updateProfile(id, userDto.getNickname(), userDto.getEmail());
+        log.info("Profile updated: userId={}", id);
         return userConverter.toUserDto(user);
     }
 
@@ -98,6 +152,10 @@ public class UserController {
         }
 
         userService.changePassword(id, params.getOldPassword(), params.getNewPassword());
+
+        // Revoke all refresh tokens on password change for security
+        refreshTokenService.revokeAllUserTokens(id);
+        log.info("Password changed and tokens revoked: userId={}", id);
     }
 
 }

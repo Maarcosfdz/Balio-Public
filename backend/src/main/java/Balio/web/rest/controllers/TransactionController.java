@@ -33,9 +33,14 @@ import Balio.web.rest.dtos.TransactionDto;
 import Balio.web.rest.dtos.TransactionResponseDto;
 import Balio.web.rest.dtos.TransactionSummaryDto;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @RestController
 @RequestMapping("/transaction")
 public class TransactionController {
+
+    private static final Logger log = LoggerFactory.getLogger(TransactionController.class);
 
     private final TransactionService transactionService;
     private final TransactionConverter transactionConverter;
@@ -90,6 +95,9 @@ public class TransactionController {
                 userId, dto.getAccountId(), dto.getCategoryId(),
                 dto.getName(), dto.getAmount(), dto.getDate(), dto.getAffectsBalance());
 
+        log.info("Expense created: txId={}, userId={}, amount={}, accountId={}",
+                transaction.getId(), userId, dto.getAmount(), dto.getAccountId());
+
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest().path("/{id}")
                 .buildAndExpand(transaction.getId()).toUri();
@@ -108,6 +116,9 @@ public class TransactionController {
         Transaction transaction = transactionService.addIncome(
                 userId, dto.getAccountId(), dto.getCategoryId(),
                 dto.getName(), dto.getAmount(), dto.getDate(), dto.getAffectsBalance());
+
+        log.info("Income created: txId={}, userId={}, amount={}, accountId={}",
+                transaction.getId(), userId, dto.getAmount(), dto.getAccountId());
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest().path("/{id}")
@@ -143,5 +154,6 @@ public class TransactionController {
             throws InstanceNotFoundException {
 
         transactionService.deleteTransaction(userId, transactionId, revertBalance);
+        log.info("Transaction deleted: txId={}, userId={}, revertBalance={}", transactionId, userId, revertBalance);
     }
 }
