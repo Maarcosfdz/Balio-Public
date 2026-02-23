@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/balio
-    username: balio
-    password: baliopass
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:balio}
+    username: ${DB_USERNAME:balio}
+    password: ${DB_PASSWORD:baliopass}
 
   flyway:
     enabled: true
@@ -12,9 +12,15 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
-    show-sql: true
+    show-sql: ${SHOW_SQL:false}
+
+project:
+  jwt:
+    signKey: ${JWT_SIGN_KEY:YourSuperSecretKeyForJWTMustBeAtLeast256BitsLong!!}
+    accessExpirationMinutes: ${JWT_ACCESS_EXPIRATION:15}
+    refreshExpirationDays: ${JWT_REFRESH_EXPIRATION_DAYS:7}
 
 logging:
   level:
-    org.flywaydb: DEBUG
-    org.springframework.boot.autoconfigure: DEBUG
+    org.flywaydb: ${LOG_FLYWAY:DEBUG}
+    org.springframework.boot.autoconfigure: ${LOG_SPRING:DEBUG}

@@ -1,0 +1,10 @@
+package Balio.web.model.Exceptions;
+
+@SuppressWarnings("serial")
+public class DuplicateInstanceException extends InstanceException {
+
+    public DuplicateInstanceException(String name, Object key) {
+        super(name, key);
+    }
+
+}
