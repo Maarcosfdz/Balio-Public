@@ -29,3 +29,15 @@ bd con coker e postgree
 migracions con flyway
 
 jacoco e rompe con menos dun 80 de cobertura
+
+o editconfig do checkstyle
+
+
+
+-------
+
+swagger
+
+http://localhost:8080/swagger-ui/index.html
+
+http://localhost:8080/v3/api-docs

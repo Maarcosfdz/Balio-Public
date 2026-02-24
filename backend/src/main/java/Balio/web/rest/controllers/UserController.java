@@ -1,23 +1,5 @@
 package Balio.web.rest.controllers;
 
-import java.net.URI;
-import java.util.UUID;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
 import Balio.web.model.Exceptions.DuplicateInstanceException;
 import Balio.web.model.Exceptions.IncorrectLoginException;
 import Balio.web.model.Exceptions.IncorrectPasswordException;
@@ -27,15 +9,31 @@ import Balio.web.model.entities.User;
 import Balio.web.model.services.RefreshTokenService;
 import Balio.web.model.services.UserService;
 import Balio.web.rest.common.JwtGenerator;
+import Balio.web.rest.common.LoginRateLimiter;
 import Balio.web.rest.dtos.AuthenticatedUserDto;
 import Balio.web.rest.dtos.ChangePasswordParamsDto;
 import Balio.web.rest.dtos.LoginParamsDto;
 import Balio.web.rest.dtos.RefreshTokenRequestDto;
 import Balio.web.rest.dtos.UserConverter;
 import Balio.web.rest.dtos.UserDto;
-import Balio.web.rest.common.LoginRateLimiter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.management.InstanceNotFoundException;
+import java.net.URI;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/user")
@@ -84,7 +82,7 @@ public class UserController {
     public AuthenticatedUserDto login(@Validated @RequestBody LoginParamsDto params)
             throws IncorrectLoginException {
 
-        if (loginRateLimiter.isBlocked(params.getEmail())) {
+        if ( loginRateLimiter.isBlocked(params.getEmail()) ) {
             long remaining = loginRateLimiter.getRemainingBlockSeconds(params.getEmail());
             log.warn("Login blocked due to rate limiting: email={}, remaining={}s", params.getEmail(), remaining);
             throw new IncorrectLoginException("Too many failed attempts. Try again in " + remaining + " seconds.");
@@ -131,7 +129,7 @@ public class UserController {
                                  @Validated({UserDto.UpdateValidations.class}) @RequestBody UserDto userDto)
             throws InstanceNotFoundException, DuplicateInstanceException, PermissionException {
 
-        if (!id.equals(userId)) {
+        if ( !id.equals(userId) ) {
             throw new PermissionException();
         }
 
@@ -147,7 +145,7 @@ public class UserController {
                                @Validated @RequestBody ChangePasswordParamsDto params)
             throws PermissionException, InstanceNotFoundException, IncorrectPasswordException {
 
-        if (!id.equals(userId)) {
+        if ( !id.equals(userId) ) {
             throw new PermissionException();
         }
 
