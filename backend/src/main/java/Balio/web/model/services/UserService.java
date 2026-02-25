@@ -10,7 +10,8 @@ import java.util.UUID;
 
 /*
  * Defines the contract for user-related operations in the application.
- * This interface includes methods for signing up new users, logging in, retrieving user information by ID, updating user profiles, and changing passwords.
+ * This interface includes methods for signing up new users, logging in,
+ * retrieving user information by ID, updating user profiles, and changing passwords.
  * The methods throw specific exceptions to handle cases such as duplicate instances and incorrect login attempts.
  */
 public interface UserService {

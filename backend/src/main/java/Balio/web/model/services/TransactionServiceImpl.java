@@ -58,10 +58,10 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public Transaction updateTransaction(UUID userId, UUID transactionId, UUID accountId, UUID categoryId, TransactionType type, String name,
-                                         BigDecimal amount, LocalDate date, Boolean affectsBalance) throws
-                                                                                                    InstanceNotFoundException,
-                                                                                                    AccountInvalidException {
+    public Transaction updateTransaction(UUID userId, UUID transactionId, UUID accountId,
+            UUID categoryId, TransactionType type, String name,
+            BigDecimal amount, LocalDate date, Boolean affectsBalance)
+            throws InstanceNotFoundException, AccountInvalidException {
 
         if ( name == null || name.isBlank() ) {
             throw new IllegalArgumentException("Name must not be blank");
@@ -129,9 +129,8 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     private Transaction addTransaction(UUID userId, UUID accountId, UUID categoryId, String name,
-                                       BigDecimal amount, LocalDate date, Boolean affectsBalance, TransactionType type) throws
-                                                                                                                        AccountInvalidException,
-                                                                                                                        UserNotFoundException {
+            BigDecimal amount, LocalDate date, Boolean affectsBalance, TransactionType type)
+            throws AccountInvalidException, UserNotFoundException {
 
         if ( name == null || name.isBlank() ) {
             throw new IllegalArgumentException("Name must not be blank");

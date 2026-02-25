@@ -169,6 +169,17 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.12</version>
 
+                <!-- Exclude infrastructure/config and trivial exception classes from coverage -->
+                <configuration>
+                    <excludes>
+                        <exclude>Balio/web/config/FlywayConfig.class</exclude>
+                        <exclude>Balio/web/config/ScheduledTasks.class</exclude>
+                        <exclude>Balio/web/config/JacksonConfig.class</exclude>
+                        <exclude>Balio/web/config/OpenApiConfig.class</exclude>
+                        <exclude>Balio/web/model/Exceptions/*.class</exclude>
+                    </excludes>
+                </configuration>
+
                 <executions>
                     <!-- Prepare agent for unit tests (Surefire) -->
                     <execution>

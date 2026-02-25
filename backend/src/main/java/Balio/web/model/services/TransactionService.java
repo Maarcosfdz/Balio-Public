@@ -28,10 +28,10 @@ public interface TransactionService {
                                                                                      AccountInvalidException,
                                                                                      UserNotFoundException;
 
-    Transaction updateTransaction(UUID userId, UUID transactionId, UUID accountId, UUID categoryId, TransactionType type, String name,
-                                  BigDecimal amount, LocalDate date, Boolean affectsBalance) throws
-                                                                                             InstanceNotFoundException,
-                                                                                             AccountInvalidException;
+    Transaction updateTransaction(UUID userId, UUID transactionId, UUID accountId,
+            UUID categoryId, TransactionType type, String name,
+            BigDecimal amount, LocalDate date, Boolean affectsBalance)
+            throws InstanceNotFoundException, AccountInvalidException;
 
     void deleteTransaction(UUID userId, UUID transactionId, boolean revertBalance) throws
                                                                                    InstanceNotFoundException;
