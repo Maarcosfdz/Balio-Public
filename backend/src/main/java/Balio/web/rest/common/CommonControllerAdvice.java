@@ -3,6 +3,8 @@ package Balio.web.rest.common;
 import Balio.web.model.Exceptions.AccountInvalidException;
 import Balio.web.model.Exceptions.CategoryInvalidException;
 import Balio.web.model.Exceptions.DuplicateInstanceException;
+import Balio.web.model.Exceptions.FilterInvalidException;
+import Balio.web.model.Exceptions.GoalInvalidException;
 import Balio.web.model.Exceptions.IncorrectLoginException;
 import Balio.web.model.Exceptions.IncorrectPasswordException;
 import Balio.web.model.Exceptions.InstanceNotFoundException;
@@ -124,6 +126,24 @@ public class CommonControllerAdvice {
     @ResponseBody
     public Map<String, String> handleCategoryInvalidException(CategoryInvalidException exception) {
         return Map.of("code", "project.exceptions.CategoryInvalidException", "message", exception.getMessage());
+    }
+
+    // --- GoalInvalidException (runtime) ---
+
+    @ExceptionHandler(GoalInvalidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public Map<String, String> handleGoalInvalidException(GoalInvalidException exception) {
+        return Map.of("code", "project.exceptions.GoalInvalidException", "message", exception.getMessage());
+    }
+
+    // --- FilterInvalidException (runtime) ---
+
+    @ExceptionHandler(FilterInvalidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public Map<String, String> handleFilterInvalidException(FilterInvalidException exception) {
+        return Map.of("code", "project.exceptions.FilterInvalidException", "message", exception.getMessage());
     }
 
     // --- Validation errors ---
