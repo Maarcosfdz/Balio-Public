@@ -41,3 +41,20 @@ swagger
 http://localhost:8080/swagger-ui/index.html
 
 http://localhost:8080/v3/api-docs
+
+------
+
+jacoco
+
+Todo 
+
+./mvnw verify
+
+Eso ejecuta en orden:
+
+Tests unitarios (Surefire) → genera target/jacoco-ut.exec
+Tests de integración (Failsafe) → genera target/jacoco-it.exec
+Reporte JaCoCo → genera target/site/jacoco/index.html
+Si quieres saltarte Checkstyle para ir más rápido:
+
+./mvnw verify -Dcheckstyle.skip=true
