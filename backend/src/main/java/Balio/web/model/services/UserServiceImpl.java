@@ -79,9 +79,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void changePassword(UUID authUserId, String oldRawPassword, String newRawPassword) throws
-                                                                                              InstanceNotFoundException,
-                                                                                              IncorrectPasswordException {
+    public void changePassword(UUID authUserId, String oldRawPassword, String newRawPassword)
+            throws InstanceNotFoundException, IncorrectPasswordException {
 
         User user = userDao.findById(authUserId)
                 .orElseThrow(() -> new InstanceNotFoundException());

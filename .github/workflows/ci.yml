@@ -9,7 +9,8 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: 
+      - '**' # Trigger on all branches
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -75,4 +76,5 @@ jobs:
           name: test-reports
           path: |
             backend/target/surefire-reports/
+            backend/target/failsafe-reports/
             backend/target/site/jacoco/

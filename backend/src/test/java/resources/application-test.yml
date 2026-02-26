@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    url: @testDataSource.url@
+    username: @testDataSource.user@
+    password: @testDataSource.password@
+    dbcp2:
+      max-total: 1
+      max-idle: 1

@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    # MODE=PostgreSQL allows H2 to accept jsonb columns and PostgreSQL-compatible syntax
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    database-platform: org.hibernate.dialect.H2Dialect
+
+  flyway:
+    enabled: false
+
+project:
+  jwt:
+    signKey: TestSecretKeyForJWTMustBeAtLeast256BitsLong!!TestKey
+    accessExpirationMinutes: 15
+    refreshExpirationDays: 7
