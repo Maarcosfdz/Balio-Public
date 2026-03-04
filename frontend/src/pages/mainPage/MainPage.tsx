@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/config/routes";
 import Footer from "@/components/layout/footer";
 import BalioBrand from "@/components/branding/BalioBrand";
-import HeroBackdrop from "@/components/layout/HeroBackdrop";
 
 const features = [
   {
@@ -98,7 +97,6 @@ export default function MainPage() {
       </header>
 
       <div className="relative w-full overflow-hidden bg-muted/40">
-        <HeroBackdrop />
         <section className="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-0 px-4 py-16 sm:px-6 lg:grid-cols-12 lg:px-3">
           <div className="flex flex-col gap-5 lg:col-span-7 lg:-ml-12">
             <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-600">

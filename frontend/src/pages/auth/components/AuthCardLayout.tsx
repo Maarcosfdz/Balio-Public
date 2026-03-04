@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { X } from "lucide-react";
 import BalioBrand from "@/components/branding/BalioBrand";
-import HeroBackdrop from "@/components/layout/HeroBackdrop";
 import { ROUTES } from "@/config/routes";
+import MainPage from "@/pages/mainPage/MainPage";
 
 interface AuthCardLayoutProps {
   title: string;
@@ -19,9 +19,15 @@ export default function AuthCardLayout({
   children,
 }: AuthCardLayoutProps) {
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-100 px-4 py-8">
-      <HeroBackdrop blurred />
-      <div className="absolute inset-0 bg-white/45 backdrop-blur-[1px]" />
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-8">
+      {/* MainPage real difuminada como fondo */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        <div className="blur-sm brightness-75 scale-[1.02] origin-center">
+          <MainPage />
+        </div>
+      </div>
+      {/* Capa de oscurecimiento encima del fondo */}
+      <div className="absolute inset-0 bg-white/30 backdrop-blur-[2px]" />
 
       <Link
         to={ROUTES.HOME}
