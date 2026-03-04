@@ -146,4 +146,12 @@ public class AccountServiceImpl implements AccountService {
         return accountDao.findByIdAndUserId(accountId, userId)
                 .orElseThrow(() -> new InstanceNotFoundException("Account", accountId));
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UUID getDefaultAccountId(UUID userId) {
+        return userDao.findById(userId)
+                .map(u -> u.getDefaultAccount() != null ? u.getDefaultAccount().getId() : null)
+                .orElse(null);
+    }
 }

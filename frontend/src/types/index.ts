@@ -62,6 +62,9 @@ export interface AccountSummaryDto {
   id: string;
   name: string;
   type: AccountType;
+  currency: string;
+  balance: number;
+  isDefault: boolean;
 }
 
 export interface AccountResponseDto {
@@ -127,6 +130,7 @@ export interface CategoryDto {
 export interface CategorySummaryDto {
   id: string;
   name: string;
+  type?: TransactionType;
 }
 
 export interface CategoryResponseDto {

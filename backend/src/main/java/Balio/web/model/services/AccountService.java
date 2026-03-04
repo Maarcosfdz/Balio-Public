@@ -66,4 +66,9 @@ public interface AccountService {
      */
     Account findByIdAndUserId(UUID accountId, UUID userId) throws InstanceNotFoundException;
 
+    /**
+     * Returns the UUID of the user's default account, or null if none is set.
+     */
+    UUID getDefaultAccountId(UUID userId);
+
 }

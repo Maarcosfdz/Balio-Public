@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowDownCircle,
   ArrowUpCircle,
+  Bookmark,
   Loader2,
   Plus,
   RefreshCw,
+  Tag,
 } from "lucide-react";
 import type {
   TransactionFilters,
@@ -19,6 +22,7 @@ import Pagination from "@/components/transactions/Pagination";
 import FilterPanel, {
   type ActiveFilters,
 } from "./components/FilterPanel";
+import { ROUTES } from "@/config/routes";
 
 const PAGE_SIZE = 20;
 
@@ -28,14 +32,20 @@ function normalize(s: string) {
 
 export default function TransactionsPage() {
   const { t } = useTranslation();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const stateAccountId = (location.state as { accountId?: string; filterId?: string } | null)?.accountId;
+  const stateFilterId  = (location.state as { accountId?: string; filterId?: string } | null)?.filterId;
 
   // ── Data ──
   const [transactions, setTransactions] = useState<TransactionSummaryDto[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // ── Filters ──
-  const [filters, setFilters] = useState<ActiveFilters>({});
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  // ── Filters — pre-populate from navigation state ──
+  const [filters, setFilters] = useState<ActiveFilters>(() =>
+    stateAccountId ? { accountId: stateAccountId } : {}
+  );
+  const [filtersOpen, setFiltersOpen] = useState(!!stateAccountId);
 
   // ── Modals ──
   const [expenseOpen, setExpenseOpen] = useState(false);
@@ -70,7 +80,11 @@ export default function TransactionsPage() {
   );
 
   useEffect(() => {
-    fetchTransactions();
+    if (stateFilterId) {
+      handleApplySavedFilter(stateFilterId);
+    } else {
+      fetchTransactions();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -155,6 +169,22 @@ export default function TransactionsPage() {
             <RefreshCw className="h-4 w-4" />
           </button>
           <button
+            onClick={() => navigate(ROUTES.CATEGORIES)}
+            title={t("nav.categories")}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-50"
+          >
+            <Tag className="h-4 w-4" />
+            <span className="hidden sm:inline">{t("nav.categories")}</span>
+          </button>
+          <button
+            onClick={() => navigate(ROUTES.FILTERS)}
+            title={t("nav.filters")}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-50"
+          >
+            <Bookmark className="h-4 w-4" />
+            <span className="hidden sm:inline">{t("nav.filters")}</span>
+          </button>
+          <button
             onClick={() => setExpenseOpen(true)}
             className="inline-flex items-center gap-1.5 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600"
           >
@@ -177,6 +207,7 @@ export default function TransactionsPage() {
         onToggle={() => setFiltersOpen((v) => !v)}
         onApply={handleApplyFilters}
         onApplySavedFilter={handleApplySavedFilter}
+        defaultAccountId={stateAccountId}
       />
 
       {/* Transaction list */}

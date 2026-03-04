@@ -37,6 +37,7 @@ interface FilterPanelProps {
   onToggle: () => void;
   onApply: (filters: ActiveFilters) => void;
   onApplySavedFilter: (filterId: string) => void;
+  defaultAccountId?: string;
 }
 
 export default function FilterPanel({
@@ -44,6 +45,7 @@ export default function FilterPanel({
   onToggle,
   onApply,
   onApplySavedFilter,
+  defaultAccountId,
 }: FilterPanelProps) {
   const { t } = useTranslation();
 
@@ -60,7 +62,7 @@ export default function FilterPanel({
 
   // Filter state
   const [type, setType] = useState<TransactionType | "">("");
-  const [accountId, setAccountId] = useState("");
+  const [accountId, setAccountId] = useState(defaultAccountId ?? "");
   const [categoryId, setCategoryId] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
