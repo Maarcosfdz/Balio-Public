@@ -1,0 +1,161 @@
+{
+  "main": {
+    "badge": "Tu gestor de finanzas personales",
+    "titleLine1": "Gestiona tus",
+    "titleHighlight": "finanzas personales",
+    "titleLine2": "f\u00e1cilmente.",
+    "subtitle": "Toma el control de tu vida financiera con herramientas dise\u00f1adas para la simplicidad y la potencia. Registra, ahorra y haz crecer tu patrimonio.",
+    "trusted": "Usado por estudiantes y profesionales",
+    "featuresTitle": "Todo lo que necesitas para dominar tu dinero",
+    "featuresSubtitle": "Balio te ofrece una visi\u00f3n completa de tu salud financiera con herramientas intuitivas.",
+    "feat1Title": "Transacciones inteligentes",
+    "feat1Desc": "Categoriza autom\u00e1ticamente tus gastos y visualiza tus h\u00e1bitos de gasto a lo largo del tiempo.",
+    "feat2Title": "Gesti\u00f3n de cuentas",
+    "feat2Desc": "Lleva el control de todas tus cuentas (efectivo, banco...) y consulta tu saldo en tiempo real.",
+    "feat3Title": "Metas de ahorro",
+    "feat3Desc": "Fija objetivos financieros y sigue tu progreso para alcanzarlos antes de lo previsto.",
+    "feat4Title": "An\u00e1lisis detallado",
+    "feat4Desc": "Visualiza gr\u00e1ficos interactivos y descubre tendencias en tus ingresos y gastos.",
+    "ctaTitle": "\u00bfListo para tomar el control?",
+    "ctaSubtitle": "\u00danete y empieza a gestionar tu dinero de forma inteligente hoy mismo.",
+    "ctaButton": "Empieza gratis",
+    "allRights": "Todos los derechos reservados."
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "confirm": "Confirmar",
+    "loading": "Cargando...",
+    "noResults": "Sin resultados",
+    "error": "Ha ocurrido un error",
+    "success": "Operación realizada correctamente",
+    "currency": "€"
+  },
+  "auth": {
+    "login": "Iniciar sesión",
+    "signUp": "Registrarse",
+    "loginTitle": "Bienvenido de vuelta",
+    "signUpTitle": "Crear cuenta",
+    "loginSubtitle": "Introduce tus datos para acceder a tu panel.",
+    "signUpSubtitle": "Empieza a gestionar tus finanzas hoy.",
+    "logout": "Cerrar sesión",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "nickname": "Nombre de usuario",
+    "confirmPassword": "Confirmar contraseña",
+    "noAccount": "¿No tienes cuenta?",
+    "hasAccount": "¿Ya tienes cuenta?",
+    "loginError": "Correo o contraseña incorrectos",
+    "signUpError": "No se pudo crear la cuenta",
+    "passwordRequirements": "Mínimo 8 caracteres, 1 mayúscula, 1 minúscula y 1 número",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
+    "submitting": "Enviando...",
+    "close": "Cerrar",
+    "acceptTerms": "Acepto los Términos de Servicio y la Política de Privacidad",
+    "placeholders": {
+      "nickname": "Introduce tu nombre de usuario",
+      "email": "nombre@ejemplo.com",
+      "password": "Introduce tu contraseña",
+      "confirmPassword": "Repite tu contraseña"
+    },
+    "errors": {
+      "required": "Este campo es obligatorio",
+      "invalidEmail": "Introduce un correo válido",
+      "passwordMinLength": "La contraseña debe tener al menos 8 caracteres",
+      "passwordMaxLength": "La contraseña no puede superar 255 caracteres",
+      "passwordPattern": "La contraseña debe incluir mayúscula, minúscula y número",
+      "passwordMismatch": "Las contraseñas no coinciden",
+      "nicknameMaxLength": "El nombre de usuario no puede superar 60 caracteres",
+      "acceptTerms": "Debes aceptar los términos",
+      "emailInUse": "Este correo ya está registrado"
+    }
+  },
+  "nav": {
+    "dashboard": "Panel",
+    "transactions": "Transacciones",
+    "accounts": "Cuentas",
+    "categories": "Categorías",
+    "goals": "Metas",
+    "filters": "Filtros",
+    "settings": "Ajustes"
+  },
+  "dashboard": {
+    "title": "Panel principal",
+    "totalBalance": "Balance total",
+    "recentTransactions": "Transacciones recientes",
+    "expensesByCategory": "Gastos por categoría",
+    "monthlyOverview": "Resumen mensual"
+  },
+  "accounts": {
+    "title": "Mis cuentas",
+    "create": "Nueva cuenta",
+    "name": "Nombre",
+    "type": "Tipo",
+    "currency": "Moneda",
+    "balance": "Saldo",
+    "setDefault": "Establecer por defecto",
+    "clearDefault": "Quitar por defecto",
+    "maxAccounts": "Has alcanzado el máximo de 5 cuentas",
+    "types": {
+      "CASH": "Efectivo",
+      "BANK": "Banco",
+      "OTHER": "Otro"
+    },
+    "deleteConfirm": "¿Seguro que quieres eliminar esta cuenta?"
+  },
+  "transactions": {
+    "title": "Transacciones",
+    "create": "Nueva transacción",
+    "expense": "Gasto",
+    "income": "Ingreso",
+    "name": "Concepto",
+    "amount": "Importe",
+    "date": "Fecha",
+    "account": "Cuenta",
+    "category": "Categoría",
+    "type": "Tipo",
+    "affectsBalance": "Afecta al saldo",
+    "revertBalance": "Revertir efecto en saldo",
+    "noCategory": "Sin categoría",
+    "deleteConfirm": "¿Seguro que quieres eliminar esta transacción?"
+  },
+  "categories": {
+    "title": "Categorías",
+    "create": "Nueva categoría",
+    "name": "Nombre",
+    "type": "Tipo",
+    "deleteConfirm": "¿Seguro que quieres eliminar esta categoría?"
+  },
+  "goals": {
+    "title": "Metas de ahorro",
+    "create": "Nueva meta",
+    "name": "Nombre",
+    "targetAmount": "Objetivo",
+    "currentAmount": "Ahorro actual",
+    "progress": "Progreso",
+    "addAmount": "Añadir",
+    "withdrawAmount": "Retirar",
+    "deleteConfirm": "¿Seguro que quieres eliminar esta meta?"
+  },
+  "filters": {
+    "title": "Filtros guardados",
+    "create": "Nuevo filtro",
+    "name": "Nombre",
+    "apply": "Aplicar filtro",
+    "definition": "Definición",
+    "deleteConfirm": "¿Seguro que quieres eliminar este filtro?"
+  },
+  "settings": {
+    "title": "Ajustes",
+    "profile": "Perfil",
+    "changePassword": "Cambiar contraseña",
+    "oldPassword": "Contraseña actual",
+    "newPassword": "Nueva contraseña",
+    "language": "Idioma"
+  }
+}

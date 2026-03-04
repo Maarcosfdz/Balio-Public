@@ -1,0 +1,121 @@
+/*
+ * components/buttons.css — Botones personalizados.
+ *
+ * Clases definidas aquí:
+ *   .btn-register       — botón "Registrarse" con borde degradado suave en hover
+ *   .btn-register-sm    — variante pequeña (header)
+ *   .btn-register-text  — span interior (compatibilidad)
+ *   .btn-login-hover    — botón "Iniciar sesión" con gradiente que se desliza en hover
+ *   .btn-login-sm       — variante pequeña (header)
+ *
+ * Técnica usada en .btn-register:
+ *   Un ::before con el gradiente + opacity:0→1 para una transición suave,
+ *   ya que CSS no puede interpolar gradientes directamente.
+ *
+ * Técnica usada en .btn-login-hover:
+ *   background-position se desliza de right→left en hover (sí es interpolable).
+ */
+
+/* ── Botón Registrarse ──────────────────────────────────────────── */
+.btn-register {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.25rem;
+  font-size: 1.125rem;
+  font-weight: 500;
+  border-radius: 0.75rem;
+  border: 2px solid #cbd5e1;
+  background: white;
+  color: #0f172a;
+  text-decoration: none;
+  cursor: pointer;
+  line-height: 1.5;
+  transition: border-color 1200ms ease, color 1200ms ease;
+  z-index: 0;
+  overflow: hidden;
+}
+
+/* Capa de gradiente detrás: se revela con opacity */
+.btn-register::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: calc(0.75rem + 2px);
+  background: linear-gradient(90deg, #0ea5e9, #34d399, #10b981);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 1200ms ease;
+}
+
+/* Fondo blanco que tapa el degradado dejando sólo el borde visible */
+.btn-register::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: calc(0.75rem - 1px);
+  background: white;
+  z-index: -1;
+}
+
+.btn-register:hover {
+  border-color: transparent;
+  color: #0ea5e9;
+}
+
+.btn-register:hover::before {
+  opacity: 1;
+}
+
+/* span interior — el color lo gestiona la regla de :hover del padre */
+.btn-register-text { pointer-events: none; }
+
+/* Variante pequeña (header) */
+.btn-register-sm {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.875rem;
+  border-radius: 0.5rem;
+}
+.btn-register-sm::before { border-radius: calc(0.5rem + 2px); }
+.btn-register-sm::after  { border-radius: calc(0.5rem - 1px); }
+
+/* ── Botón Iniciar sesión ───────────────────────────────────────── */
+.btn-login-hover {
+  background: linear-gradient(270deg, #2563eb, #34d399, #10b981, #0ea5e9, #2563eb);
+  background-size: 300% 100%;
+  background-position: right center;
+  transition: background-position 1400ms ease;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.25rem;
+  font-size: 1.125rem;
+  font-weight: 500;
+  border-radius: 0.75rem;
+  border: none;
+  text-decoration: none;
+  gap: 0.5rem;
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+.btn-login-hover:hover {
+  background-position: left center;
+}
+
+/* Flecha: slide hacia la derecha en hover */
+.btn-login-hover .arrow-icon {
+  transition: transform 500ms ease;
+}
+.btn-login-hover:hover .arrow-icon {
+  transform: translateX(6px);
+}
+
+/* Variante pequeña (header) */
+.btn-login-sm {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.875rem;
+  border-radius: 0.5rem;
+}

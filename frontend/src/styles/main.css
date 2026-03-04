@@ -1,0 +1,22 @@
+/*
+ * main.css — punto de entrada único de estilos.
+ * Aquí se carga Tailwind una sola vez y luego se importa todo en orden.
+ *
+ * Orden recomendado:
+ *   1. Tailwind (base, componentes, utilidades)
+ *   2. Tema global (variables shadcn + @theme inline)
+ *   3. Estilos base (fuentes, elementos raíz)
+ *   4. Componentes CSS propios
+ *   5. Páginas (estilos muy específicos de una sola ruta)
+ */
+
+@import "tailwindcss";
+
+/* ── Tema ── */
+@import "./theme.css";
+
+/* ── Base ── */
+@import "./base.css";
+
+/* ── Componentes ── */
+@import "./components/buttons.css";

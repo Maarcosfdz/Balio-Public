@@ -1,0 +1,161 @@
+{
+  "main": {
+    "badge": "Your personal finance manager",
+    "titleLine1": "Manage your",
+    "titleHighlight": "personal finances",
+    "titleLine2": "simply.",
+    "subtitle": "Take control of your financial life with our comprehensive suite of tools designed for simplicity and power. Track, save, and grow your wealth.",
+    "trusted": "Trusted by students and professionals",
+    "featuresTitle": "Everything you need to master your money",
+    "featuresSubtitle": "Balio provides a complete 360-degree view of your financial health with intuitive tools.",
+    "feat1Title": "Smart Transactions",
+    "feat1Desc": "Automatically categorize expenses and visualize your spending habits over time.",
+    "feat2Title": "Account Management",
+    "feat2Desc": "Keep track of all your accounts (cash, bank...) and check your balance in real time.",
+    "feat3Title": "Savings Goals",
+    "feat3Desc": "Set financial objectives and track your progress to reach them ahead of schedule.",
+    "feat4Title": "Deep Analytics",
+    "feat4Desc": "Visualize your wealth growth and discover trends with interactive charts.",
+    "ctaTitle": "Ready to take control?",
+    "ctaSubtitle": "Join others who are mastering their money with Balio today.",
+    "ctaButton": "Get Started for Free",
+    "allRights": "All rights reserved."
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "confirm": "Confirm",
+    "loading": "Loading...",
+    "noResults": "No results",
+    "error": "An error occurred",
+    "success": "Operation completed successfully",
+    "currency": "€"
+  },
+  "auth": {
+    "login": "Log in",
+    "signUp": "Sign up",
+    "loginTitle": "Welcome Back",
+    "signUpTitle": "Create Account",
+    "loginSubtitle": "Enter your details to access your dashboard.",
+    "signUpSubtitle": "Start managing your finances today.",
+    "logout": "Log out",
+    "email": "Email",
+    "password": "Password",
+    "nickname": "Username",
+    "confirmPassword": "Confirm password",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "loginError": "Incorrect email or password",
+    "signUpError": "Could not create account",
+    "passwordRequirements": "At least 8 characters, 1 uppercase, 1 lowercase and 1 number",
+    "forgotPassword": "Forgot password?",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "submitting": "Submitting...",
+    "close": "Close",
+    "acceptTerms": "I agree to the Terms of Service and Privacy Policy",
+    "placeholders": {
+      "nickname": "Enter your username",
+      "email": "name@example.com",
+      "password": "Enter your password",
+      "confirmPassword": "Repeat your password"
+    },
+    "errors": {
+      "required": "This field is required",
+      "invalidEmail": "Enter a valid email",
+      "passwordMinLength": "Password must have at least 8 characters",
+      "passwordMaxLength": "Password cannot exceed 255 characters",
+      "passwordPattern": "Password must include uppercase, lowercase and a number",
+      "passwordMismatch": "Passwords do not match",
+      "nicknameMaxLength": "Username cannot exceed 60 characters",
+      "acceptTerms": "You must accept the terms",
+      "emailInUse": "This email is already registered"
+    }
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "transactions": "Transactions",
+    "accounts": "Accounts",
+    "categories": "Categories",
+    "goals": "Goals",
+    "filters": "Filters",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "totalBalance": "Total Balance",
+    "recentTransactions": "Recent Transactions",
+    "expensesByCategory": "Expenses by Category",
+    "monthlyOverview": "Monthly Overview"
+  },
+  "accounts": {
+    "title": "My Accounts",
+    "create": "New Account",
+    "name": "Name",
+    "type": "Type",
+    "currency": "Currency",
+    "balance": "Balance",
+    "setDefault": "Set as default",
+    "clearDefault": "Clear default",
+    "maxAccounts": "You have reached the maximum of 5 accounts",
+    "types": {
+      "CASH": "Cash",
+      "BANK": "Bank",
+      "OTHER": "Other"
+    },
+    "deleteConfirm": "Are you sure you want to delete this account?"
+  },
+  "transactions": {
+    "title": "Transactions",
+    "create": "New Transaction",
+    "expense": "Expense",
+    "income": "Income",
+    "name": "Description",
+    "amount": "Amount",
+    "date": "Date",
+    "account": "Account",
+    "category": "Category",
+    "type": "Type",
+    "affectsBalance": "Affects balance",
+    "revertBalance": "Revert balance effect",
+    "noCategory": "No category",
+    "deleteConfirm": "Are you sure you want to delete this transaction?"
+  },
+  "categories": {
+    "title": "Categories",
+    "create": "New Category",
+    "name": "Name",
+    "type": "Type",
+    "deleteConfirm": "Are you sure you want to delete this category?"
+  },
+  "goals": {
+    "title": "Savings Goals",
+    "create": "New Goal",
+    "name": "Name",
+    "targetAmount": "Target",
+    "currentAmount": "Current savings",
+    "progress": "Progress",
+    "addAmount": "Add",
+    "withdrawAmount": "Withdraw",
+    "deleteConfirm": "Are you sure you want to delete this goal?"
+  },
+  "filters": {
+    "title": "Saved Filters",
+    "create": "New Filter",
+    "name": "Name",
+    "apply": "Apply Filter",
+    "definition": "Definition",
+    "deleteConfirm": "Are you sure you want to delete this filter?"
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "changePassword": "Change Password",
+    "oldPassword": "Current password",
+    "newPassword": "New password",
+    "language": "Language"
+  }
+}

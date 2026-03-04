@@ -1,0 +1,24 @@
+/*
+ * base.css — Estilos base y fuentes.
+ *
+ * Contiene:
+ *   - Variables de fuente (--font-system, --font-app)
+ *   - Clases utilitarias de fuente (.font-system, .font-app)
+ *
+ * No meter aquí estilos de componentes concretos.
+ */
+
+@layer base {
+  :root {
+    --font-system: system-ui, -apple-system, sans-serif;
+    --font-app: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  .font-system {
+    font-family: var(--font-system);
+  }
+
+  .font-app {
+    font-family: var(--font-app);
+  }
+}
