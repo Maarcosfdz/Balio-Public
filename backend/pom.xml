@@ -139,6 +139,11 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <spring.profiles.active>${spring.profiles.active}</spring.profiles.active>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
 
             <!-- CHECKSTYLE -->
@@ -335,6 +340,9 @@
                     <version>2.4.240</version>
                 </dependency>
             </dependencies>
+            <properties>
+                <spring.profiles.active>h2</spring.profiles.active>
+            </properties>
         </profile>
     </profiles>
 

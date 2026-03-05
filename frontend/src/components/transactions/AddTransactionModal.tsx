@@ -67,16 +67,23 @@ export default function AddTransactionModal({
     }
   }, [open]);
 
-  // Pre-select first account
+  // Pre-select first account (optional — user can clear it)
   useEffect(() => {
     if (accounts.length > 0 && !accountId) {
       setAccountId(accounts[0].id);
     }
   }, [accounts, accountId]);
 
+  // Validation: only name and amount are required
   const isValid = useMemo(
-    () => name.trim() && parseFloat(amount) > 0 && accountId,
-    [name, amount, accountId]
+    () => name.trim().length > 0 && parseFloat(amount) > 0,
+    [name, amount]
+  );
+
+  // Filter categories to those matching this transaction type (or untyped)
+  const filteredCategories = useMemo(
+    () => categories.filter((c) => !c.type || c.type === type),
+    [categories, type]
   );
 
   const handleCategoryCreated = useCallback((cat: CategorySummaryDto) => {
@@ -95,19 +102,40 @@ export default function AddTransactionModal({
     const dto: TransactionDto = {
       name: name.trim(),
       amount: parseFloat(amount),
-      accountId,
+      accountId: accountId || undefined!,
       date,
       categoryId: categoryId ?? undefined,
       affectsBalance,
     };
 
+    // Log request for debugging (mask sensitive data)
+    if (import.meta.env.DEV) {
+      console.log(
+        `[AddTransaction] ${isExpense ? "EXPENSE" : "INCOME"} →`,
+        { ...dto, _endpoint: isExpense ? "/transaction/expense" : "/transaction/income" }
+      );
+    }
+
     try {
       const created = isExpense
         ? await transactionService.createExpense(dto)
         : await transactionService.createIncome(dto);
+
+      if (import.meta.env.DEV) {
+        console.log("[AddTransaction] ✓ Created:", created.id);
+      }
       onCreated(created);
       onClose();
-    } catch {
+    } catch (err: unknown) {
+      // Enhanced error logging for debugging 403/network issues
+      if (import.meta.env.DEV) {
+        const axiosErr = err as { response?: { status: number; data: unknown }; message?: string };
+        console.error("[AddTransaction] ✗ Error:", {
+          status: axiosErr.response?.status,
+          data: axiosErr.response?.data,
+          message: axiosErr.message,
+        });
+      }
       setError(t("common.error"));
     } finally {
       setSubmitting(false);
@@ -148,18 +176,82 @@ export default function AddTransactionModal({
             type="button"
             onClick={onClose}
             className="rounded-full p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+            aria-label={t("common.cancel")}
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Account */}
+          {/* 1. Name / Concepto — FIRST FIELD */}
           <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-slate-700">
+            <label htmlFor="tx-name" className="text-sm font-semibold text-slate-700">
+              {isExpense ? t("txPage.expenseName") : t("txPage.incomeName")}
+              <span className="text-red-400"> *</span>
+            </label>
+            <input
+              id="tx-name"
+              autoFocus
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={
+                isExpense
+                  ? t("txPage.expenseNamePlaceholder")
+                  : t("txPage.incomeNamePlaceholder")
+              }
+              className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-100"
+            />
+          </div>
+
+          {/* 2. Amount */}
+          <div className="space-y-1.5">
+            <label htmlFor="tx-amount" className="text-sm font-semibold text-slate-700">
+              {t("transactions.amount")}
+              <span className="text-red-400"> *</span>
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">
+                {t("common.currency")}
+              </span>
+              <input
+                id="tx-amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
+                className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 pl-8 pr-3 text-sm outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-100"
+              />
+            </div>
+          </div>
+
+          {/* 3. Date */}
+          <div className="space-y-1.5">
+            <label htmlFor="tx-date" className="text-sm font-semibold text-slate-700">
+              {t("transactions.date")}
+            </label>
+            <div className="relative">
+              <input
+                id="tx-date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-100"
+              />
+              <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            </div>
+          </div>
+
+          {/* 4. Account — OPTIONAL */}
+          <div className="space-y-1.5">
+            <label htmlFor="tx-account" className="text-sm font-semibold text-slate-700">
               {t("transactions.account")}
+              <span className="ml-1 text-xs font-normal text-slate-400">(opcional)</span>
             </label>
             <select
+              id="tx-account"
               value={accountId}
               onChange={(e) => setAccountId(e.target.value)}
               className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-100"
@@ -173,13 +265,14 @@ export default function AddTransactionModal({
             </select>
           </div>
 
-          {/* Category */}
+          {/* 5. Category — OPTIONAL */}
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-slate-700">
               {t("transactions.category")}
+              <span className="ml-1 text-xs font-normal text-slate-400">(opcional)</span>
             </label>
             <CategoryCombobox
-              categories={categories}
+              categories={filteredCategories}
               value={categoryId}
               transactionType={type}
               onChange={setCategoryId}
@@ -187,62 +280,7 @@ export default function AddTransactionModal({
             />
           </div>
 
-          {/* Date */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-slate-700">
-              {t("transactions.date")}
-            </label>
-            <div className="relative">
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-100"
-              />
-              <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            </div>
-          </div>
-
-          {/* Name */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-slate-700">
-              {isExpense ? t("txPage.expenseName") : t("txPage.incomeName")}
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={
-                isExpense
-                  ? t("txPage.expenseNamePlaceholder")
-                  : t("txPage.incomeNamePlaceholder")
-              }
-              className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-100"
-            />
-          </div>
-
-          {/* Amount */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-slate-700">
-              {t("transactions.amount")}
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">
-                {t("common.currency")}
-              </span>
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.00"
-                className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 pl-8 pr-3 text-sm outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-100"
-              />
-            </div>
-          </div>
-
-          {/* Affects balance */}
+          {/* 6. Affects balance */}
           <label className="flex items-center gap-2.5 cursor-pointer">
             <input
               type="checkbox"
@@ -260,7 +298,11 @@ export default function AddTransactionModal({
             </div>
           </label>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && (
+            <p className="text-sm text-red-600" role="alert">
+              {error}
+            </p>
+          )}
 
           {/* Actions */}
           <div className="flex items-center justify-end gap-3 pt-2">

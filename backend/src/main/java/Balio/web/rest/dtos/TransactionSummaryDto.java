@@ -12,6 +12,9 @@ public class TransactionSummaryDto {
     private TransactionType type;
     private BigDecimal amount;
     private LocalDate date;
+    private String accountName;
+    private String categoryName;
+    private String categoryId;
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -27,4 +30,13 @@ public class TransactionSummaryDto {
 
     public LocalDate getDate() { return date; }
     public void setDate(LocalDate date) { this.date = date; }
+
+    public String getAccountName() { return accountName; }
+    public void setAccountName(String accountName) { this.accountName = accountName; }
+
+    public String getCategoryName() { return categoryName; }
+    public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
+
+    public String getCategoryId() { return categoryId; }
+    public void setCategoryId(String categoryId) { this.categoryId = categoryId; }
 }

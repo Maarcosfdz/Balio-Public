@@ -1,6 +1,7 @@
 package Balio.web.rest.dtos;
 
 import Balio.web.model.entities.Account;
+import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 

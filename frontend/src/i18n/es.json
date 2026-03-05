@@ -30,6 +30,7 @@
     "create": "Crear",
     "confirm": "Confirmar",
     "loading": "Cargando...",
+    "optional": "opcional",
     "noResults": "Sin resultados",
     "error": "Ha ocurrido un error",
     "success": "Operación realizada correctamente",

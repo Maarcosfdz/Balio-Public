@@ -145,8 +145,6 @@ public class TransactionServiceImpl implements TransactionService {
             account = accountDao
                     .findByIdAndUserId(accountId, userId)
                     .orElseThrow(() -> new AccountInvalidException("Account not linked"));
-        } else {
-            throw new AccountInvalidException("Account not found");
         }
 
         if ( date == null ) {
@@ -173,7 +171,7 @@ public class TransactionServiceImpl implements TransactionService {
         transactionDao.save(transaction);
 
         // Update account balance
-        if ( affects ) {
+        if ( affects && account != null ) {
             applyBalance(account, amount, type, false);
         }
 

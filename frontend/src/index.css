@@ -105,6 +105,31 @@
   border-radius: 0.5rem;
 }
 
+/* ── Guardar filtro: balanceo suave ── */
+@keyframes save-wobble {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  15%  { transform: translateX(-4px) rotate(-2.5deg); }
+  35%  { transform: translateX(5px) rotate(2.5deg); }
+  55%  { transform: translateX(-3px) rotate(-1.5deg); }
+  75%  { transform: translateX(3px) rotate(1.5deg); }
+  90%  { transform: translateX(-1px) rotate(-0.5deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+.btn-save-filter {
+  transition: border-color 200ms ease, color 200ms ease, background-color 200ms ease;
+}
+.btn-save-filter:hover {
+  animation: save-wobble 0.65s ease-in-out;
+  border-color: #374151;
+  color: #374151;
+  background-color: #f3f4f6;
+}
+.btn-save-filter:active {
+  border-color: #10b981 !important;
+  color: #10b981 !important;
+  background-color: #f0fdf4 !important;
+}
+
 @theme inline {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));

@@ -82,7 +82,7 @@ export interface AccountResponseDto {
 export interface TransactionDto {
   name: string;
   amount: number;
-  accountId: string;
+  accountId?: string;
   type?: TransactionType;
   date?: string;
   categoryId?: string;
@@ -95,6 +95,13 @@ export interface TransactionSummaryDto {
   type: TransactionType;
   amount: number;
   date: string;
+  accountName?: string;
+  categoryName?: string;
+  categoryId?: string | null;
+}
+
+export interface TransactionSummaryDtoWithCategoryIds extends TransactionSummaryDto {
+  // helper alias — same shape
 }
 
 export interface TransactionResponseDto {
