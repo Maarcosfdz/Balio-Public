@@ -5,6 +5,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -53,25 +55,19 @@ public class TransactionController {
     // ── LIST (summary, optional filters) ─────────────────────────────────
 
     @GetMapping
-    public List<TransactionSummaryDto> getAllTransactions(
+    public Page<TransactionSummaryDto> getAllTransactions(
             @RequestAttribute UUID userId,
             @RequestParam(required = false) TransactionType type,
             @RequestParam(required = false) UUID accountId,
             @RequestParam(required = false) UUID categoryId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
 
-        List<Transaction> transactions;
-
-        if (type != null || accountId != null || categoryId != null || startDate != null || endDate != null) {
-            transactions = transactionService.findFiltered(userId, type, accountId, categoryId, startDate, endDate);
-        } else {
-            transactions = transactionService.findAllByUserId(userId);
-        }
-
-        return transactions.stream()
-                .map(transactionConverter::toSummaryDto)
-                .toList();
+        return transactionService
+                .findPaged(userId, type, accountId, categoryId, startDate, endDate, page, size)
+                .map(transactionConverter::toSummaryDto);
     }
 
     // ── DETAIL (all fields) ──────────────────────────────────────────────

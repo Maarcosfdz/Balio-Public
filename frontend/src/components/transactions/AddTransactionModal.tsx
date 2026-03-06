@@ -1,6 +1,9 @@
-import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Calendar, DollarSign, X } from "lucide-react";
+import { type FormEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { CalendarDays, Check, ChevronDown, DollarSign, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { DayPicker } from "react-day-picker";
+import "react-day-picker/style.css";
 import type {
   AccountSummaryDto,
   CategorySummaryDto,
@@ -18,6 +21,212 @@ interface AddTransactionModalProps {
   open: boolean;
   onClose: () => void;
   onCreated: (tx: TransactionResponseDto) => void;
+}
+
+// ── Helpers compartidos por los sub-componentes ────────────────────────
+function _toISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function _parseISO(s: string): Date | undefined {
+  if (!s) return undefined;
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+// ── Selector de fecha con portal ──────────────────────────────────────
+function ModalDatePicker({ date, onChange }: { date: string; onChange: (v: string) => void }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const [portalStyle, setPortalStyle] = useState<React.CSSProperties>({});
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    const updatePos = () => {
+      if (!triggerRef.current) return;
+      const rect = triggerRef.current.getBoundingClientRect();
+      const DROPDOWN_H = 340;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const top = spaceBelow >= DROPDOWN_H ? rect.bottom + 4 : rect.top - DROPDOWN_H - 4;
+      const PICKER_W = 320;
+      const clampedLeft = Math.min(rect.left, Math.max(0, window.innerWidth - PICKER_W - 8));
+      setPortalStyle({ position: "fixed", top, left: clampedLeft, zIndex: 10000 });
+    };
+    updatePos();
+    window.addEventListener("scroll", updatePos, { capture: true });
+    window.addEventListener("resize", updatePos);
+    return () => {
+      window.removeEventListener("scroll", updatePos, { capture: true });
+      window.removeEventListener("resize", updatePos);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      const portal = document.getElementById("modal-date-portal");
+      if (
+        triggerRef.current && !triggerRef.current.contains(e.target as Node) &&
+        (!portal || !portal.contains(e.target as Node))
+      ) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const parsed = _parseISO(date);
+  const displayText = parsed
+    ? parsed.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })
+    : t("txPage.selectDate", "Seleccionar fecha");
+
+  return (
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`flex h-10 w-full items-center gap-2 rounded-lg border px-3 text-sm transition ${
+          open
+            ? "border-sky-400 bg-white ring-2 ring-sky-100"
+            : "border-slate-300 bg-slate-50 hover:border-sky-300 hover:bg-white"
+        } ${date ? "text-slate-700" : "text-slate-400"}`}
+      >
+        <CalendarDays className="h-4 w-4 shrink-0 text-slate-400" />
+        <span className="flex-1 text-left">{displayText}</span>
+      </button>
+      {open && typeof document !== "undefined" && createPortal(
+        <div
+          id="modal-date-portal"
+          style={portalStyle}
+          className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5"
+        >
+          <div
+            style={{
+              "--rdp-accent-color": "#0ea5e9",
+              "--rdp-accent-background-color": "#e0f2fe",
+            } as React.CSSProperties}
+          >
+            <DayPicker
+              mode="single"
+              selected={parsed}
+              onSelect={(d) => { if (d) { onChange(_toISO(d)); setOpen(false); } }}
+            />
+          </div>
+          <div className="border-t border-slate-100 px-3 pb-2 pt-1">
+            <button
+              type="button"
+              onClick={() => { onChange(_toISO(new Date())); setOpen(false); }}
+              className="tx-date-action-btn"
+            >
+              {t("txPage.today", "Hoy")}
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
+
+// ── Select estilizado con portal ──────────────────────────────────────
+function ModalSelect({
+  value, onChange, options, placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  placeholder: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [portalStyle, setPortalStyle] = useState<React.CSSProperties>({});
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    const updatePos = () => {
+      if (!triggerRef.current) return;
+      const rect = triggerRef.current.getBoundingClientRect();
+      const DROPDOWN_H = Math.min(options.length * 40 + 16, 200);
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const top = spaceBelow >= DROPDOWN_H ? rect.bottom + 4 : rect.top - DROPDOWN_H - 4;
+      const clampedLeft = Math.min(rect.left, Math.max(0, window.innerWidth - rect.width - 8));
+      setPortalStyle({ position: "fixed", top, left: clampedLeft, width: rect.width, zIndex: 10000 });
+    };
+    updatePos();
+    window.addEventListener("scroll", updatePos, { capture: true });
+    window.addEventListener("resize", updatePos);
+    return () => {
+      window.removeEventListener("scroll", updatePos, { capture: true });
+      window.removeEventListener("resize", updatePos);
+    };
+  }, [open, options.length]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      const portal = document.getElementById("modal-select-portal");
+      if (
+        triggerRef.current && !triggerRef.current.contains(e.target as Node) &&
+        (!portal || !portal.contains(e.target as Node))
+      ) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const selectedLabel = options.find((o) => o.value === value)?.label ?? "";
+
+  return (
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`flex h-10 w-full items-center gap-2 rounded-lg border px-3 text-sm transition ${
+          open
+            ? "border-sky-400 bg-white ring-2 ring-sky-100"
+            : "border-slate-300 bg-slate-50 hover:border-sky-300 hover:bg-white"
+        } ${value ? "text-slate-700" : "text-slate-400"}`}
+      >
+        <span className="flex-1 truncate text-left">{value ? selectedLabel : placeholder}</span>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && typeof document !== "undefined" && createPortal(
+        <div
+          id="modal-select-portal"
+          style={portalStyle}
+          className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5"
+        >
+          <div className="max-h-48 overflow-y-auto py-1">
+            <button
+              type="button"
+              onClick={() => { onChange(""); setOpen(false); }}
+              className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition hover:bg-slate-50 ${
+                !value ? "font-semibold text-sky-600" : "text-slate-400"
+              }`}
+            >
+              {placeholder}
+            </button>
+            {options.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => { onChange(opt.value); setOpen(false); }}
+                className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-sm transition hover:bg-slate-50 ${
+                  opt.value === value ? "font-semibold text-sky-600" : "text-slate-700"
+                }`}
+              >
+                {opt.label}
+                {opt.value === value && <Check className="h-3.5 w-3.5 text-sky-500" />}
+              </button>
+            ))}
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
+  );
 }
 
 function todayISO(): string {
@@ -73,6 +282,11 @@ export default function AddTransactionModal({
       setAccountId(accounts[0].id);
     }
   }, [accounts, accountId]);
+
+  const handleAccountChange = (v: string) => {
+    setAccountId(v);
+    if (!v) setAffectsBalance(false);
+  };
 
   // Validation: only name and amount are required
   const isValid = useMemo(
@@ -229,40 +443,24 @@ export default function AddTransactionModal({
 
           {/* 3. Date */}
           <div className="space-y-1.5">
-            <label htmlFor="tx-date" className="text-sm font-semibold text-slate-700">
+            <label className="text-sm font-semibold text-slate-700">
               {t("transactions.date")}
             </label>
-            <div className="relative">
-              <input
-                id="tx-date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-100"
-              />
-              <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            </div>
+            <ModalDatePicker date={date} onChange={setDate} />
           </div>
 
           {/* 4. Account — OPTIONAL */}
           <div className="space-y-1.5">
-            <label htmlFor="tx-account" className="text-sm font-semibold text-slate-700">
+            <label className="text-sm font-semibold text-slate-700">
               {t("transactions.account")}
               <span className="ml-1 text-xs font-normal text-slate-400">(opcional)</span>
             </label>
-            <select
-              id="tx-account"
+            <ModalSelect
               value={accountId}
-              onChange={(e) => setAccountId(e.target.value)}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-100"
-            >
-              <option value="">{t("txPage.selectAccount")}</option>
-              {accounts.map((acc) => (
-                <option key={acc.id} value={acc.id}>
-                  {acc.name}
-                </option>
-              ))}
-            </select>
+              onChange={handleAccountChange}
+              options={accounts.map((acc) => ({ value: acc.id, label: acc.name }))}
+              placeholder={t("txPage.selectAccount")}
+            />
           </div>
 
           {/* 5. Category — OPTIONAL */}
@@ -281,11 +479,12 @@ export default function AddTransactionModal({
           </div>
 
           {/* 6. Affects balance */}
-          <label className="flex items-center gap-2.5 cursor-pointer">
+          <label className={`flex items-center gap-2.5 ${accountId ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}>
             <input
               type="checkbox"
               checked={affectsBalance}
               onChange={(e) => setAffectsBalance(e.target.checked)}
+              disabled={!accountId}
               className="h-4.5 w-4.5 rounded border-slate-300 text-sky-500 focus:ring-sky-200"
             />
             <div>

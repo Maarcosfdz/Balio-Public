@@ -3,6 +3,8 @@ package Balio.web.model.services;
 import Balio.web.enums.TransactionType;
 import Balio.web.model.Exceptions.InstanceNotFoundException;
 import Balio.web.model.entities.Category;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.UUID;
@@ -44,6 +46,11 @@ public interface CategoryService {
      * Returns all categories belonging to the user, ordered by name.
      */
     List<Category> findAllByUserId(UUID userId);
+
+    /**
+     * Returns a paginated list of categories for the user, optionally filtered by type.
+     */
+    Page<Category> findPagedByUserId(UUID userId, TransactionType type, Pageable pageable);
 
     /**
      * Returns a single category belonging to the user.

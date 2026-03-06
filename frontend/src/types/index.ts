@@ -125,6 +125,30 @@ export interface TransactionFilters {
   endDate?: string;
 }
 
+export interface TransactionPage {
+  content: TransactionSummaryDto[];
+  totalPages: number;
+  totalElements: number;
+  number: number;   // 0-based page index
+  size: number;
+}
+
+export interface CategoryPage {
+  content: CategorySummaryDto[];
+  totalPages: number;
+  totalElements: number;
+  number: number;
+  size: number;
+}
+
+export interface FilterPage {
+  content: FilterSummaryDto[];
+  totalPages: number;
+  totalElements: number;
+  number: number;
+  size: number;
+}
+
 // ============================================
 // Category DTOs
 // ============================================

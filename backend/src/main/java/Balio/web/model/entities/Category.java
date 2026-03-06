@@ -26,7 +26,7 @@ public class Category {
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 10)
+    @Column(name = "category_type", nullable = false, length = 10)
     private TransactionType type; // EXPENSE / INCOME
 
     @ManyToOne(optional = false)

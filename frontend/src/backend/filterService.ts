@@ -1,6 +1,7 @@
 import api from "./api";
 import type {
   FilterDto,
+  FilterPage,
   FilterResponseDto,
   FilterSummaryDto,
   FilterUpdateDto,
@@ -10,6 +11,10 @@ import type {
 export const filterService = {
   getAll(): Promise<FilterSummaryDto[]> {
     return api.get("/filter").then((r) => r.data);
+  },
+
+  getPaged(page: number, size: number): Promise<FilterPage> {
+    return api.get("/filter/paged", { params: { page, size } }).then((r) => r.data);
   },
 
   getById(filterId: string): Promise<FilterResponseDto> {

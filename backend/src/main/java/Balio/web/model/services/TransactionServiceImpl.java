@@ -215,4 +215,15 @@ public class TransactionServiceImpl implements TransactionService {
                                           UUID categoryId, LocalDate startDate, LocalDate endDate) {
         return transactionDao.findFiltered(userId, type, accountId, categoryId, startDate, endDate);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<Transaction> findPaged(
+            UUID userId, TransactionType type, UUID accountId, UUID categoryId,
+            LocalDate startDate, LocalDate endDate, int page, int size) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
+                page, size,
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "date"));
+        return transactionDao.findFilteredPaged(userId, type, accountId, categoryId, startDate, endDate, pageable);
+    }
 }

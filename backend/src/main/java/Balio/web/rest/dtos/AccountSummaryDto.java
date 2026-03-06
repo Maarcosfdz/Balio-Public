@@ -1,6 +1,7 @@
 package Balio.web.rest.dtos;
 
 import Balio.web.enums.AccountType;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;
 
@@ -11,6 +12,7 @@ public class AccountSummaryDto {
     private AccountType type;
     private String currency;
     private BigDecimal balance;
+    @JsonProperty("isDefault")
     private boolean isDefault;
 
     public String getId() { return id; }

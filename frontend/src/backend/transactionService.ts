@@ -2,13 +2,13 @@ import api from "./api";
 import type {
   TransactionDto,
   TransactionFilters,
+  TransactionPage,
   TransactionResponseDto,
-  TransactionSummaryDto,
 } from "@/types";
 
 export const transactionService = {
-  getAll(filters?: TransactionFilters): Promise<TransactionSummaryDto[]> {
-    return api.get("/transaction", { params: filters }).then((r) => r.data);
+  getAll(filters?: TransactionFilters, page = 0, size = 20): Promise<TransactionPage> {
+    return api.get("/transaction", { params: { ...filters, page, size } }).then((r) => r.data);
   },
 
   getById(transactionId: string): Promise<TransactionResponseDto> {

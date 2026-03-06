@@ -113,9 +113,79 @@
   transform: translateX(6px);
 }
 
+/* ── Botón cancelar (mismo efecto que login pero en rojo) ────────── */
+.btn-cancel-hover {
+  background: linear-gradient(270deg, #dc2626, #f97316, #ef4444, #f43f5e, #dc2626);
+  background-size: 300% 100%;
+  background-position: right center;
+  transition: background-position 1400ms ease;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.25rem;
+  font-size: 1.125rem;
+  font-weight: 500;
+  border-radius: 0.75rem;
+  border: none;
+  cursor: pointer;
+  line-height: 1.5;
+  gap: 0.5rem;
+}
+
+.btn-cancel-hover:hover {
+  background-position: left center;
+}
+
 /* Variante pequeña (header) */
 .btn-login-sm {
   padding: 0.4rem 0.9rem;
   font-size: 0.875rem;
   border-radius: 0.5rem;
+}
+
+/* ── Anillo animado para badge de cuenta por defecto ───────────────── */
+/*
+ * Técnica: padding en el padre crea el grosor uniforme del anillo.
+ * El hijo ocupa el área interior (padre menos 2×padding) y tapa el centro.
+ */
+.ring-anim {
+  flex-shrink: 0;
+  width: 1.75rem;     /* 28 px */
+  height: 1.75rem;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, #0ea5e9 0%, #34d399 50%, #0ea5e9 100%);
+  animation: girar-anillo 3s linear infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;       /* grosor uniforme del anillo */
+  border: none;
+  cursor: pointer;
+  outline: none;
+}
+.ring-inner {
+  /* tamaño fijo = 28px - 2*3px = 22px, así el borde es exactamente 3px en todos lados */
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+@keyframes girar-anillo {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(359deg); }
+}
+
+/* Counter-rotate inner content so the check stays visually fixed */
+@keyframes girar-anillo-reverse {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(-359deg); }
+}
+.ring-inner {
+  animation: girar-anillo-reverse 3s linear infinite;
 }

@@ -20,6 +20,7 @@ public class CategoryConverter {
         CategorySummaryDto dto = new CategorySummaryDto();
         dto.setId(category.getId().toString());
         dto.setName(category.getName());
+        dto.setType(category.getType());
         return dto;
     }
 }

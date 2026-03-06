@@ -3,9 +3,12 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowDownCircle,
+  ArrowLeft,
   ArrowRight,
   ArrowUpCircle,
   Bookmark,
+  ChevronLeft,
+  ChevronRight,
   Loader2,
   RefreshCw,
   Trash2,
@@ -171,15 +174,24 @@ function FilterCard({ filter, onDeleted }: FilterCardProps) {
 
 // ── Main page ─────────────────────────────────────────────────────────────
 
+const PAGE_SIZE = 20;
+
 export default function FiltersPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<FilterSummaryDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
 
-  const fetchFilters = useCallback(async () => {
+  const fetchFilters = useCallback(async (p: number) => {
     setLoading(true);
     try {
-      setFilters(await filterService.getAll());
+      const data = await filterService.getPaged(p, PAGE_SIZE);
+      setFilters(data.content);
+      setTotalPages(data.totalPages || 1);
+      setTotalElements(data.totalElements);
     } catch {
       setFilters([]);
     } finally {
@@ -187,18 +199,46 @@ export default function FiltersPage() {
     }
   }, []);
 
-  useEffect(() => { fetchFilters(); }, [fetchFilters]);
+  useEffect(() => { fetchFilters(0); }, [fetchFilters]);
+
+  const handlePageChange = (p: number) => {
+    setPage(p);
+    fetchFilters(p);
+  };
+
+  const handleDeleted = (id: string) => {
+    const newList = filters.filter((f) => f.id !== id);
+    setTotalElements((n) => n - 1);
+    if (newList.length === 0 && page > 0) {
+      const prev = page - 1;
+      setPage(prev);
+      fetchFilters(prev);
+    } else {
+      setFilters(newList);
+    }
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
+          <button
+            onClick={() => navigate(ROUTES.TRANSACTIONS)}
+            className="tx-back-btn mb-2"
+          >
+            <span className="tx-back-btn-inner">
+              <ArrowLeft className="h-4 w-4" />
+              <span className="tx-back-btn-text">
+                {t("nav.backToTransactions", "Transacciones")}
+              </span>
+            </span>
+          </button>
           <h1 className="text-3xl font-bold text-slate-800">{t("filters.title")}</h1>
           <p className="mt-1 text-sm text-slate-400">{t("filters.subtitle")}</p>
         </div>
         <button
-          onClick={fetchFilters}
+          onClick={() => fetchFilters(page)}
           className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50"
         >
           <RefreshCw className="h-4 w-4" />
@@ -218,15 +258,39 @@ export default function FiltersPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filters.map((f) => (
-            <FilterCard
-              key={f.id}
-              filter={f}
-              onDeleted={() => setFilters((prev) => prev.filter((x) => x.id !== f.id))}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {filters.map((f) => (
+              <FilterCard
+                key={f.id}
+                filter={f}
+                onDeleted={() => handleDeleted(f.id)}
+              />
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                disabled={page === 0}
+                onClick={() => handlePageChange(page - 1)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-sky-300 hover:text-sky-600 disabled:opacity-30"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="text-sm text-slate-500">
+                {page + 1} / {totalPages}
+              </span>
+              <button
+                disabled={page >= totalPages - 1}
+                onClick={() => handlePageChange(page + 1)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-sky-300 hover:text-sky-600 disabled:opacity-30"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

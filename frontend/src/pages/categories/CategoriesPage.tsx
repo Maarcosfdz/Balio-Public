@@ -6,10 +6,14 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import {
   ArrowDownCircle,
+  ArrowLeft,
   ArrowUpCircle,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Loader2,
   Pencil,
   Plus,
@@ -19,6 +23,7 @@ import {
 } from "lucide-react";
 import type { CategorySummaryDto, TransactionType } from "@/types";
 import { categoryService } from "@/backend/categoryService";
+import { ROUTES } from "@/config/routes";
 
 // ── Inline editable chip ──────────────────────────────────────────────────
 
@@ -222,6 +227,10 @@ interface CategoryColumnProps {
   icon: React.ReactNode;
   type: TransactionType;
   categories: CategorySummaryDto[];
+  totalElements: number;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (p: number) => void;
   onDeleted: (id: string) => void;
   onRenamed: (id: string, newName: string) => void;
   onCreated: (cat: CategorySummaryDto) => void;
@@ -232,6 +241,10 @@ function CategoryColumn({
   icon,
   type,
   categories,
+  totalElements,
+  currentPage,
+  totalPages,
+  onPageChange,
   onDeleted,
   onRenamed,
   onCreated,
@@ -249,7 +262,7 @@ function CategoryColumn({
         </div>
         <div>
           <p className="text-sm font-bold text-slate-800">{title}</p>
-          <p className="text-xs text-slate-400">{categories.length} categorías</p>
+          <p className="text-xs text-slate-400">{totalElements} categorías</p>
         </div>
       </div>
 
@@ -265,57 +278,147 @@ function CategoryColumn({
         ))}
         <CreateChip type={type} onCreated={onCreated} />
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-1 flex items-center justify-center gap-2">
+          <button
+            disabled={currentPage === 0}
+            onClick={() => onPageChange(currentPage - 1)}
+            className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-sky-300 hover:text-sky-600 disabled:opacity-30"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </button>
+          <span className="text-xs text-slate-500">
+            {currentPage + 1} / {totalPages}
+          </span>
+          <button
+            disabled={currentPage >= totalPages - 1}
+            onClick={() => onPageChange(currentPage + 1)}
+            className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-sky-300 hover:text-sky-600 disabled:opacity-30"
+          >
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────
 
+const PAGE_SIZE = 20;
+
 export default function CategoriesPage() {
   const { t } = useTranslation();
-  const [categories, setCategories] = useState<CategorySummaryDto[]>([]);
+  const navigate = useNavigate();
+
+  const [expenseCategories, setExpenseCategories] = useState<CategorySummaryDto[]>([]);
+  const [incomeCategories, setIncomeCategories] = useState<CategorySummaryDto[]>([]);
+  const [expensePage, setExpensePage] = useState(0);
+  const [incomePage, setIncomePage] = useState(0);
+  const [expenseTotalPages, setExpenseTotalPages] = useState(1);
+  const [incomeTotalPages, setIncomeTotalPages] = useState(1);
+  const [expenseTotalElements, setExpenseTotalElements] = useState(0);
+  const [incomeTotalElements, setIncomeTotalElements] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const fetchCategories = useCallback(async () => {
-    setLoading(true);
-    try {
-      setCategories(await categoryService.getAll());
-    } catch {
-      setCategories([]);
-    } finally {
-      setLoading(false);
-    }
+  const fetchExpense = useCallback(async (page: number) => {
+    const data = await categoryService.getPaged("EXPENSE", page, PAGE_SIZE);
+    setExpenseCategories(data.content);
+    setExpenseTotalPages(data.totalPages || 1);
+    setExpenseTotalElements(data.totalElements);
   }, []);
 
-  useEffect(() => { fetchCategories(); }, [fetchCategories]);
+  const fetchIncome = useCallback(async (page: number) => {
+    const data = await categoryService.getPaged("INCOME", page, PAGE_SIZE);
+    setIncomeCategories(data.content);
+    setIncomeTotalPages(data.totalPages || 1);
+    setIncomeTotalElements(data.totalElements);
+  }, []);
 
-  const handleDeleted = (id: string) => {
-    setCategories((prev) => prev.filter((c) => c.id !== id));
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      await Promise.all([fetchExpense(0), fetchIncome(0)]);
+      setExpensePage(0);
+      setIncomePage(0);
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  }, [fetchExpense, fetchIncome]);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const handleExpensePageChange = (p: number) => {
+    setExpensePage(p);
+    fetchExpense(p);
+  };
+
+  const handleIncomePageChange = (p: number) => {
+    setIncomePage(p);
+    fetchIncome(p);
+  };
+
+  const handleExpenseDeleted = (id: string) => {
+    const newList = expenseCategories.filter((c) => c.id !== id);
+    if (newList.length === 0 && expensePage > 0) {
+      const prev = expensePage - 1;
+      setExpensePage(prev);
+      fetchExpense(prev);
+    } else {
+      setExpenseCategories(newList);
+      setExpenseTotalElements((n) => n - 1);
+    }
+  };
+
+  const handleIncomeDeleted = (id: string) => {
+    const newList = incomeCategories.filter((c) => c.id !== id);
+    if (newList.length === 0 && incomePage > 0) {
+      const prev = incomePage - 1;
+      setIncomePage(prev);
+      fetchIncome(prev);
+    } else {
+      setIncomeCategories(newList);
+      setIncomeTotalElements((n) => n - 1);
+    }
   };
 
   const handleRenamed = (id: string, newName: string) => {
-    setCategories((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, name: newName } : c))
-    );
+    setExpenseCategories((prev) => prev.map((c) => (c.id === id ? { ...c, name: newName } : c)));
+    setIncomeCategories((prev) => prev.map((c) => (c.id === id ? { ...c, name: newName } : c)));
   };
 
-  const handleCreated = (cat: CategorySummaryDto) => {
-    setCategories((prev) => [...prev, cat]);
+  const handleExpenseCreated = () => {
+    fetchExpense(expensePage);
+    setExpenseTotalElements((n) => n + 1);
   };
 
-  const expenseCategories = categories.filter((c) => !c.type || c.type === "EXPENSE");
-  const incomeCategories  = categories.filter((c) => c.type === "INCOME");
+  const handleIncomeCreated = () => {
+    fetchIncome(incomePage);
+    setIncomeTotalElements((n) => n + 1);
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
+          <button
+            onClick={() => navigate(ROUTES.TRANSACTIONS)}
+            className="tx-back-btn mb-2"
+          >
+            <span className="tx-back-btn-inner">
+              <ArrowLeft className="h-4 w-4" />
+              <span className="tx-back-btn-text">
+                {t("nav.backToTransactions", "Transacciones")}
+              </span>
+            </span>
+          </button>
           <h1 className="text-3xl font-bold text-slate-800">{t("categories.title")}</h1>
           <p className="mt-1 text-sm text-slate-400">{t("categories.subtitle")}</p>
         </div>
         <button
-          onClick={fetchCategories}
+          onClick={fetchAll}
           className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50"
         >
           <RefreshCw className="h-4 w-4" />
@@ -334,9 +437,13 @@ export default function CategoriesPage() {
             icon={<ArrowDownCircle className="h-4 w-4" />}
             type="EXPENSE"
             categories={expenseCategories}
-            onDeleted={handleDeleted}
+            totalElements={expenseTotalElements}
+            currentPage={expensePage}
+            totalPages={expenseTotalPages}
+            onPageChange={handleExpensePageChange}
+            onDeleted={handleExpenseDeleted}
             onRenamed={handleRenamed}
-            onCreated={handleCreated}
+            onCreated={handleExpenseCreated}
           />
 
           {/* Income */}
@@ -345,13 +452,16 @@ export default function CategoriesPage() {
             icon={<ArrowUpCircle className="h-4 w-4" />}
             type="INCOME"
             categories={incomeCategories}
-            onDeleted={handleDeleted}
+            totalElements={incomeTotalElements}
+            currentPage={incomePage}
+            totalPages={incomeTotalPages}
+            onPageChange={handleIncomePageChange}
+            onDeleted={handleIncomeDeleted}
             onRenamed={handleRenamed}
-            onCreated={handleCreated}
+            onCreated={handleIncomeCreated}
           />
         </div>
       )}
     </div>
   );
 }
-

@@ -1,6 +1,7 @@
 import api from "./api";
 import type {
   CategoryDto,
+  CategoryPage,
   CategoryResponseDto,
   CategorySummaryDto,
 } from "@/types";
@@ -8,6 +9,10 @@ import type {
 export const categoryService = {
   getAll(): Promise<CategorySummaryDto[]> {
     return api.get("/category").then((r) => r.data);
+  },
+
+  getPaged(type: string, page: number, size: number): Promise<CategoryPage> {
+    return api.get("/category/paged", { params: { type, page, size } }).then((r) => r.data);
   },
 
   getById(categoryId: string): Promise<CategoryResponseDto> {

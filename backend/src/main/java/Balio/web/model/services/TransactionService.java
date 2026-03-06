@@ -4,6 +4,7 @@ import Balio.web.enums.TransactionType;
 import Balio.web.model.Exceptions.AccountInvalidException;
 import Balio.web.model.Exceptions.UserNotFoundException;
 import Balio.web.model.entities.Transaction;
+import org.springframework.data.domain.Page;
 
 import javax.management.InstanceNotFoundException;
 import java.math.BigDecimal;
@@ -11,11 +12,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-/*
- * Defines the contract for transaction-related operations in the application.
- * This interface includes methods for adding expenses and incomes, updating transactions, and deleting transactions.
- * Each method requires the user ID to ensure that users can only modify their own transactions.
- */
 public interface TransactionService {
 
     Transaction addExpense(UUID userId, UUID accountId, UUID categoryId, String name,
@@ -36,22 +32,20 @@ public interface TransactionService {
     void deleteTransaction(UUID userId, UUID transactionId, boolean revertBalance) throws
                                                                                    InstanceNotFoundException;
 
-    /**
-     * Returns all transactions belonging to the user, ordered by date descending.
-     */
     List<Transaction> findAllByUserId(UUID userId);
 
-    /**
-     * Returns a single transaction belonging to the user.
-     *
-     * @throws InstanceNotFoundException if the transaction does not exist or does not belong to the user
-     */
     Transaction findByIdAndUserId(UUID transactionId, UUID userId) throws InstanceNotFoundException;
 
-    /**
-     * Returns transactions matching optional filters. All filter parameters are optional.
-     */
     List<Transaction> findFiltered(UUID userId, TransactionType type, UUID accountId,
                                    UUID categoryId, LocalDate startDate, LocalDate endDate);
 
+    /**
+     * Returns a paginated page of transactions matching optional filters. Ordered by date desc.
+     * @param page  zero-based page index
+     * @param size  page size
+     */
+    Page<Transaction> findPaged(UUID userId, TransactionType type, UUID accountId,
+                                UUID categoryId, LocalDate startDate, LocalDate endDate,
+                                int page, int size);
 }
+

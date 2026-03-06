@@ -14,6 +14,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -101,6 +103,12 @@ public class FilterServiceImpl implements FilterService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<Filter> findPagedByUserId(UUID userId, Pageable pageable) {
+        return filterDao.findAllByUserIdOrderByNameAsc(userId, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Filter findByIdAndUserId(UUID filterId, UUID userId) throws InstanceNotFoundException {
         return filterDao.findByIdAndUserId(filterId, userId)
                 .orElseThrow(() -> new InstanceNotFoundException("Filter", filterId));
@@ -150,7 +158,11 @@ public class FilterServiceImpl implements FilterService {
 
     private boolean isKnownField(String field) {
         return "type".equals(field) || "accountId".equals(field) || "categoryId".equals(field)
-                || "startDate".equals(field) || "endDate".equals(field);
+                || "startDate".equals(field) || "endDate".equals(field)
+                // frontend-only filter fields (stored but applied client-side)
+                || "categoryIds".equals(field) || "nameQuery".equals(field)
+                || "amountMin".equals(field) || "amountMax".equals(field)
+                || "specificDates".equals(field);
     }
 
     private void parseDateField(String value, String fieldName) {

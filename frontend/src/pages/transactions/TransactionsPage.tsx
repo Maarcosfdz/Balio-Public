@@ -57,6 +57,10 @@ export default function TransactionsPage() {
 
   // ── Pagination ──
   const [page, setPage] = useState(1);
+  const pageRef = useRef(1);
+  const [isServerPaged, setIsServerPaged] = useState(false);
+  const isServerPagedRef = useRef(false);
+  const [serverTotalPages, setServerTotalPages] = useState(1);
 
   // ── Quick Access Tabs ──
   const [pinnedFilters, setPinnedFilters] = useState<FilterSummaryDto[]>([]);
@@ -97,24 +101,47 @@ export default function TransactionsPage() {
   filtersRef.current = filters;
 
   const fetchTransactions = useCallback(
-    async (f: ActiveFilters = filtersRef.current, showLoading = true) => {
+    async (f: ActiveFilters, showLoading: boolean, pageIndex: number) => {
       if (showLoading) setLoading(true);
       try {
         const backendFilters: TransactionFilters = {};
         if (f.type) backendFilters.type = f.type;
         if (f.accountId) backendFilters.accountId = f.accountId;
-        // Send single categoryId to backend for optimal query; multiple = client-side only
         if (f.categoryIds && f.categoryIds.length === 1) {
           backendFilters.categoryId = f.categoryIds[0];
         }
         if (f.startDate) backendFilters.startDate = f.startDate;
         if (f.endDate) backendFilters.endDate = f.endDate;
 
-        const data = await transactionService.getAll(backendFilters);
-        setTransactions(data);
-        if (showLoading) setPage(1);
+        const hasClientOnlyFilters = !!(
+          f.nameQuery ||
+          f.amountMin != null ||
+          f.amountMax != null ||
+          (f.specificDates?.length ?? 0) > 0 ||
+          (f.categoryIds?.length ?? 0) > 1
+        );
+
+        if (hasClientOnlyFilters) {
+          const result = await transactionService.getAll(backendFilters, 0, 10000);
+          setTransactions(result.content);
+          isServerPagedRef.current = false;
+          setIsServerPaged(false);
+        } else {
+          const result = await transactionService.getAll(backendFilters, pageIndex, PAGE_SIZE);
+          setTransactions(result.content);
+          setServerTotalPages(result.totalPages);
+          isServerPagedRef.current = true;
+          setIsServerPaged(true);
+        }
+
+        if (showLoading) {
+          pageRef.current = 1;
+          setPage(1);
+        }
       } catch {
         setTransactions([]);
+        isServerPagedRef.current = false;
+        setIsServerPaged(false);
       } finally {
         setLoading(false);
       }
@@ -127,7 +154,7 @@ export default function TransactionsPage() {
     if (stateFilterId) {
       handleApplySavedFilter(stateFilterId);
     } else {
-      fetchTransactions(filters);
+      fetchTransactions(filters, true, 0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -135,12 +162,14 @@ export default function TransactionsPage() {
   // ── Auto-refresh: polling + visibility change ──
   useEffect(() => {
     const interval = setInterval(() => {
-      fetchTransactions(filtersRef.current, false);
+      const cp = isServerPagedRef.current ? pageRef.current - 1 : 0;
+      fetchTransactions(filtersRef.current, false, cp);
     }, AUTO_REFRESH_INTERVAL);
 
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
-        fetchTransactions(filtersRef.current, false);
+        const cp = isServerPagedRef.current ? pageRef.current - 1 : 0;
+        fetchTransactions(filtersRef.current, false, cp);
       }
     };
     document.addEventListener("visibilitychange", handleVisibility);
@@ -165,6 +194,10 @@ export default function TransactionsPage() {
     if (filters.amountMax != null) {
       list = list.filter((tx) => tx.amount <= filters.amountMax!);
     }
+    if (filters.specificDates && filters.specificDates.length > 0) {
+      const specificDates = new Set(filters.specificDates);
+      list = list.filter((tx) => specificDates.has(tx.date.slice(0, 10)));
+    }
     // multi-category: when > 1 selected, backend returned all so filter here
     if (filters.categoryIds && filters.categoryIds.length > 1) {
       list = list.filter(
@@ -174,13 +207,21 @@ export default function TransactionsPage() {
 
     list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     return list;
-  }, [transactions, filters.nameQuery, filters.amountMin, filters.amountMax, filters.categoryIds]);
+  }, [
+    transactions,
+    filters.nameQuery,
+    filters.amountMin,
+    filters.amountMax,
+    filters.specificDates,
+    filters.categoryIds,
+  ]);
 
-  const totalPages = Math.max(1, Math.ceil(displayedTransactions.length / PAGE_SIZE));
-  const paged = displayedTransactions.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE
-  );
+  const totalPages = isServerPaged
+    ? serverTotalPages
+    : Math.max(1, Math.ceil(displayedTransactions.length / PAGE_SIZE));
+  const paged = isServerPaged
+    ? displayedTransactions
+    : displayedTransactions.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   // Max amount for slider initial value in FilterPanel
   const maxTxAmount = useMemo(
@@ -192,7 +233,7 @@ export default function TransactionsPage() {
   const handleApplyFilters = (f: ActiveFilters) => {
     setFilters(f);
     setActiveTabId(null);
-    fetchTransactions(f);
+    fetchTransactions(f, true, 0);
   };
 
   const handleApplySavedFilter = async (filterId: string) => {
@@ -201,6 +242,9 @@ export default function TransactionsPage() {
     try {
       const data = await filterService.apply(filterId);
       setTransactions(data);
+      isServerPagedRef.current = false;
+      setIsServerPaged(false);
+      pageRef.current = 1;
       setPage(1);
     } catch {
       // ignore
@@ -212,14 +256,15 @@ export default function TransactionsPage() {
   const handleTransactionCreated = () => {
     setExpenseOpen(false);
     setIncomeOpen(false);
-    fetchTransactions(filtersRef.current);
+    const cp = isServerPagedRef.current ? pageRef.current - 1 : 0;
+    fetchTransactions(filtersRef.current, false, cp);
   };
 
   const handleRemoveTab = (id: string) => {
     setPinnedFilters((prev) => prev.filter((f) => f.id !== id));
     if (activeTabId === id) {
       setActiveTabId(null);
-      fetchTransactions(filtersRef.current);
+      fetchTransactions(filtersRef.current, true, 0);
     }
   };
 
@@ -229,9 +274,17 @@ export default function TransactionsPage() {
       setPinnedFilters((prev) => prev.filter((f) => f.id !== id));
       if (activeTabId === id) {
         setActiveTabId(null);
-        fetchTransactions(filtersRef.current);
+        fetchTransactions(filtersRef.current, true, 0);
       }
     } catch { /* ignore */ }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    pageRef.current = newPage;
+    setPage(newPage);
+    if (isServerPagedRef.current) {
+      fetchTransactions(filtersRef.current, false, newPage - 1);
+    }
   };
 
   const handleAddToTabs = async () => {
@@ -264,56 +317,77 @@ export default function TransactionsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="flex items-center gap-3 text-3xl font-bold text-slate-800">
-          <ArrowLeftRight className="h-7 w-7 text-sky-500" />
+    <div className="space-y-5">
+      {/* ── Cabecera ── */}
+      <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+        {/* Fila 1: título */}
+        <h1 className="flex items-center gap-2.5 text-2xl font-bold text-slate-800">
+          <ArrowLeftRight className="h-6 w-6 text-sky-500" />
           {t("transactions.title")}
         </h1>
 
-        <div className="flex items-center gap-2">
-          {/* Categories button — icon wiggle on hover */}
+        {/* Fila 2: acciones */}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {/* Categorías */}
           <button
             onClick={() => navigate(ROUTES.CATEGORIES)}
             title={t("nav.categories")}
-            className="group inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-600 transition-all duration-200 hover:border-slate-400 hover:shadow-sm"
+            className="tx-outline-hover-btn group"
           >
-            <Tag className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
-            <span className="hidden sm:inline">{t("nav.categories")}</span>
+            <svg
+              className="tx-outline-hover-border"
+              viewBox="0 0 100 34"
+              preserveAspectRatio="none"
+              aria-hidden
+            >
+              <rect x="1" y="1" width="98" height="32" rx="8" className="tx-outline-hover-bg" />
+              <rect x="1" y="1" width="98" height="32" rx="8" className="tx-outline-hover-hl" />
+            </svg>
+            <Tag className="relative z-10 h-3.5 w-3.5" />
+            <span className="relative z-10 hidden sm:inline">{t("nav.categories")}</span>
           </button>
 
-          {/* Filters button — icon wiggle on hover */}
+          {/* Filtros guardados */}
           <button
             onClick={() => navigate(ROUTES.FILTERS)}
             title={t("nav.filters")}
-            className="group inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-600 transition-all duration-200 hover:border-slate-400 hover:shadow-sm"
+            className="tx-outline-hover-btn group"
           >
-            <Bookmark className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
-            <span className="hidden sm:inline">{t("nav.filters")}</span>
+            <svg
+              className="tx-outline-hover-border"
+              viewBox="0 0 100 34"
+              preserveAspectRatio="none"
+              aria-hidden
+            >
+              <rect x="1" y="1" width="98" height="32" rx="8" className="tx-outline-hover-bg" />
+              <rect x="1" y="1" width="98" height="32" rx="8" className="tx-outline-hover-hl" />
+            </svg>
+            <Bookmark className="relative z-10 h-3.5 w-3.5" />
+            <span className="relative z-10 hidden sm:inline">{t("nav.filters")}</span>
           </button>
 
-          {/* New Expense — outline red, fill from both sides toward center */}
-          <button
-            onClick={() => setExpenseOpen(true)}
-            className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg border-2 border-red-400 bg-white px-4 py-2 text-sm font-semibold text-red-500 transition-colors duration-500 hover:text-white"
-          >
-            <span className="absolute left-0 top-0 h-full w-1/2 origin-left scale-x-0 bg-red-500 transition-transform duration-500 group-hover:scale-x-100" />
-            <span className="absolute right-0 top-0 h-full w-1/2 origin-right scale-x-0 bg-red-500 transition-transform duration-500 group-hover:scale-x-100" />
-            <Plus className="relative z-10 h-4 w-4" />
-            <span className="relative z-10">{t("txPage.addExpense")}</span>
-          </button>
+          {/* Nuevo Gasto + Ingreso — far right */}
+          <div className="ml-auto flex items-center gap-2">
+            <div className="h-5 w-px bg-slate-100" aria-hidden />
 
-          {/* New Income — green gradient, fill from both sides toward center */}
-          <button
-            onClick={() => setIncomeOpen(true)}
-            className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg border-2 border-emerald-500 bg-white px-4 py-2 text-sm font-semibold text-emerald-600 transition-colors duration-500 hover:text-white"
-          >
-            <span className="absolute left-0 top-0 h-full w-1/2 origin-left scale-x-0 bg-gradient-to-r from-emerald-600 to-emerald-500 transition-transform duration-500 group-hover:scale-x-100" />
-            <span className="absolute right-0 top-0 h-full w-1/2 origin-right scale-x-0 bg-gradient-to-l from-green-600 to-emerald-500 transition-transform duration-500 group-hover:scale-x-100" />
-            <Plus className="relative z-10 h-4 w-4" />
-            <span className="relative z-10">{t("txPage.addIncome")}</span>
-          </button>
+            {/* Nuevo Gasto */}
+            <button
+              onClick={() => setExpenseOpen(true)}
+              className="tx-squishy-tech tx-squishy-expense"
+            >
+              <Plus className="tx-squishy-icon relative z-10 h-3.5 w-3.5" />
+              <span className="relative z-10">{t("txPage.addExpense")}</span>
+            </button>
+
+            {/* Nuevo Ingreso */}
+            <button
+              onClick={() => setIncomeOpen(true)}
+              className="tx-squishy-tech tx-squishy-income"
+            >
+              <Plus className="tx-squishy-icon relative z-10 h-3.5 w-3.5" />
+              <span className="relative z-10">{t("txPage.addIncome")}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -493,7 +567,7 @@ export default function TransactionsPage() {
       <Pagination
         currentPage={page}
         totalPages={totalPages}
-        onPageChange={setPage}
+        onPageChange={handlePageChange}
       />
 
       {/* Modals */}

@@ -3,6 +3,8 @@ package Balio.web.model.services;
 import Balio.web.model.Exceptions.InstanceNotFoundException;
 import Balio.web.model.entities.Filter;
 import Balio.web.model.entities.Transaction;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.UUID;
@@ -40,6 +42,11 @@ public interface FilterService {
      * Returns all filters belonging to the user, ordered by name.
      */
     List<Filter> findAllByUserId(UUID userId);
+
+    /**
+     * Returns a paginated list of filters for the user, ordered by name.
+     */
+    Page<Filter> findPagedByUserId(UUID userId, Pageable pageable);
 
     /**
      * Returns a single filter belonging to the user.
