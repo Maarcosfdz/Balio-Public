@@ -5,6 +5,7 @@
 export const ROUTES = {
   // Públicas
   HOME: "/",
+  ABOUT: "/about",
   LOGIN: "/login",
   SIGNUP: "/signup",
 

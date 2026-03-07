@@ -4,6 +4,7 @@ import PublicRoute from "./PublicRoute";
 import AppLayout from "@/components/layout/AppLayout";
 import { ROUTES } from "@/config/routes";
 import MainPage from "@/pages/mainPage/MainPage";
+import AboutPage from "@/pages/mainPage/AboutPage";
 import LoginPage from "@/pages/auth/LoginPage";
 import SignUpPage from "@/pages/auth/SignUpPage";
 import DashboardPage from "@/pages/dashboard/DashboardPage";
@@ -20,6 +21,7 @@ export const router = createBrowserRouter([
     element: <PublicRoute />,
     children: [
       { path: ROUTES.HOME,   element: <MainPage /> },
+      { path: ROUTES.ABOUT,  element: <AboutPage /> },
       { path: ROUTES.LOGIN,  element: <LoginPage /> },
       { path: ROUTES.SIGNUP, element: <SignUpPage /> },
     ],

@@ -4,7 +4,7 @@ import { ArrowRight, ArrowLeftRight, Wallet, BarChart2, Target } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/config/routes";
 import Footer from "@/components/layout/footer";
-import BalioBrand from "@/components/branding/BalioBrand";
+import PublicHeader from "@/components/layout/PublicHeader";
 
 const features = [
   {
@@ -84,17 +84,7 @@ export default function MainPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="flex items-center justify-between border-b px-9 py-3">
-        <BalioBrand />
-        <div className="flex items-center gap-3">
-          <Link to={ROUTES.SIGNUP} className="btn-register btn-register-sm">
-            <span className="btn-register-text">{t("auth.signUp")}</span>
-          </Link>
-          <Link to={ROUTES.LOGIN} className="btn-login-hover btn-login-sm">
-            {t("auth.login")}
-          </Link>
-        </div>
-      </header>
+      <PublicHeader />
 
       <div className="relative w-full overflow-hidden bg-muted/40">
         <section className="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-0 px-4 py-16 sm:px-6 lg:grid-cols-12 lg:px-3">

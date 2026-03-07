@@ -84,6 +84,95 @@
       "emailInUse": "Este correo xa está rexistrado"
     }
   },
+  "publicNav": {
+    "home": "Inicio",
+    "about": "About"
+  },
+  "about": {
+    "hero": {
+      "badge": "About",
+      "title": "Un TFG de finanzas persoais con enfoque práctico, técnico e realista.",
+      "description": "Balio foi desenvolvido como Traballo de Fin de Grao por Marcos Romay Fernández para ofrecer unha ferramenta sinxela pero potente de xestión financeira persoal, con control de contas, transaccións, categorías, metas e análise visual.",
+      "illustration": {
+        "frontendBackend": "Frontend + backend",
+        "secureSession": "Sesión segura",
+        "visualization": "Visualización",
+        "stackTitle": "Stack usado en Balio"
+      },
+      "architecture": {
+        "items": {
+          "technical": {
+            "title": "Arquitectura técnica",
+            "description": "Frontend SPA en React con tipado estrito e backend desacoplado en Spring Boot, comunicados mediante unha API REST autenticada."
+          },
+          "security": {
+            "title": "Seguridade",
+            "description": "Autenticación baseada en JWT con refresh token rotatorio, control de sesión, peche por inactividade e rutas protexidas."
+          },
+          "persistence": {
+            "title": "Persistencia",
+            "description": "Modelo relacional orientado a usuarios, contas, transaccións, categorías, filtros e metas de aforro."
+          }
+        }
+      }
+    },
+    "project": {
+      "eyebrow": "Sobre o proxecto",
+      "lead": "Este proxecto foi desenvolvido como Traballo de Fin de Grao por Marcos Romay Fernández.",
+      "body": "Balio nace co obxectivo de ofrecer unha ferramenta sinxela pero potente para a xestión de finanzas persoais, permitindo aos usuarios levar un control claro dos seus ingresos, gastos e obxectivos de aforro."
+    },
+    "technical": {
+      "eyebrow": "Máis información técnica",
+      "paragraph1": "A aplicación combina unha capa visual moderna cun backend robusto orientado á xestión de datos financeiros, autenticación segura e persistencia consistente.",
+      "paragraph2": "O deseño busca equilibrio entre claridade para a persoa usuaria e estrutura suficiente para crecer en funcionalidades como filtros, metas, orzamentos e estatísticas."
+    },
+    "origin": {
+      "title": "Orixe da idea",
+      "paragraph1": "Ao longo da miña vida fun adquirindo o hábito de aforrar pequenas cantidades de diñeiro procedentes de agasallos familiares ou de tarefas ocasionais. Co paso do tempo, e a medida que fun asumindo máis gastos persoais, comecei a traballar na hostalaría para manter certa independencia económica.",
+      "paragraph2": "Isto levoume a dispoñer de máis diñeiro tanto en metálico como en contas bancarias, polo que xurdiu a necesidade de levar un control máis preciso dos ingresos e gastos.",
+      "paragraph3": "Probe diversas aplicacións de xestión financeira, mais ningunha delas se adaptaba completamente ás funcionalidades que eu consideraba necesarias. A maioría ofrecían un rexistro básico de ingresos e gastos, pero carecían doutras características que considero importantes para un control máis detallado e unha planificación financeira eficaz."
+    },
+    "objective": {
+      "title": "Obxectivo da aplicación",
+      "paragraph1": "O obxectivo deste TFG é deseñar e desenvolver unha aplicación de xestión financeira persoal que cubra esas carencias e proporcione unha experiencia máis completa.",
+      "paragraph2": "A funcionalidade principal consiste no rexistro de ingresos e gastos, que poden asociarse a diferentes contas: contas bancarias vinculadas polo usuario e contas manuais, como diñeiro en efectivo.",
+      "paragraph3": "Cada movemento pode asignarse a unha categoría, o que permite xerar estatísticas claras e útiles para comprender mellor a situación financeira persoal."
+    },
+    "features": {
+      "title": "Funcionalidades principais",
+      "description": "A aplicación inclúe as pezas necesarias para rexistrar movementos, organizar contas e transformar datos financeiros en información útil para a toma de decisións.",
+      "items": {
+        "transactions": {
+          "title": "Rexistro de transaccións",
+          "description": "Permite gardar ingresos e gastos de forma rápida, clara e organizada."
+        },
+        "accounts": {
+          "title": "Xestión de contas",
+          "description": "Posibilidade de traballar con varias contas, tanto bancarias como manuais."
+        },
+        "categories": {
+          "title": "Categorías personalizadas",
+          "description": "Axudan a clasificar os gastos e analizar mellor o comportamento financeiro."
+        },
+        "budgets": {
+          "title": "Orzamentos e estatísticas",
+          "description": "Facilitan a planificación futura e ofrecen vistas claras sobre ingresos, gastos e cantidades."
+        },
+        "goals": {
+          "title": "Metas de aforro",
+          "description": "Permiten definir obxectivos concretos e facer seguimento do progreso acadado."
+        }
+      }
+    },
+    "usefulness": {
+      "title": "Enfoque e utilidade",
+      "description": "Grazas ao seu nivel de personalización, a aplicación tamén pode adaptarse a pequenos negocios ou proxectos persoais, ofrecendo un sistema de xestión financeira sinxelo, efectivo e pensado para o control diario das finanzas."
+    },
+    "links": {
+      "title": "Máis información",
+      "backHome": "Volver a inicio"
+    }
+  },
   "nav": {
     "dashboard": "Panel",
     "transactions": "Transaccións",

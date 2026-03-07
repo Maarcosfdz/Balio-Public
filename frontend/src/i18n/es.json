@@ -84,6 +84,95 @@
       "emailInUse": "Este correo ya está registrado"
     }
   },
+  "publicNav": {
+    "home": "Inicio",
+    "about": "About"
+  },
+  "about": {
+    "hero": {
+      "badge": "About",
+      "title": "Un TFG de finanzas personales con enfoque práctico, técnico y realista.",
+      "description": "Balio ha sido desarrollado como Trabajo de Fin de Grado por Marcos Romay Fernández para ofrecer una herramienta sencilla pero potente de gestión financiera personal, con control de cuentas, transacciones, categorías, metas y análisis visual.",
+      "illustration": {
+        "frontendBackend": "Frontend + backend",
+        "secureSession": "Sesión segura",
+        "visualization": "Visualización",
+        "stackTitle": "Stack usado en Balio"
+      },
+      "architecture": {
+        "items": {
+          "technical": {
+            "title": "Arquitectura técnica",
+            "description": "Frontend SPA en React con tipado estricto y backend desacoplado en Spring Boot, comunicados mediante API REST autenticada."
+          },
+          "security": {
+            "title": "Seguridad",
+            "description": "Autenticación basada en JWT con refresh token rotatorio, control de sesión, cierre por inactividad y rutas protegidas."
+          },
+          "persistence": {
+            "title": "Persistencia",
+            "description": "Modelo relacional orientado a usuarios, cuentas, transacciones, categorías, filtros y metas de ahorro."
+          }
+        }
+      }
+    },
+    "project": {
+      "eyebrow": "Sobre el proyecto",
+      "lead": "Este proyecto ha sido desarrollado como Trabajo de Fin de Grado (TFG) por Marcos Romay Fernández.",
+      "body": "Balio nace con el objetivo de ofrecer una herramienta sencilla pero potente para la gestión de finanzas personales, permitiendo a los usuarios llevar un control claro de sus ingresos, gastos y objetivos de ahorro."
+    },
+    "technical": {
+      "eyebrow": "Más información técnica",
+      "paragraph1": "La aplicación combina una capa visual moderna con un backend robusto orientado a la gestión de datos financieros, autenticación segura y persistencia consistente.",
+      "paragraph2": "El diseño busca equilibrio entre claridad para el usuario final y estructura suficiente para crecer en funcionalidades como filtros, metas, presupuestos y estadísticas."
+    },
+    "origin": {
+      "title": "Origen de la idea",
+      "paragraph1": "A lo largo de mi vida fui adquiriendo el hábito de ahorrar pequeñas cantidades de dinero procedentes de regalos familiares o de tareas ocasionales. Con el tiempo, y a medida que fui asumiendo más gastos personales, empecé a trabajar en hostelería para mantener cierta independencia económica.",
+      "paragraph2": "Esto me llevó a disponer de más dinero tanto en efectivo como en cuentas bancarias, por lo que surgió la necesidad de llevar un control más preciso de los ingresos y gastos.",
+      "paragraph3": "Probé diversas aplicaciones de gestión financiera, pero ninguna se adaptaba completamente a las funcionalidades que yo consideraba necesarias. La mayoría ofrecían un registro básico de ingresos y gastos, pero carecían de otras características que considero importantes para un control más detallado y una planificación financiera eficaz."
+    },
+    "objective": {
+      "title": "Objetivo de la aplicación",
+      "paragraph1": "El objetivo de este TFG es diseñar y desarrollar una aplicación de gestión financiera personal que cubra esas carencias y proporcione una experiencia más completa.",
+      "paragraph2": "La funcionalidad principal consiste en el registro de ingresos y gastos, que pueden asociarse a diferentes cuentas: cuentas bancarias vinculadas por el usuario y cuentas manuales, como dinero en efectivo.",
+      "paragraph3": "Cada movimiento puede asignarse a una categoría, lo que permite generar estadísticas claras y útiles para comprender mejor la situación financiera personal."
+    },
+    "features": {
+      "title": "Funcionalidades principales",
+      "description": "La aplicación incluye las piezas necesarias para registrar movimientos, organizar cuentas y transformar datos financieros en información útil para la toma de decisiones.",
+      "items": {
+        "transactions": {
+          "title": "Registro de transacciones",
+          "description": "Permite guardar ingresos y gastos de forma rápida, clara y organizada."
+        },
+        "accounts": {
+          "title": "Gestión de cuentas",
+          "description": "Posibilidad de trabajar con varias cuentas, tanto bancarias como manuales."
+        },
+        "categories": {
+          "title": "Categorías personalizadas",
+          "description": "Ayudan a clasificar los gastos y analizar mejor el comportamiento financiero."
+        },
+        "budgets": {
+          "title": "Presupuestos y estadísticas",
+          "description": "Facilitan la planificación futura y ofrecen vistas claras sobre ingresos, gastos y cantidades."
+        },
+        "goals": {
+          "title": "Metas de ahorro",
+          "description": "Permiten definir objetivos concretos y hacer seguimiento del progreso alcanzado."
+        }
+      }
+    },
+    "usefulness": {
+      "title": "Enfoque y utilidad",
+      "description": "Gracias a su nivel de personalización, la aplicación también puede adaptarse a pequeños negocios o proyectos personales, ofreciendo un sistema de gestión financiera sencillo, efectivo y pensado para el control diario de las finanzas."
+    },
+    "links": {
+      "title": "Más información",
+      "backHome": "Volver a inicio"
+    }
+  },
   "nav": {
     "dashboard": "Panel",
     "transactions": "Transacciones",

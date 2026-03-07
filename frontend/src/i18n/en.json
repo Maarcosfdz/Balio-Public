@@ -84,6 +84,95 @@
       "emailInUse": "This email is already registered"
     }
   },
+  "publicNav": {
+    "home": "Home",
+    "about": "About"
+  },
+  "about": {
+    "hero": {
+      "badge": "About",
+      "title": "A final degree project on personal finance with a practical, technical and realistic approach.",
+      "description": "Balio was developed as a final degree project by Marcos Romay Fernandez to provide a simple yet powerful personal finance management tool, with account tracking, transactions, categories, savings goals and visual analysis.",
+      "illustration": {
+        "frontendBackend": "Frontend + backend",
+        "secureSession": "Secure session",
+        "visualization": "Visualization",
+        "stackTitle": "Stack used in Balio"
+      },
+      "architecture": {
+        "items": {
+          "technical": {
+            "title": "Technical architecture",
+            "description": "A React SPA frontend with strict typing and a decoupled Spring Boot backend, connected through an authenticated REST API."
+          },
+          "security": {
+            "title": "Security",
+            "description": "JWT-based authentication with rotating refresh tokens, session control, inactivity logout and protected routes."
+          },
+          "persistence": {
+            "title": "Persistence",
+            "description": "A relational model focused on users, accounts, transactions, categories, filters and savings goals."
+          }
+        }
+      }
+    },
+    "project": {
+      "eyebrow": "About the project",
+      "lead": "This project was developed as a final degree project by Marcos Romay Fernandez.",
+      "body": "Balio was created to offer a simple yet powerful tool for personal finance management, allowing users to keep a clear view of their income, expenses and savings goals."
+    },
+    "technical": {
+      "eyebrow": "Technical overview",
+      "paragraph1": "The application combines a modern visual layer with a robust backend focused on financial data management, secure authentication and consistent persistence.",
+      "paragraph2": "Its design seeks a balance between clarity for end users and enough structure to grow in areas such as filters, goals, budgets and statistics."
+    },
+    "origin": {
+      "title": "Origin of the idea",
+      "paragraph1": "Throughout my life I developed the habit of saving small amounts of money from family gifts or occasional tasks. Over time, as I started taking on more personal expenses, I began working in hospitality to maintain some financial independence.",
+      "paragraph2": "This meant I had more money both in cash and in bank accounts, which created the need for more accurate control over income and expenses.",
+      "paragraph3": "I tried several financial management applications, but none of them fully matched the features I considered necessary. Most offered only a basic income and expense log, while lacking other capabilities that I believe are important for more detailed control and effective financial planning."
+    },
+    "objective": {
+      "title": "Application objective",
+      "paragraph1": "The objective of this final degree project is to design and develop a personal finance management application that fills those gaps and provides a more complete experience.",
+      "paragraph2": "Its main functionality is the recording of income and expenses, which can be associated with different accounts: user-linked bank accounts and manual accounts such as cash.",
+      "paragraph3": "Each transaction can be assigned to a category, making it possible to generate clear and useful statistics to better understand a person's financial situation."
+    },
+    "features": {
+      "title": "Main features",
+      "description": "The application includes the key building blocks needed to register movements, organize accounts and turn financial data into useful information for decision-making.",
+      "items": {
+        "transactions": {
+          "title": "Transaction tracking",
+          "description": "Allows income and expenses to be recorded quickly, clearly and in an organized way."
+        },
+        "accounts": {
+          "title": "Account management",
+          "description": "Supports working with multiple accounts, both bank-based and manual."
+        },
+        "categories": {
+          "title": "Custom categories",
+          "description": "Help classify expenses and better analyze financial behavior."
+        },
+        "budgets": {
+          "title": "Budgets and statistics",
+          "description": "Support future planning and provide clear views of income, expenses and amounts."
+        },
+        "goals": {
+          "title": "Savings goals",
+          "description": "Allow users to define specific goals and track their progress over time."
+        }
+      }
+    },
+    "usefulness": {
+      "title": "Approach and usefulness",
+      "description": "Thanks to its level of customization, the application can also adapt to small businesses or personal projects, offering a simple, effective financial management system designed for day-to-day control."
+    },
+    "links": {
+      "title": "More information",
+      "backHome": "Back to home"
+    }
+  },
   "nav": {
     "dashboard": "Dashboard",
     "transactions": "Transactions",
