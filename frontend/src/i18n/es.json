@@ -189,6 +189,8 @@
     "tabActive": "Activas",
     "tabCompleted": "Completadas",
     "noCompleted": "Aún no tienes metas completadas",
+    "noGoals": "No tienes metas de ahorro todavía",
+    "goalsCount": "metas",
     "addAmount": "Añadir",
     "withdrawAmount": "Retirar",
     "adjustLabel": "Ajustar",

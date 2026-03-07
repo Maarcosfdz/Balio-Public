@@ -2,25 +2,42 @@
   type FormEvent,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
 import {
   CheckCircle2,
+  Gem,
   Loader2,
   Minus,
   Pencil,
   Plus,
-  RefreshCw,
+  Sparkles,
+  Star,
   Target,
+  TrendingUp,
   Trash2,
+  Trophy,
   X,
+  Zap,
 } from "lucide-react";
 import type { GoalSummaryDto } from "@/types";
 import { goalService } from "@/backend/goalService";
 
-//  Helpers 
+const MAX_GOALS = 40;
+
+// ── Formatting ──────────────────────────────────────────────────────────
+const _nf = new Intl.NumberFormat(undefined, {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+function fmtAmt(n: number) {
+  return `${_nf.format(n)} EUR`;
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────
 
 function pct(current: number, target: number) {
   if (target <= 0) return 0;
@@ -31,40 +48,74 @@ function isCompleted(g: GoalSummaryDto) {
   return g.currentAmount >= g.targetAmount;
 }
 
-function ringColor(p: number) {
-  if (p >= 100) return "#10b981";
-  if (p >= 75) return "#f97316";
-  if (p >= 45) return "#0ea5e9";
-  return "#38bdf8";
+/** Espectro completo: rojo → naranja → violeta → azul → verde */
+function progressColor(p: number): string {
+  if (p >= 100) return "#16a34a"; // green-600 ✓ completada
+  if (p >= 93)  return "#22c55e"; // green-500
+  if (p >= 86)  return "#10b981"; // emerald-500
+  if (p >= 79)  return "#0d9488"; // teal-600
+  if (p >= 72)  return "#06b6d4"; // cyan-500
+  if (p >= 65)  return "#0ea5e9"; // sky-500
+  if (p >= 58)  return "#2563eb"; // blue-600
+  if (p >= 51)  return "#3b82f6"; // blue-500
+  if (p >= 44)  return "#6366f1"; // indigo-500
+  if (p >= 37)  return "#8b5cf6"; // violet-500
+  if (p >= 30)  return "#a855f7"; // purple-500
+  if (p >= 23)  return "#c026d3"; // fuchsia-600
+  if (p >= 16)  return "#fbbf24"; // amber-400
+  if (p >= 10)  return "#fb923c"; // orange-400
+  if (p >= 5)   return "#f97316"; // orange-500
+  if (p >= 2)   return "#ef4444"; // red-500
+  return "#dc2626";               // red-600
 }
 
-//  Circular progress ring 
+// Random-but-stable icon set per goal (seeded by id)
+const GOAL_ICONS = [Target, Star, Gem, TrendingUp, Zap, Trophy, Sparkles] as const;
+type GoalIconComponent = (typeof GOAL_ICONS)[number];
 
-function CircleProgress({ value, label }: { value: number; label: string }) {
-  const r = 42;
+function getGoalIcon(id: string): GoalIconComponent {
+  let hash = 0;
+  for (const c of id) hash = ((hash * 31) + c.charCodeAt(0)) >>> 0;
+  return GOAL_ICONS[hash % GOAL_ICONS.length];
+}
+
+// ── Circular progress ring ───────────────────────────────────────────────
+
+function CircleProgress({
+  value,
+  label,
+  color,
+}: {
+  value: number;
+  label: string;
+  color: string;
+}) {
+  const r = 46;
   const circ = 2 * Math.PI * r;
   const offset = circ - (value / 100) * circ;
-  const color = ringColor(value);
 
   return (
-    <div className="relative flex items-center justify-center" style={{ width: 112, height: 112 }}>
-      <svg width="112" height="112" className="-rotate-90">
-        <circle cx="56" cy="56" r={r} fill="none" stroke="#f1f5f9" strokeWidth="9" />
+    <div
+      className="relative flex items-center justify-center"
+      style={{ width: 124, height: 124 }}
+    >
+      <svg width="124" height="124" className="-rotate-90">
+        <circle cx="62" cy="62" r={r} fill="none" stroke="#f1f5f9" strokeWidth="10" />
         <circle
-          cx="56"
-          cy="56"
+          cx="62"
+          cy="62"
           r={r}
           fill="none"
           stroke={color}
-          strokeWidth="9"
+          strokeWidth="10"
           strokeLinecap="round"
           strokeDasharray={circ}
           strokeDashoffset={offset}
-          className="transition-all duration-700"
+          style={{ transition: "stroke-dashoffset 1.2s ease, stroke 1.2s ease" }}
         />
       </svg>
       <div className="absolute flex flex-col items-center leading-none">
-        <span className="text-xl font-extrabold text-slate-800">{value.toFixed(0)}%</span>
+        <span className="text-2xl font-extrabold text-slate-800">{value.toFixed(0)}%</span>
         <span className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-slate-400">
           {label}
         </span>
@@ -73,14 +124,15 @@ function CircleProgress({ value, label }: { value: number; label: string }) {
   );
 }
 
-//  Mini adjust popover 
+// ── Mini adjust popover ──────────────────────────────────────────────────
 
 interface AdjustPopoverProps {
   direction: "add" | "withdraw";
   onConfirm: (amount: number) => Promise<void>;
+  wide?: boolean;
 }
 
-function AdjustPopover({ direction, onConfirm }: AdjustPopoverProps) {
+function AdjustPopover({ direction, onConfirm, wide = false }: AdjustPopoverProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
@@ -117,51 +169,46 @@ function AdjustPopover({ direction, onConfirm }: AdjustPopoverProps) {
 
   const isAdd = direction === "add";
 
+  // wide buttons use neutral white/bg via CSS; avoid coloring here so they keep card-like appearance
+
   return (
-    <div className="relative" ref={ref}>
+    <div className={`relative${wide ? " flex-1" : ""}`} ref={ref}>
       <button
         onClick={() => { setOpen((v) => !v); setValue(""); setError(""); }}
-        className={`flex h-8 w-8 items-center justify-center rounded-lg border transition ${
-          isAdd
-            ? "border-slate-300 text-slate-500 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-600"
-            : "border-slate-300 text-slate-500 hover:border-red-300 hover:bg-red-50 hover:text-red-500"
-        }`}
+        className={wide ? "goal-adjust-wide w-full" : (isAdd ? "goal-adjust-btn-add" : "goal-adjust-btn-withdraw")}
       >
-        {isAdd ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+        {isAdd ? <Plus className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
       </button>
 
       {open && (
         <div
-          className={`absolute bottom-10 z-30 flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-lg ${
+          className={`absolute bottom-12 z-30 flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-lg ${
             isAdd ? "right-0" : "left-0"
           }`}
-          style={{ width: 160 }}
+          style={{ width: 148 }}
         >
-          <p className="text-[11px] font-semibold text-slate-500">
-            {isAdd ? t("goals.addAmount") : t("goals.withdrawAmount")}
-          </p>
           <div className="relative">
             <input
               autoFocus
               type="number"
               min="0.01"
-              step="0.01"
+              step="1"
               value={value}
               onChange={(e) => { setValue(e.target.value); setError(""); }}
               onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
-              placeholder="0.00"
-              className="h-8 w-full rounded-lg border border-slate-300 bg-slate-50 px-2 pr-6 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+              placeholder="0"
+              className="h-9 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 pr-10 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
             />
-            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">EUR</span>
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+              EUR
+            </span>
           </div>
           {error && <p className="text-[10px] text-red-500">{error}</p>}
           <button
             onClick={handleConfirm}
             disabled={loading}
-            className={`flex h-7 items-center justify-center rounded-lg text-xs font-semibold text-white transition disabled:opacity-60 ${
-              isAdd
-                ? "bg-emerald-500 hover:bg-emerald-600"
-                : "bg-red-500 hover:bg-red-600"
+            className={`flex h-8 items-center justify-center rounded-lg text-xs font-semibold text-white transition disabled:opacity-60 ${
+              isAdd ? "bg-emerald-500 hover:bg-emerald-600" : "bg-red-500 hover:bg-red-600"
             }`}
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("common.confirm")}
@@ -291,7 +338,7 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
   );
 }
 
-//  Goal card 
+// ── Goal card ────────────────────────────────────────────────────────────
 
 interface GoalCardProps {
   goal: GoalSummaryDto;
@@ -304,10 +351,10 @@ function GoalCard({ goal, onEdit, onDelete, onUpdated }: GoalCardProps) {
   const { t } = useTranslation();
   const progress = pct(goal.currentAmount, goal.targetAmount);
   const completed = isCompleted(goal);
+  const color = progressColor(progress);
+  const Icon: GoalIconComponent = getGoalIcon(goal.id);
 
-  const ringLabel = completed
-    ? t("goals.completed").toUpperCase()
-    : "SAVED";
+  const ringLabel = completed ? t("goals.completed").toUpperCase() : "SAVED";
 
   const handleAdjust = async (direction: "add" | "withdraw", amount: number) => {
     let updated;
@@ -320,67 +367,96 @@ function GoalCard({ goal, onEdit, onDelete, onUpdated }: GoalCardProps) {
   };
 
   return (
-    <div
-      className={`relative flex flex-col items-center overflow-hidden rounded-2xl border bg-white px-5 pb-4 pt-5 shadow-sm transition hover:shadow-md ${
-        completed ? "border-emerald-200" : "border-slate-200"
-      }`}
-    >
-      <div className="flex w-full items-start justify-between">
-        <div
-          className={`flex h-9 w-9 items-center justify-center rounded-xl ${
-            completed
-              ? "bg-emerald-100 text-emerald-600"
-              : "bg-slate-100 text-sky-600"
-          }`}
-        >
-          {completed ? <CheckCircle2 className="h-5 w-5" /> : <Target className="h-5 w-5" />}
+    <div className="relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+      {/* Franja de color según progreso */}
+      <div
+        className="h-1 w-full"
+        style={{ backgroundColor: color, transition: "background-color 1.2s ease" }}
+      />
+
+      <div className="flex flex-1 flex-col px-5 pb-5 pt-4">
+        {/* Header: icono + nombre + botones */}
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            {/* Icono aleatorio con color del progreso */}
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded-xl"
+              style={{
+                backgroundColor: `${color}22`,
+                color,
+                transition: "background-color 1.2s ease, color 1.2s ease",
+              }}
+            >
+              <Icon className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-bold text-slate-800">{goal.name}</p>
+              {completed && (
+                <span className="text-[10px] font-semibold text-emerald-500">
+                  ✓ {t("goals.goalReached")}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Botones editar / eliminar */}
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={() => onEdit(goal)}
+              className="rounded-lg p-1.5 text-slate-400 hover:bg-sky-50 hover:text-sky-600"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => onDelete(goal)}
+              className="tx-squishy-tech tx-squishy-expense p-1.5 ml-1"
+            >
+              <Trash2 className="tx-squishy-icon relative z-10 h-4 w-4" />
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-0.5">
-          <button
-            onClick={() => onEdit(goal)}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-sky-50 hover:text-sky-600"
-          >
-            <Pencil className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => onDelete(goal)}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-500"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+
+        {/* Anillo de progreso */}
+        <div className="my-5 flex justify-center">
+          <CircleProgress value={progress} label={ringLabel} color={color} />
         </div>
-      </div>
 
-      <p className="mt-2 text-center text-base font-bold text-slate-800">{goal.name}</p>
+        {/* Importes */}
+        <div className="mb-5 text-center">
+          <p className="text-2xl font-extrabold tabular-nums text-slate-800">
+            {fmtAmt(goal.currentAmount)}
+          </p>
+          <p className="mt-0.5 text-xs text-slate-400">
+            de {fmtAmt(goal.targetAmount)}
+          </p>
+        </div>
 
-      <div className="my-4">
-        <CircleProgress value={progress} label={ringLabel} />
-      </div>
-
-      <div className="mb-4 text-center">
-        <span className="text-xl font-bold text-slate-800">{goal.currentAmount.toFixed(2)} EUR</span>
-        <span className="ml-1 text-sm text-slate-400">/ {goal.targetAmount.toFixed(2)} EUR</span>
-      </div>
-
-      <div className="flex w-full items-center justify-between">
+        {/* Botones ajuste o banner completada */}
         {completed ? (
-          <div className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-50 py-2 text-sm font-semibold text-emerald-600">
+          <div className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-50 py-2.5 text-sm font-semibold text-emerald-600">
             <CheckCircle2 className="h-4 w-4" />
             {t("goals.goalReached")}
           </div>
         ) : (
-          <>
-            <AdjustPopover direction="withdraw" onConfirm={(a) => handleAdjust("withdraw", a)} />
-            <span className="text-xs text-slate-400">{t("goals.adjustLabel")}</span>
-            <AdjustPopover direction="add" onConfirm={(a) => handleAdjust("add", a)} />
-          </>
+          <div className="flex gap-2">
+            <AdjustPopover
+              direction="withdraw"
+              onConfirm={(a) => handleAdjust("withdraw", a)}
+              wide
+            />
+            <AdjustPopover
+              direction="add"
+              onConfirm={(a) => handleAdjust("add", a)}
+              wide
+            />
+          </div>
         )}
       </div>
     </div>
   );
 }
 
-//  Empty slot card 
+// ── Empty slot card ───────────────────────────────────────────────────────
 
 function EmptyGoalCard({ onAdd }: { onAdd: () => void }) {
   const { t } = useTranslation();
@@ -400,49 +476,41 @@ function EmptyGoalCard({ onAdd }: { onAdd: () => void }) {
   );
 }
 
-//  Status pill 
-
-function StatusPill({ label, count, color }: { label: string; count: number; color: "emerald" | "sky" }) {
-  return (
-    <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm">
-      <span className="text-sm font-medium text-slate-600">{label}</span>
-      <span
-        className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white ${
-          color === "emerald" ? "bg-emerald-500" : "bg-sky-500"
-        }`}
-      >
-        {count}
-      </span>
-    </div>
-  );
-}
-
-//  Main page 
-
-type Tab = "active" | "completed";
+// ── Main page ─────────────────────────────────────────────────────────────
 
 export default function GoalsPage() {
   const { t } = useTranslation();
 
   const [goals, setGoals] = useState<GoalSummaryDto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<Tab>("active");
   const [formOpen, setFormOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<GoalSummaryDto | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  const fetchGoals = useCallback(async () => {
-    setLoading(true);
+  // ── Auto-refresh (30 s + visibilità) ──────────────────────────────────
+  const fetchGoals = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       setGoals(await goalService.getAll());
     } catch {
       setGoals([]);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, []);
 
-  useEffect(() => { fetchGoals(); }, [fetchGoals]);
+  useEffect(() => {
+    fetchGoals();
+    const interval = setInterval(() => fetchGoals(false), 30_000);
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") fetchGoals(false);
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [fetchGoals]);
 
   const handleSaved = () => {
     setFormOpen(false);
@@ -466,69 +534,106 @@ export default function GoalsPage() {
     setGoals((prev) => prev.map((g) => (g.id === updated.id ? updated : g)));
   };
 
+  // Activas primero, completadas al final
+  const sortedGoals = useMemo(
+    () => [...goals].sort((a, b) => (isCompleted(a) ? 1 : 0) - (isCompleted(b) ? 1 : 0)),
+    [goals],
+  );
+
   const activeGoals = goals.filter((g) => !isCompleted(g));
   const completedGoals = goals.filter(isCompleted);
-  const displayed = tab === "active" ? activeGoals : completedGoals;
+  const canAdd = goals.length < MAX_GOALS;
+
+  // Portfolio stats
+  const totalSaved = goals.reduce((s, g) => s + g.currentAmount, 0);
 
   return (
     <>
+      {/* SVG filter para el efecto gooey de las pills */}
+      <svg
+        style={{ visibility: "hidden", position: "absolute", width: 0, height: 0 }}
+        aria-hidden="true"
+      >
+        <defs>
+          <filter id="goal-goo">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
+            <feColorMatrix
+              in="blur"
+              mode="matrix"
+              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 9 -4"
+              result="goo"
+            />
+            <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+          </filter>
+        </defs>
+      </svg>
+
       <div className="space-y-6">
-        {/* Header */}
+        {/* ── Cabecera ── */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800">{t("goals.title")}</h1>
-            <p className="mt-1 text-sm text-slate-400">{t("goals.subtitle")}</p>
+            <h1 className="flex items-center gap-2.5 text-3xl font-bold text-slate-800">
+              <Target className="h-8 w-8 text-sky-500" />
+              {t("goals.title")}
+            </h1>
+            <div className="mt-1 flex flex-wrap items-center gap-x-2">
+              <p className="text-sm text-slate-400">{t("goals.subtitle")}</p>
+              {goals.length > 0 && (
+                <>
+                  <span className="text-slate-300" aria-hidden>·</span>
+                  <span className="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">
+                    <span className="text-xs uppercase tracking-wide text-slate-500">{t("goals.totalSaved")}</span>
+                    <span className="tabular-nums">{fmtAmt(totalSaved)}</span>
+                  </span>
+                  <span className="text-slate-300" aria-hidden>·</span>
+                  <span className="text-xs text-slate-400">{goals.length}/{MAX_GOALS} {t("goals.goalsCount")}</span>
+                </>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="flex items-center gap-3">
+            {/* Pills con efecto gooey */}
+            <div style={{ filter: "url('#goal-goo')", display: "flex", gap: "0.5rem" }}>
+              <div className="goal-pill goal-pill-active">
+                <span>{t("goals.tabActive")}</span>
+                <span className="goal-pill-badge">{activeGoals.length}</span>
+              </div>
+              <div className="goal-pill goal-pill-completed">
+                <span>{t("goals.tabCompleted")}</span>
+                <span className="goal-pill-badge">{completedGoals.length}</span>
+              </div>
+            </div>
+
+            {/* Botón nueva meta */}
             <button
-              onClick={fetchGoals}
-              className="rounded-lg border border-slate-300 p-2 text-slate-500 hover:bg-slate-50"
+              onClick={() => { setEditTarget(null); setFormOpen(true); }}
+              disabled={!canAdd}
+              className="goal-new-btn"
             >
-              <RefreshCw className="h-4 w-4" />
+              <Plus className="goal-new-icon h-4 w-4" />
+              {t("goals.create")}
             </button>
-            <StatusPill label={t("goals.tabCompleted")} count={completedGoals.length} color="emerald" />
-            <StatusPill label={t("goals.tabActive")} count={activeGoals.length} color="sky" />
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex w-fit gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1">
-          {(["active", "completed"] as Tab[]).map((tabKey) => (
-            <button
-              key={tabKey}
-              onClick={() => setTab(tabKey)}
-              className={`rounded-lg px-5 py-1.5 text-sm font-semibold transition ${
-                tab === tabKey
-                  ? "bg-white text-slate-800 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              {tabKey === "active" ? t("goals.tabActive") : t("goals.tabCompleted")}
-              <span
-                className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                  tab === tabKey
-                    ? "bg-slate-100 text-slate-600"
-                    : "bg-slate-200 text-slate-500"
-                }`}
-              >
-                {tabKey === "active" ? activeGoals.length : completedGoals.length}
-              </span>
-            </button>
-          ))}
-        </div>
 
-        {/* Grid */}
+
+        {/* ── Grid de metas ── */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-slate-300" />
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {displayed.map((g) => (
+            {sortedGoals.map((g) => (
               <div key={g.id} className="relative">
+                {/* Overlay confirmación borrado */}
                 {deleteConfirm === g.id && (
                   <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white/95 backdrop-blur-sm">
-                    <p className="text-sm font-semibold text-slate-700">{t("goals.deleteConfirm")}</p>
+                    <p className="text-sm font-semibold text-slate-700">
+                      {t("goals.deleteConfirm")}
+                    </p>
                     <div className="flex gap-2">
                       <button
                         onClick={() => setDeleteConfirm(null)}
@@ -554,15 +659,14 @@ export default function GoalsPage() {
               </div>
             ))}
 
-            {tab === "active" && (
-              <EmptyGoalCard
-                onAdd={() => { setEditTarget(null); setFormOpen(true); }}
-              />
+            {/* Tarjeta vacía para añadir */}
+            {canAdd && (
+              <EmptyGoalCard onAdd={() => { setEditTarget(null); setFormOpen(true); }} />
             )}
 
-            {tab === "completed" && completedGoals.length === 0 && (
+            {goals.length === 0 && (
               <div className="col-span-full py-16 text-center text-slate-400">
-                {t("goals.noCompleted")}
+                {t("goals.noGoals")}
               </div>
             )}
           </div>

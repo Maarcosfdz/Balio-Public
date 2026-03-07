@@ -189,6 +189,8 @@
     "tabActive": "Active",
     "tabCompleted": "Completed",
     "noCompleted": "No completed goals yet",
+    "noGoals": "You have no savings goals yet",
+    "goalsCount": "goals",
     "addAmount": "Add",
     "withdrawAmount": "Withdraw",
     "adjustLabel": "Adjust",
