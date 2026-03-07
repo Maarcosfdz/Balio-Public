@@ -7,7 +7,6 @@ import React, {
 import { useTranslation } from "react-i18next";
 import {
   AlignLeft,
-  CheckCircle2,
   Eye,
   EyeOff,
   KeyRound,
@@ -15,12 +14,12 @@ import {
   Loader2,
   Pencil,
   ShieldAlert,
-  TriangleAlert,
   User,
   X,
 } from "lucide-react";
 import { authService } from "@/backend/authService";
 import { useAuth } from "@/contexts/AuthContext";
+import { ToastBanner, type ToastBannerTone } from "@/components/ui/toast-banner";
 
 // ── Small reusable components ────────────────────────────────────────────
 
@@ -87,29 +86,7 @@ function PasswordInput({
   );
 }
 
-type Toast = { type: "success" | "error"; message: string };
-
-function ToastBanner({ toast, onClose }: { toast: Toast; onClose: () => void }) {
-  return (
-    <div
-      className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl border px-5 py-3 shadow-lg ${
-        toast.type === "success"
-          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-          : "border-red-200 bg-red-50 text-red-700"
-      }`}
-    >
-      {toast.type === "success" ? (
-        <CheckCircle2 className="h-5 w-5 shrink-0" />
-      ) : (
-        <TriangleAlert className="h-5 w-5 shrink-0" />
-      )}
-      <span className="text-sm font-medium">{toast.message}</span>
-      <button onClick={onClose} className="rounded-full p-0.5 hover:bg-black/10">
-        <X className="h-4 w-4" />
-      </button>
-    </div>
-  );
-}
+type Toast = { type: Extract<ToastBannerTone, "success" | "error">; message: string };
 
 // ── Profile section ──────────────────────────────────────────────────────
 
@@ -477,15 +454,29 @@ function DangerSection() {
   const CONFIRM_WORD = i18n.language?.startsWith("en") ? "delete" : "eliminar";
   const canDelete = typed.toLowerCase() === CONFIRM_WORD;
 
+  const openDialog = () => {
+    setTyped("");
+    setOpen(true);
+  };
+
+  const closeDialog = () => {
+    setOpen(false);
+    setTyped("");
+  };
+
   useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 50);
-    else setTyped("");
+    if (!open) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => inputRef.current?.focus(), 50);
+    return () => window.clearTimeout(timeoutId);
   }, [open]);
 
   const handleDelete = () => {
     if (!canDelete) return;
     // TODO: call DELETE /user/{id} when endpoint is implemented
-    setOpen(false);
+    closeDialog();
   };
 
   return (
@@ -500,7 +491,7 @@ function DangerSection() {
             </div>
           </div>
           <button
-            onClick={() => setOpen(true)}
+            onClick={openDialog}
             className="shrink-0 rounded-xl border-2 border-red-400 px-5 py-2 text-sm font-bold text-red-600 transition hover:bg-red-100"
           >
             {t("settings.deleteAccount")}
@@ -512,7 +503,7 @@ function DangerSection() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-            onClick={() => setOpen(false)}
+            onClick={closeDialog}
           />
           <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
             <div className="mb-4 flex items-start justify-between">
@@ -525,7 +516,7 @@ function DangerSection() {
                 </h2>
               </div>
               <button
-                onClick={() => setOpen(false)}
+                onClick={closeDialog}
                 className="rounded-full p-1 text-slate-400 hover:bg-slate-100"
               >
                 <X className="h-5 w-5" />
@@ -600,7 +591,13 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {toast && <ToastBanner toast={toast} onClose={() => setToast(null)} />}
+      {toast ? (
+        <ToastBanner
+          tone={toast.type}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
+      ) : null}
     </>
   );
 }

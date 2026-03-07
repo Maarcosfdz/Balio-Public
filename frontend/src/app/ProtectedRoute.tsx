@@ -4,7 +4,7 @@ import { ROUTES } from "@/config/routes";
 
 /**
  * Wrapper que protege rutas autenticadas.
- * Si no hay sesión, redirige a /login.
+ * Si no hay sesión, redirige a la página principal.
  */
 export default function ProtectedRoute() {
   const { isAuthenticated, isLoading } = useAuth();

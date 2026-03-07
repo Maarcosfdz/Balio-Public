@@ -58,6 +58,13 @@
     "hidePassword": "Ocultar contraseña",
     "submitting": "Enviando...",
     "close": "Cerrar",
+    "sessionWarningTitle": "Tu sesión está a punto de caducar",
+    "sessionWarningMessage": "Si sigues inactivo, tu sesión se cerrará automáticamente en {{minutes}} minuto(s).",
+    "sessionWarningAction": "Seguir conectado",
+    "sessionExpiredTitle": "Tu sesión ha caducado",
+    "sessionExpiredMessage": "No se ha podido renovar tu sesión. Para seguir usando la aplicación, vuelve a iniciar sesión.",
+    "sessionExpiredInactive": "Has estado inactivo demasiado tiempo. Por seguridad, la sesión se ha cerrado y necesitas volver a iniciar sesión.",
+    "sessionExpiredAction": "Ir a la página principal",
     "acceptTerms": "Acepto los Términos de Servicio y la Política de Privacidad",
     "placeholders": {
       "nickname": "Introduce tu nombre de usuario",

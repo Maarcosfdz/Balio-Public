@@ -58,6 +58,13 @@
     "hidePassword": "Hide password",
     "submitting": "Submitting...",
     "close": "Close",
+    "sessionWarningTitle": "Your session is about to expire",
+    "sessionWarningMessage": "If you remain inactive, your session will close automatically in {{minutes}} minute(s).",
+    "sessionWarningAction": "Stay signed in",
+    "sessionExpiredTitle": "Your session has expired",
+    "sessionExpiredMessage": "We could not renew your session. To keep using the application, please log in again.",
+    "sessionExpiredInactive": "You have been inactive for too long. For security reasons, your session has been closed and you need to log in again.",
+    "sessionExpiredAction": "Go to home page",
     "acceptTerms": "I agree to the Terms of Service and Privacy Policy",
     "placeholders": {
       "nickname": "Enter your username",

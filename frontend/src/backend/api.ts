@@ -1,4 +1,8 @@
 import axios from "axios";
+import {
+  getAccessToken,
+  refreshSessionTokens,
+} from "@/lib/session";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
 
@@ -12,7 +16,7 @@ const api = axios.create({
 
 // ── Request interceptor: inyecta accessToken ──
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("accessToken");
+  const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -63,22 +67,8 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const refreshToken = localStorage.getItem("refreshToken");
-      if (!refreshToken) {
-        isRefreshing = false;
-        // No hay refresh token → forzar logout
-        localStorage.clear();
-        window.location.href = "/";
-        return Promise.reject(error);
-      }
-
       try {
-        const { data } = await axios.post(`${API_BASE_URL}/user/refreshToken`, {
-          refreshToken,
-        });
-
-        localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("refreshToken", data.refreshToken);
+        const data = await refreshSessionTokens();
 
         processQueue(null, data.accessToken);
 
@@ -86,8 +76,6 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        localStorage.clear();
-        window.location.href = "/";
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

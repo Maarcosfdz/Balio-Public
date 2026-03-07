@@ -58,6 +58,13 @@
     "hidePassword": "Ocultar contrasinal",
     "submitting": "Enviando...",
     "close": "Pechar",
+    "sessionWarningTitle": "A túa sesión está a piques de caducar",
+    "sessionWarningMessage": "Se segues inactivo, a sesión pecharase automaticamente en {{minutes}} minuto(s).",
+    "sessionWarningAction": "Seguir conectado",
+    "sessionExpiredTitle": "A túa sesión caducou",
+    "sessionExpiredMessage": "Non se puido renovar a túa sesión. Para seguir usando a aplicación, volve iniciar sesión.",
+    "sessionExpiredInactive": "Levas demasiado tempo inactivo. Por seguridade, pechouse a sesión e tes que volver iniciar sesión.",
+    "sessionExpiredAction": "Ir á páxina principal",
     "acceptTerms": "Acepto os Termos de Servizo e a Política de Privacidade",
     "placeholders": {
       "nickname": "Introduce o teu nome de usuario",
