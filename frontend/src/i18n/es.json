@@ -293,6 +293,14 @@
     "amountMax": "Importe máximo",
     "name": "Concepto",
     "date": "Fecha",
-    "noTransactions": "No hay transacciones"
+    "noTransactions": "No hay transacciones",
+    "baseTab": "Base",
+    "selectDate": "Seleccionar fecha",
+    "selectDates": "Seleccionar fecha/s",
+    "looseDates": "fechas sueltas",
+    "looseDatesLabel": "Fechas sueltas",
+    "clearLooseDates": "Limpiar fechas sueltas",
+    "singleDate": "Día",
+    "dateRange": "Rango"
   }
 }

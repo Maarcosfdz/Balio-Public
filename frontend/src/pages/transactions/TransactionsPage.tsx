@@ -9,10 +9,11 @@ import {
   Loader2,
   Plus,
   Tag,
-  Trash2,
   X,
-} from "lucide-react";
+  } from "lucide-react";
+import PageHeader from "@/components/layout/PageHeader";
 import type {
+  FilterResponseDto,
   FilterSummaryDto,
   TransactionFilters,
   TransactionSummaryDto,
@@ -63,30 +64,28 @@ export default function TransactionsPage() {
   const [serverTotalPages, setServerTotalPages] = useState(1);
 
   // ── Quick Access Tabs ──
-  const [pinnedFilters, setPinnedFilters] = useState<FilterSummaryDto[]>([]);
-  const [activeTabId, setActiveTabId] = useState<string | null>(null);
-  const [deleteMode, setDeleteMode] = useState(false);
-  const [showAddPicker, setShowAddPicker] = useState(false);
+  // Initialized synchronously from localStorage so they're ready on first render.
+  const [pinnedFilters, setPinnedFilters] = useState<FilterSummaryDto[]>(() => {
+    try { return JSON.parse(localStorage.getItem("balio_pinned_filters") ?? "[]"); }
+    catch { return []; }
+  });
+  const [activeTabId, setActiveTabId] = useState<string | null>(
+    () => localStorage.getItem("balio_active_tab")
+  );
   const [allSavedFilters, setAllSavedFilters] = useState<FilterSummaryDto[]>([]);
+  const [showAddPicker, setShowAddPicker] = useState(false);
   const addPickerRef = useRef<HTMLDivElement>(null);
 
-  // Load pinned filters from localStorage
+  // Fetch all saved filters for the add-to-tabs picker
   useEffect(() => {
-    const saved = localStorage.getItem("balio_pinned_filters");
-    if (saved) {
-      try {
-        setPinnedFilters(JSON.parse(saved));
-      } catch { /* ignore */ }
-    }
+    filterService.getAll().then(setAllSavedFilters).catch(() => {});
   }, []);
 
-  // Save pinned filters to localStorage
+  // Close picker on outside click + refresh list when picker opens
   useEffect(() => {
-    localStorage.setItem("balio_pinned_filters", JSON.stringify(pinnedFilters));
-  }, [pinnedFilters]);
-
-  // Close add picker on outside click
-  useEffect(() => {
+    if (!showAddPicker) return;
+    // Refresh so newly-created filters appear without a page reload
+    filterService.getAll().then(setAllSavedFilters).catch(() => {});
     const handler = (e: MouseEvent) => {
       if (addPickerRef.current && !addPickerRef.current.contains(e.target as Node)) {
         setShowAddPicker(false);
@@ -94,7 +93,18 @@ export default function TransactionsPage() {
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  }, [showAddPicker]);
+
+  // Persist pinned filters
+  useEffect(() => {
+    localStorage.setItem("balio_pinned_filters", JSON.stringify(pinnedFilters));
+  }, [pinnedFilters]);
+
+  // Persist active tab
+  useEffect(() => {
+    if (activeTabId) localStorage.setItem("balio_active_tab", activeTabId);
+    else localStorage.removeItem("balio_active_tab");
+  }, [activeTabId]);
 
   // ── Fetch data ──
   const filtersRef = useRef(filters);
@@ -149,15 +159,28 @@ export default function TransactionsPage() {
     []
   );
 
-  // Initial load
+  // Initial / per-navigation load.
+  // location.key changes on every navigation event so this runs whenever the
+  // user arrives at this page (fresh mount OR back-navigation).
   useEffect(() => {
     if (stateFilterId) {
+      // Came from FiltersPage "Ver transacciones" button
       handleApplySavedFilter(stateFilterId);
     } else {
-      fetchTransactions(filters, true, 0);
+      // Restore the last active pinned tab from localStorage, if any
+      const storedTab = localStorage.getItem("balio_active_tab");
+      const storedPinned: FilterSummaryDto[] = (() => {
+        try { return JSON.parse(localStorage.getItem("balio_pinned_filters") ?? "[]"); }
+        catch { return []; }
+      })();
+      if (storedTab && storedPinned.some((p) => p.id === storedTab)) {
+        handleApplySavedFilter(storedTab);
+      } else {
+        fetchTransactions(filtersRef.current, true, 0);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [location.key]);
 
   // ── Auto-refresh: polling + visibility change ──
   useEffect(() => {
@@ -240,8 +263,16 @@ export default function TransactionsPage() {
     setLoading(true);
     setActiveTabId(filterId);
     try {
-      const data = await filterService.apply(filterId);
+      // Apply the filter and fetch its definition in parallel
+      const [data, details] = await Promise.all([
+        filterService.apply(filterId),
+        filterService.getById(filterId).catch((): FilterResponseDto | null => null),
+      ]);
       setTransactions(data);
+      // Sync FilterPanel state from the saved filter's definition
+      if (details?.definition) {
+        try { setFilters(JSON.parse(details.definition)); } catch { /* ignore */ }
+      }
       isServerPagedRef.current = false;
       setIsServerPaged(false);
       pageRef.current = 1;
@@ -268,38 +299,12 @@ export default function TransactionsPage() {
     }
   };
 
-  const handleDeletePinnedFilter = async (id: string) => {
-    try {
-      await filterService.remove(id);
-      setPinnedFilters((prev) => prev.filter((f) => f.id !== id));
-      if (activeTabId === id) {
-        setActiveTabId(null);
-        fetchTransactions(filtersRef.current, true, 0);
-      }
-    } catch { /* ignore */ }
-  };
-
   const handlePageChange = (newPage: number) => {
     pageRef.current = newPage;
     setPage(newPage);
     if (isServerPagedRef.current) {
       fetchTransactions(filtersRef.current, false, newPage - 1);
     }
-  };
-
-  const handleAddToTabs = async () => {
-    try {
-      const all = await filterService.getAll();
-      setAllSavedFilters(all);
-      setShowAddPicker(true);
-    } catch { /* ignore */ }
-  };
-
-  const handlePickFilter = (sf: FilterSummaryDto) => {
-    if (pinnedFilters.length >= 10) return;
-    if (pinnedFilters.some((p) => p.id === sf.id)) return;
-    setPinnedFilters((prev) => [...prev, sf]);
-    setShowAddPicker(false);
   };
 
   const formatDate = (iso: string) => {
@@ -317,78 +322,69 @@ export default function TransactionsPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* ── Cabecera ── */}
-      <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-        {/* Fila 1: título */}
-        <h1 className="flex items-center gap-2.5 text-2xl font-bold text-slate-800">
-          <ArrowLeftRight className="h-6 w-6 text-sky-500" />
-          {t("transactions.title")}
-        </h1>
+      <div className="rounded-xl bg-white px-5 py-4">
+        <PageHeader
+          left={<ArrowLeftRight className="h-8 w-8 text-sky-500" />}
+          title={t("transactions.title")}
+          actions={
+            <div className="flex flex-wrap items-center gap-3 page-header-actions">
+              <button
+                onClick={() => navigate(ROUTES.CATEGORIES)}
+                title={t("nav.categories")}
+                className="group tx-outline-hover-btn self-center"
+              >
+                <svg
+                  className="tx-outline-hover-border"
+                  viewBox="0 0 100 36"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                >
+                  <rect className="tx-outline-hover-bg" x="1" y="1" width="98" height="34" rx="10" />
+                  <rect className="tx-outline-hover-hl" x="1" y="1" width="98" height="34" rx="10" />
+                </svg>
+                <Tag className="relative z-10 h-4 w-4 text-slate-400 transition-colors duration-200 group-hover:text-sky-500" />
+                <span className="relative z-10 hidden sm:inline">{t("nav.categories")}</span>
+              </button>
 
-        {/* Fila 2: acciones */}
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {/* Categorías */}
-          <button
-            onClick={() => navigate(ROUTES.CATEGORIES)}
-            title={t("nav.categories")}
-            className="tx-outline-hover-btn group"
-          >
-            <svg
-              className="tx-outline-hover-border"
-              viewBox="0 0 100 34"
-              preserveAspectRatio="none"
-              aria-hidden
-            >
-              <rect x="1" y="1" width="98" height="32" rx="8" className="tx-outline-hover-bg" />
-              <rect x="1" y="1" width="98" height="32" rx="8" className="tx-outline-hover-hl" />
-            </svg>
-            <Tag className="relative z-10 h-3.5 w-3.5" />
-            <span className="relative z-10 hidden sm:inline">{t("nav.categories")}</span>
-          </button>
+              <button
+                onClick={() => navigate(ROUTES.FILTERS)}
+                title={t("nav.filters")}
+                className="group tx-outline-hover-btn self-center"
+              >
+                <svg
+                  className="tx-outline-hover-border"
+                  viewBox="0 0 100 36"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                >
+                  <rect className="tx-outline-hover-bg" x="1" y="1" width="98" height="34" rx="10" />
+                  <rect className="tx-outline-hover-hl" x="1" y="1" width="98" height="34" rx="10" />
+                </svg>
+                <Bookmark className="relative z-10 h-4 w-4 text-slate-400 transition-colors duration-200 group-hover:text-sky-500" />
+                <span className="relative z-10 hidden sm:inline">{t("nav.filters")}</span>
+              </button>
 
-          {/* Filtros guardados */}
-          <button
-            onClick={() => navigate(ROUTES.FILTERS)}
-            title={t("nav.filters")}
-            className="tx-outline-hover-btn group"
-          >
-            <svg
-              className="tx-outline-hover-border"
-              viewBox="0 0 100 34"
-              preserveAspectRatio="none"
-              aria-hidden
-            >
-              <rect x="1" y="1" width="98" height="32" rx="8" className="tx-outline-hover-bg" />
-              <rect x="1" y="1" width="98" height="32" rx="8" className="tx-outline-hover-hl" />
-            </svg>
-            <Bookmark className="relative z-10 h-3.5 w-3.5" />
-            <span className="relative z-10 hidden sm:inline">{t("nav.filters")}</span>
-          </button>
-
-          {/* Nuevo Gasto + Ingreso — far right */}
-          <div className="ml-auto flex items-center gap-2">
-            <div className="h-5 w-px bg-slate-100" aria-hidden />
-
-            {/* Nuevo Gasto */}
-            <button
-              onClick={() => setExpenseOpen(true)}
-              className="tx-squishy-tech tx-squishy-expense"
-            >
-              <Plus className="tx-squishy-icon relative z-10 h-3.5 w-3.5" />
-              <span className="relative z-10">{t("txPage.addExpense")}</span>
-            </button>
-
-            {/* Nuevo Ingreso */}
-            <button
-              onClick={() => setIncomeOpen(true)}
-              className="tx-squishy-tech tx-squishy-income"
-            >
-              <Plus className="tx-squishy-icon relative z-10 h-3.5 w-3.5" />
-              <span className="relative z-10">{t("txPage.addIncome")}</span>
-            </button>
-          </div>
-        </div>
+              <div className="flex items-center gap-2.5 ml-3">
+                <button
+                  onClick={() => setExpenseOpen(true)}
+                  className="tx-squishy-tech tx-header-cta tx-squishy-expense"
+                >
+                  <Plus className="tx-squishy-icon relative z-10 h-4 w-4" />
+                  <span className="relative z-10">{t("txPage.addExpense")}</span>
+                </button>
+                <button
+                  onClick={() => setIncomeOpen(true)}
+                  className="tx-squishy-tech tx-header-cta tx-squishy-income"
+                >
+                  <Plus className="tx-squishy-icon relative z-10 h-4 w-4" />
+                  <span className="relative z-10">{t("txPage.addIncome")}</span>
+                </button>
+              </div>
+            </div>
+          }
+        />
       </div>
 
       {/* Filters */}
@@ -404,97 +400,84 @@ export default function TransactionsPage() {
       {/* Transaction list — browser-chrome card (tabs built in) */}
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
 
-        {/* Quick Access Tab bar — inside the card */}
-        {pinnedFilters.length > 0 && (
-          <div className="flex items-end border-b border-slate-200 bg-slate-100 px-3 pt-2">
-            {/* Scrollable tabs */}
-            <div className="flex flex-1 items-end gap-0 overflow-x-auto">
-              {pinnedFilters.map((pf) => (
-                <div
-                  key={pf.id}
-                  className={`group relative flex shrink-0 items-center gap-1.5 rounded-t-lg border-l border-r border-t px-3 py-2 text-xs font-medium transition-all duration-200 ${
-                    activeTabId === pf.id
-                      ? "border-slate-200 bg-white text-sky-600 -mb-[1px] z-10"
-                      : "border-slate-200 bg-slate-100 text-slate-500 hover:bg-slate-50 hover:text-slate-700"
-                  }`}
-                >
-                  {deleteMode ? (
-                    <button
-                      onClick={() => handleDeletePinnedFilter(pf.id)}
-                      className="text-red-400 transition hover:text-red-600"
-                      aria-label={`${t("common.delete")} ${pf.name}`}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  ) : null}
+      {/* Quick Access Tab bar — sempre visible, with permanent Base tab */}
+      <div className="flex items-end border-b border-slate-200 bg-slate-200 px-3 pt-2">
+        {/* Scrollable tabs — scrollbar hidden via tx-tab-scroll */}
+        <div className="tx-tab-scroll flex flex-1 items-end gap-0 overflow-x-auto">
+          {/* Base tab — permanent, cannot be removed */}
+          <button
+            onClick={() => { setActiveTabId(null); setFilters({}); fetchTransactions({}, true, 0); }}
+            className={`flex shrink-0 items-center rounded-t-lg border-l border-r border-t px-3 py-2 text-xs font-semibold transition-all duration-200 ${
+              activeTabId === null
+                ? "border-slate-200 bg-white text-sky-600 -mb-[1px] z-10"
+                : "border-slate-200 bg-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+            }`}
+          >
+            {t("txPage.baseTab", "Base")}
+          </button>
 
-                  <button
-                    onClick={() => handleApplySavedFilter(pf.id)}
-                    className="truncate max-w-[120px]"
-                  >
-                    {pf.name}
-                  </button>
-
-                  {!deleteMode && (
-                    <button
-                      onClick={() => handleRemoveTab(pf.id)}
-                      className="text-slate-300 transition hover:text-slate-500"
-                      aria-label={`Quitar ${pf.name}`}
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  )}
-                </div>
-              ))}
+          {pinnedFilters.map((pf) => (
+            <div
+              key={pf.id}
+              className={`group relative flex shrink-0 items-center gap-1.5 rounded-t-lg border-l border-r border-t px-3 py-2 text-xs font-medium transition-all duration-200 ${
+                activeTabId === pf.id
+                  ? "border-slate-200 bg-white text-sky-600 -mb-[1px] z-10"
+                  : "border-slate-200 bg-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+              }`}
+            >
+              <button
+                onClick={() => handleApplySavedFilter(pf.id)}
+                className="truncate max-w-[120px]"
+              >
+                {pf.name}
+              </button>
+              <button
+                onClick={() => handleRemoveTab(pf.id)}
+                className="text-slate-300 transition hover:text-slate-500"
+                aria-label={`Quitar ${pf.name}`}
+              >
+                <X className="h-3 w-3" />
+              </button>
             </div>
+          ))}
+        </div>
 
-            {/* Tab action buttons */}
-            <div className="relative flex items-end gap-1 pb-1 pl-2" ref={addPickerRef}>
-              <button
-                onClick={handleAddToTabs}
-                className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-300 bg-slate-50 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
-                title="Añadir filtro"
-              >
-                <Plus className="h-3.5 w-3.5" />
-              </button>
-              <button
-                onClick={() => setDeleteMode((v) => !v)}
-                className={`flex h-7 w-7 items-center justify-center rounded-md border transition ${
-                  deleteMode
-                    ? "border-red-300 bg-red-50 text-red-500"
-                    : "border-slate-300 bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-                }`}
-                title="Eliminar filtros"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-
-              {showAddPicker && (
-                <div className="absolute right-0 top-full z-20 mt-1 w-52 rounded-lg border border-slate-200 bg-white shadow-lg">
-                  <div className="max-h-48 overflow-auto p-1">
-                    {allSavedFilters.length === 0 ? (
-                      <p className="px-3 py-2 text-xs text-slate-400">{t("filters.noFilters")}</p>
-                    ) : (
-                      allSavedFilters
-                        .filter((sf) => !pinnedFilters.some((p) => p.id === sf.id))
-                        .map((sf) => (
-                          <button
-                            key={sf.id}
-                            onClick={() => handlePickFilter(sf)}
-                            disabled={pinnedFilters.length >= 10}
-                            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-slate-600 transition hover:bg-sky-50 hover:text-sky-700 disabled:opacity-40"
-                          >
-                            <Bookmark className="h-3.5 w-3.5" />
-                            {sf.name}
-                          </button>
-                        ))
-                    )}
-                  </div>
-                </div>
+        {/* Add filter to tabs button */}
+        <div ref={addPickerRef} className="relative ml-1 shrink-0 pb-1.5">
+          <button
+            onClick={() => setShowAddPicker((v) => !v)}
+            className="flex h-6 w-6 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-400 transition hover:border-sky-400 hover:text-sky-500"
+            title={t("txPage.addFilterTab", "Añadir filtro a tabs")}
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
+          {showAddPicker && (
+            <div className="absolute right-0 top-8 z-50 w-48 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
+              {allSavedFilters.filter((sf) => !pinnedFilters.some((pf) => pf.id === sf.id)).length === 0 ? (
+                <p className="px-3 py-2 text-xs text-slate-400">{t("txPage.noMoreFilters", "No hay más filtros")}</p>
+              ) : (
+                <ul>
+                  {allSavedFilters
+                    .filter((sf) => !pinnedFilters.some((pf) => pf.id === sf.id))
+                    .map((sf) => (
+                      <li key={sf.id}>
+                        <button
+                          className="w-full px-3 py-2 text-left text-xs text-slate-700 hover:bg-sky-50 hover:text-sky-600"
+                          onClick={() => {
+                            setPinnedFilters((prev) => [...prev, sf]);
+                            setShowAddPicker(false);
+                          }}
+                        >
+                          {sf.name}
+                        </button>
+                      </li>
+                    ))}
+                </ul>
               )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
+      </div>
         {/* Table header — 6 columns: tipo, concepto, fecha, cuenta, categoría, importe */}
         <div className="hidden grid-cols-12 gap-2 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 sm:grid">
           <div className="col-span-1">{t("transactions.type")}</div>

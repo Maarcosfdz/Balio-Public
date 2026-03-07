@@ -1,18 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Bookmark,
   Check,
   ChevronDown,
   Filter,
   Save,
   Trash2,
-  X,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type {
   AccountSummaryDto,
   CategorySummaryDto,
-  FilterSummaryDto,
   TransactionType,
 } from "@/types";
 import { accountService } from "@/backend/accountService";
@@ -347,12 +344,10 @@ export default function FilterPanel({
 
   const [accounts, setAccounts] = useState<AccountSummaryDto[]>([]);
   const [categories, setCategories] = useState<CategorySummaryDto[]>([]);
-  const [savedFilters, setSavedFilters] = useState<FilterSummaryDto[]>([]);
 
   useEffect(() => {
     accountService.getAll().then(setAccounts).catch(() => {});
     categoryService.getAll().then(setCategories).catch(() => {});
-    filterService.getAll().then(setSavedFilters).catch(() => {});
   }, []);
 
   const [type, setType] = useState<TransactionType | "">("");
@@ -426,18 +421,10 @@ export default function FilterPanel({
   const handleSaveFilter = async (name: string) => {
     const definition = JSON.stringify(buildFilters());
     try {
-      const created = await filterService.create({ name, definition });
-      setSavedFilters((prev) => [...prev, { id: created.id, name: created.name }]);
+      await filterService.create({ name, definition });
       setShowSaveDialog(false);
-    } catch {
-      // no-op
-    }
-  };
-
-  const handleDeleteSavedFilter = async (id: string) => {
-    try {
-      await filterService.remove(id);
-      setSavedFilters((prev) => prev.filter((filter) => filter.id !== id));
+      // Notify other pages that filters changed so they can refresh automatically
+      try { window.dispatchEvent(new CustomEvent("balio:filters-updated")); } catch {}
     } catch {
       // no-op
     }
@@ -465,37 +452,6 @@ export default function FilterPanel({
         }`}
       >
         <div className="mt-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          {savedFilters.length > 0 && (
-            <div className="mb-4">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                {t("txPage.savedFilters")}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {savedFilters.map((savedFilter) => (
-                  <div
-                    key={savedFilter.id}
-                    className="group inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700 transition hover:bg-sky-100"
-                  >
-                    <button
-                      onClick={() => onApplySavedFilter(savedFilter.id)}
-                      className="inline-flex items-center gap-1.5"
-                    >
-                      <Bookmark className="h-3.5 w-3.5" />
-                      {savedFilter.name}
-                    </button>
-                    <button
-                      onClick={() => handleDeleteSavedFilter(savedFilter.id)}
-                      className="ml-1 hidden text-red-400 transition hover:text-red-600 group-hover:inline"
-                      aria-label={`${t("common.delete")} ${savedFilter.name}`}
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <SingleSelectDropdown
               value={type}

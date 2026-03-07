@@ -17,7 +17,6 @@ import {
   Loader2,
   Pencil,
   Plus,
-  RefreshCw,
   Trash2,
   X,
 } from "lucide-react";
@@ -349,6 +348,23 @@ export default function CategoriesPage() {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
+  // Refresh when categories are created/updated elsewhere in the app
+  useEffect(() => {
+    const handler = () => fetchAll();
+    window.addEventListener("balio:categories-updated", handler as EventListener);
+    return () => window.removeEventListener("balio:categories-updated", handler as EventListener);
+  }, [fetchAll]);
+
+  // Auto-refresh 30 s + visibilidad
+  useEffect(() => {
+    const interval = setInterval(fetchAll, 30_000);
+    const handleVis = () => {
+      if (document.visibilityState === "visible") fetchAll();
+    };
+    document.addEventListener("visibilitychange", handleVis);
+    return () => { clearInterval(interval); document.removeEventListener("visibilitychange", handleVis); };
+  }, [fetchAll]);
+
   const handleExpensePageChange = (p: number) => {
     setExpensePage(p);
     fetchExpense(p);
@@ -417,12 +433,7 @@ export default function CategoriesPage() {
           <h1 className="text-3xl font-bold text-slate-800">{t("categories.title")}</h1>
           <p className="mt-1 text-sm text-slate-400">{t("categories.subtitle")}</p>
         </div>
-        <button
-          onClick={fetchAll}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50"
-        >
-          <RefreshCw className="h-4 w-4" />
-        </button>
+        
       </div>
 
       {loading ? (

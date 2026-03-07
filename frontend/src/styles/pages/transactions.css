@@ -39,6 +39,13 @@
   animation: tx-bounce 0.9s ease-in-out infinite;
 }
 
+.tx-header-cta {
+  padding: 0.38rem 0.9rem;
+  border-radius: 0.5rem;
+  font-size: 0.825rem;
+  font-weight: 700;
+}
+
 /* Gasto — rojo pastel / rosáceo suave */
 .tx-squishy-expense {
   background-color: #fecaca;
@@ -47,9 +54,58 @@
   box-shadow: 0 1px 3px 0 rgba(239, 68, 68, 0.18), 0 1px 0 0 #fca5a5;
 }
 
+.tx-header-cta.tx-squishy-expense {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 10px rgba(127,29,29,0.08);
+}
+
 .tx-squishy-expense:hover {
   background-color: #fbb6b6;
   box-shadow: 0 2px 8px -2px rgba(239, 68, 68, 0.28);
+}
+
+.tx-header-cta.tx-squishy-expense:hover {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 6px 18px rgba(127,29,29,0.06);
+}
+
+/*
+ * .btn-delete-icon — clase genérica reutilizable para
+ * cualquier botón icono de eliminar en toda la app.
+ * Reutiliza el mismo estilo que tx-squishy-tech + tx-squishy-expense.
+ * Uso: <button class="btn-delete-icon"><Trash2 class="btn-delete-icon__icon" /></button>
+ */
+.btn-delete-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 0.6rem;
+  border: 1px solid #fca5a5;
+  padding: 0.375rem;
+  background-color: #fecaca;
+  color: #9f1239;
+  box-shadow: 0 1px 3px 0 rgba(239, 68, 68, 0.18), 0 1px 0 0 #fca5a5;
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+.btn-delete-icon::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 10%, rgba(255,255,255,0.35) 45%, transparent 70%);
+  transform: translateX(-120%);
+  animation: tx-shimmer 2.8s linear infinite;
+  pointer-events: none;
+}
+.btn-delete-icon:hover {
+  transform: translateY(1px);
+  filter: brightness(0.96);
+  background-color: #fbb6b6;
+  box-shadow: 0 2px 8px -2px rgba(239, 68, 68, 0.28);
+}
+.btn-delete-icon__icon {
+  position: relative;
+  z-index: 10;
 }
 
 /* Ingreso — verde pastel / esmeralda suave */
@@ -60,9 +116,17 @@
   box-shadow: 0 1px 3px 0 rgba(16, 185, 129, 0.18), 0 1px 0 0 #86efac;
 }
 
+.tx-header-cta.tx-squishy-income {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 10px rgba(20,83,45,0.08);
+}
+
 .tx-squishy-income:hover {
   background-color: #a7f3c0;
   box-shadow: 0 2px 8px -2px rgba(16, 185, 129, 0.28);
+}
+
+.tx-header-cta.tx-squishy-income:hover {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 6px 18px rgba(20,83,45,0.06);
 }
 
 /* ── Botones Categorías / Filtros ─ borde animado con rect redondeado ── */
@@ -231,7 +295,12 @@
   transform: translateY(-1px);
 }
 
-/* ── Botón volver (círculo base que se extiende en pill hover) ───── */
+/*
+ * Botón volver: sin borde. El ::before arranca como círculo sky-blue
+ * del tamaño del icono (siempre visible) y se expande en hover con bounce.
+ * El icono es blanco (sobre círculo azul); el texto es gris oscuro en reposo
+ * y blanco al hacer hover.
+ */
 .tx-back-btn {
   display: inline-flex;
   align-items: center;
@@ -242,38 +311,73 @@
 }
 
 .tx-back-btn-inner {
+  position: relative;
   display: inline-flex;
   align-items: center;
   height: 1.75rem;
   border-radius: 9999px;
-  background: #0ea5e9;
-  color: white;
+  border: none;               /* sin borde */
+  background: transparent;
+  color: #475569;             /* texto slate en reposo */
   font-size: 0.875rem;
   font-weight: 600;
   gap: 0.375rem;
-  max-width: 1.75rem;
+  padding: 0 0.625rem 0 0.375rem;
   overflow: hidden;
-  white-space: nowrap;
-  padding: 0 0.375rem;
-  transition:
-    max-width 400ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    padding 350ms ease,
-    background 300ms ease;
+  transition: color 0.25s ease;
 }
 
-.tx-back-btn:hover .tx-back-btn-inner {
-  max-width: 200px;
-  padding: 0 0.625rem 0 0.375rem;
-  background: #0284c7;
+/* Círculo azul inicial que se expande al hacer hover */
+.tx-back-btn-inner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 1.75rem;             /* círculo del tamaño del icono — siempre visible */
+  background: #0ea5e9;
+  border-radius: 9999px;
+  z-index: 0;
+  transition: width 0.75s cubic-bezier(0.68, -0.55, 0.265, 1.55),
+              background 0.25s ease;
+}
+
+/* Icono y texto por encima del fill */
+.tx-back-btn-inner > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* El icono (svg directo) es blanco sobre el círculo azul */
+.tx-back-btn-inner > svg {
+  color: white;
 }
 
 .tx-back-btn-text {
-  opacity: 0;
-  transition: opacity 200ms ease 100ms;
+  color: #475569;             /* gris oscuro visible sobre fondo transparente */
+  transition: color 0.2s ease;
+}
+
+.tx-back-btn:hover .tx-back-btn-inner {
+  color: white;
+}
+
+.tx-back-btn:hover .tx-back-btn-inner::before {
+  width: 100%;
+  background: #0284c7;
 }
 
 .tx-back-btn:hover .tx-back-btn-text {
-  opacity: 1;
+  color: white;
+}
+
+/* ── Tab bar: ocultar scrollbar nativo ── */
+.tx-tab-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.tx-tab-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 @keyframes tx-bounce {

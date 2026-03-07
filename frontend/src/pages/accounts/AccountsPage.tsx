@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Wallet, Loader2 } from "lucide-react";
+import PageHeader from "@/components/layout/PageHeader";
 import type { AccountSummaryDto } from "@/types";
 import { accountService } from "@/backend/accountService";
 
@@ -94,9 +95,21 @@ export default function AccountsPage() {
     <>
       <div className="space-y-6">
         {/* ── Page header ── */}
-        <div className="flex items-center gap-3">
-          <Wallet className="h-8 w-8 text-sky-500" />
-          <h1 className="text-3xl font-bold text-slate-800">{t("accounts.title")}</h1>
+        <div className="rounded-xl bg-white px-5 py-4">
+          <PageHeader
+            left={<Wallet className="h-8 w-8 text-sky-500" />}
+            title={t("accounts.title")}
+            subtitle={(
+              <div className="flex flex-wrap items-center gap-x-2">
+                <p className="text-sm text-slate-400">{t("accountsPage.totalNetWorth")}</p>
+                <span className="text-slate-300" aria-hidden>·</span>
+                <span className="inline-flex items-center gap-3 rounded-full px-3 py-1 text-sm font-semibold text-slate-700">
+                  <span className="text-xs uppercase tracking-wide text-slate-500">{defaultCurrency}</span>
+                  <span className="tabular-nums">{accounts.length}/{MAX_ACCOUNTS}</span>
+                </span>
+              </div>
+            )}
+          />
         </div>
 
         {/* ── Summary banner ── */}

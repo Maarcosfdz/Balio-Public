@@ -23,6 +23,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
+import PageHeader from "@/components/layout/PageHeader";
 import type { GoalSummaryDto } from "@/types";
 import { goalService } from "@/backend/goalService";
 
@@ -570,54 +571,53 @@ export default function GoalsPage() {
 
       <div className="space-y-6">
         {/* ── Cabecera ── */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="flex items-center gap-2.5 text-3xl font-bold text-slate-800">
-              <Target className="h-8 w-8 text-sky-500" />
-              {t("goals.title")}
-            </h1>
-            <div className="mt-1 flex flex-wrap items-center gap-x-2">
-              <p className="text-sm text-slate-400">{t("goals.subtitle")}</p>
-              {goals.length > 0 && (
-                <>
-                  <span className="text-slate-300" aria-hidden>·</span>
-                  <span className="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">
-                    <span className="text-xs uppercase tracking-wide text-slate-500">{t("goals.totalSaved")}</span>
-                    <span className="tabular-nums">{fmtAmt(totalSaved)}</span>
-                  </span>
-                  <span className="text-slate-300" aria-hidden>·</span>
-                  <span className="text-xs text-slate-400">{goals.length}/{MAX_GOALS} {t("goals.goalsCount")}</span>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {/* Pills con efecto gooey */}
-            <div style={{ filter: "url('#goal-goo')", display: "flex", gap: "0.5rem" }}>
-              <div className="goal-pill goal-pill-active">
-                <span>{t("goals.tabActive")}</span>
-                <span className="goal-pill-badge">{activeGoals.length}</span>
+        <div className="rounded-xl bg-white px-5 py-4">
+          <PageHeader
+            left={<Target className="h-8 w-8 text-sky-500" />}
+            title={t("goals.title")}
+            subtitle={(
+              <div className="flex flex-wrap items-center gap-x-2">
+                <p className="text-sm text-slate-400">{t("goals.subtitle")}</p>
+                {goals.length > 0 && (
+                  <>
+                    <span className="text-slate-300" aria-hidden>·</span>
+                    <span className="inline-flex items-center gap-3 rounded-full px-3 py-1 text-sm font-semibold text-slate-700">
+                      <span className="text-xs uppercase tracking-wide text-slate-500">{t("goals.totalSaved")}</span>
+                      <span className="tabular-nums">{fmtAmt(totalSaved)}</span>
+                    </span>
+                    <span className="text-slate-300" aria-hidden>·</span>
+                    <span className="text-xs text-slate-400">{goals.length}/{MAX_GOALS} {t("goals.goalsCount")}</span>
+                  </>
+                )}
               </div>
-              <div className="goal-pill goal-pill-completed">
-                <span>{t("goals.tabCompleted")}</span>
-                <span className="goal-pill-badge">{completedGoals.length}</span>
+            )}
+            actions={(
+              <div className="flex items-center gap-3 page-header-actions">
+              {/* Pills con efecto gooey */}
+              <div style={{ filter: "url('#goal-goo')", display: "flex", gap: "0.5rem" }}>
+                <div className="goal-pill goal-pill-active">
+                  <span>{t("goals.tabActive")}</span>
+                  <span className="goal-pill-badge">{activeGoals.length}</span>
+                </div>
+                <div className="goal-pill goal-pill-completed">
+                  <span>{t("goals.tabCompleted")}</span>
+                  <span className="goal-pill-badge">{completedGoals.length}</span>
+                </div>
               </div>
-            </div>
 
-            {/* Botón nueva meta */}
-            <button
-              onClick={() => { setEditTarget(null); setFormOpen(true); }}
-              disabled={!canAdd}
-              className="goal-new-btn"
-            >
-              <Plus className="goal-new-icon h-4 w-4" />
-              {t("goals.create")}
-            </button>
-          </div>
+              {/* Botón nueva meta */}
+              <button
+                onClick={() => { setEditTarget(null); setFormOpen(true); }}
+                disabled={!canAdd}
+                className="goal-new-btn"
+              >
+                <Plus className="goal-new-icon h-4 w-4" />
+                {t("goals.create")}
+              </button>
+            </div>
+            )}
+          />
         </div>
-
-
 
         {/* ── Grid de metas ── */}
         {loading ? (

@@ -1,4 +1,4 @@
-import {
+import React, {
   type FormEvent,
   useEffect,
   useRef,
@@ -331,28 +331,35 @@ function PasswordSection({ onToast }: { onToast: (t: Toast) => void }) {
 type NavStyle = "vertical" | "horizontal";
 type Lang = "es" | "en" | "gl";
 
-const LANG_OPTIONS: { code: Lang; label: string; flag: string }[] = [
-  { code: "en", label: "English", flag: "🇬🇧" },
-  { code: "es", label: "Castellano", flag: "🇪🇸" },
-  { code: "gl", label: "Galego", flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿" },
+const LANG_OPTIONS: { code: Lang; label: string; src: string }[] = [
+  { code: "en", label: "English",    src: "/banderaGB.png" },
+  { code: "es", label: "Castellano", src: "/banderasES.png" },
+  { code: "gl", label: "Galego",     src: "/banderasGL.png" },
 ];
 
 function PreferencesSection({ onToast }: { onToast: (t: Toast) => void }) {
   const { t, i18n } = useTranslation();
 
-  const savedNav = (localStorage.getItem("navStyle") as NavStyle | null) ?? "horizontal";
+  const savedNav = (localStorage.getItem("navStyle") as NavStyle | null) ?? "vertical";
   const [nav, setNav] = useState<NavStyle>(savedNav);
-  const [navInitial] = useState<NavStyle>(savedNav);
+  const [navInitial, setNavInitial] = useState<NavStyle>(savedNav);
 
-  const currentLang = (i18n.language?.slice(0, 2) as Lang) ?? "es";
+  const currentLang = (localStorage.getItem("language") as Lang | null)
+    ?? (i18n.language?.slice(0, 2) as Lang)
+    ?? "es";
   const [lang, setLang] = useState<Lang>(currentLang);
-  const [langInitial] = useState<Lang>(currentLang);
+  const [langInitial, setLangInitial] = useState<Lang>(currentLang);
 
   const dirty = nav !== navInitial || lang !== langInitial;
 
   const handleSave = () => {
     localStorage.setItem("navStyle", nav);
+    localStorage.setItem("language", lang);
     i18n.changeLanguage(lang);
+    // Notify AppLayout to re-render with new navStyle
+    window.dispatchEvent(new Event("balio:navstyle-changed"));
+    setNavInitial(nav);
+    setLangInitial(lang);
     onToast({ type: "success", message: t("common.saved") });
   };
 
@@ -409,7 +416,7 @@ function PreferencesSection({ onToast }: { onToast: (t: Toast) => void }) {
         desc={t("settings.langDesc")}
       >
         <div className="flex flex-wrap gap-2">
-          {LANG_OPTIONS.map(({ code, label, flag }) => (
+          {LANG_OPTIONS.map(({ code, label, src }) => (
             <button
               key={code}
               type="button"
@@ -420,7 +427,9 @@ function PreferencesSection({ onToast }: { onToast: (t: Toast) => void }) {
                   : "border-slate-200 text-slate-600 hover:border-sky-300 hover:bg-sky-50"
               }`}
             >
-              <span className="text-base">{flag}</span>
+              <span className="overflow-hidden rounded-sm" style={{ lineHeight: 0 }}>
+                <img src={src} alt={label} className="h-5 w-auto" />
+              </span>
               {label}
               <span
                 className={`ml-1 flex h-4 w-4 items-center justify-center rounded-full border-2 transition ${
@@ -448,7 +457,7 @@ function PreferencesSection({ onToast }: { onToast: (t: Toast) => void }) {
           type="button"
           onClick={handleSave}
           disabled={!dirty}
-          className="rounded-lg bg-gradient-to-r from-sky-500 to-emerald-500 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-40"
+          className="squishy-save-btn"
         >
           {t("settings.savePreferences")}
         </button>

@@ -51,11 +51,13 @@ export default function DateRangePicker({
       const top = spaceBelow >= DROPDOWN_HEIGHT
         ? rect.bottom + 8
         : rect.top - DROPDOWN_HEIGHT - 8;
+      const pickerWidth = 340;
+      const clampedLeft = Math.min(rect.left, Math.max(0, window.innerWidth - pickerWidth - 8));
       setPortalStyle({
         position: "fixed",
         top,
-        left: rect.left,
-        minWidth: Math.max(rect.width, 310),
+        left: clampedLeft,
+        width: pickerWidth,
         zIndex: 9999,
       });
     };

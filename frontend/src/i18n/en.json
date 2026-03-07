@@ -293,6 +293,14 @@
     "amountMax": "Max amount",
     "name": "Description",
     "date": "Date",
-    "noTransactions": "No transactions found"
+    "noTransactions": "No transactions found",
+    "baseTab": "Base",
+    "selectDate": "Select date",
+    "selectDates": "Select date/s",
+    "looseDates": "loose dates",
+    "looseDatesLabel": "Loose dates",
+    "clearLooseDates": "Clear loose dates",
+    "singleDate": "Day",
+    "dateRange": "Range"
   }
 }

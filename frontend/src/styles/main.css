@@ -20,5 +20,6 @@
 
 /* ── Componentes ── */
 @import "./components/buttons.css";
+@import "./components/navigation.css";
 @import "./pages/transactions.css";
 @import "./pages/goals.css";

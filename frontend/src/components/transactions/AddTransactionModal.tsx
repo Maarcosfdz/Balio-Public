@@ -99,7 +99,7 @@ function ModalDatePicker({ date, onChange }: { date: string; onChange: (v: strin
         <div
           id="modal-date-portal"
           style={portalStyle}
-          className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5"
+          className="rounded-xl border border-slate-200 bg-white p-2 shadow-xl ring-1 ring-black/5"
         >
           <div
             style={{
@@ -113,7 +113,7 @@ function ModalDatePicker({ date, onChange }: { date: string; onChange: (v: strin
               onSelect={(d) => { if (d) { onChange(_toISO(d)); setOpen(false); } }}
             />
           </div>
-          <div className="border-t border-slate-100 px-3 pb-2 pt-1">
+          <div className="border-t border-slate-100 px-4 pb-3 pt-2">
             <button
               type="button"
               onClick={() => { onChange(_toISO(new Date())); setOpen(false); }}
@@ -276,12 +276,16 @@ export default function AddTransactionModal({
     }
   }, [open]);
 
-  // Pre-select first account (optional — user can clear it)
+  // Auto-select the default account once per modal open session.
+  // Using a ref prevents re-selecting after the user has deliberately cleared the field.
+  const didAutoSelectRef = useRef(false);
+  useEffect(() => { if (!open) didAutoSelectRef.current = false; }, [open]);
   useEffect(() => {
-    if (accounts.length > 0 && !accountId) {
-      setAccountId(accounts[0].id);
-    }
-  }, [accounts, accountId]);
+    if (!open || didAutoSelectRef.current || accounts.length === 0) return;
+    didAutoSelectRef.current = true;
+    const defaultAcc = accounts.find((a) => a.isDefault) ?? accounts[0];
+    setAccountId(defaultAcc.id);
+  }, [open, accounts]);
 
   const handleAccountChange = (v: string) => {
     setAccountId(v);

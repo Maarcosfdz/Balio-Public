@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Search, Tag } from "lucide-react";
+import { Plus, Search, Tag, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { CategorySummaryDto, TransactionType } from "@/types";
 import { categoryService } from "@/backend/categoryService";
@@ -79,6 +79,8 @@ export default function CategoryCombobox({
       });
       const summary: CategorySummaryDto = { id: created.id, name: created.name };
       onCategoryCreated(summary);
+        // Notify other pages that categories changed so they can refresh automatically
+        try { window.dispatchEvent(new CustomEvent("balio:categories-updated")); } catch {}
       onChange(created.id);
       setQuery("");
       setOpen(false);
@@ -117,6 +119,16 @@ export default function CategoryCombobox({
 
       {open && (
         <ul className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg">
+          {/* Deselect option — shown only when a category is selected */}
+          {value && (
+            <li
+              className="flex cursor-pointer items-center gap-2 border-b border-slate-100 px-3 py-2 text-sm text-slate-400 hover:bg-slate-50"
+              onClick={() => { onChange(null); setQuery(""); setOpen(false); }}
+            >
+              <X className="h-3.5 w-3.5" />
+              {t("txPage.selectCategory")}
+            </li>
+          )}
           {filtered.map((cat) => (
             <li
               key={cat.id}

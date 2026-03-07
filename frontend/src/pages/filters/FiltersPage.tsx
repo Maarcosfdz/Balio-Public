@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
@@ -10,7 +10,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-  RefreshCw,
   Trash2,
   X,
 } from "lucide-react";
@@ -110,9 +109,9 @@ function FilterCard({ filter, onDeleted }: FilterCardProps) {
         ) : (
           <button
             onClick={handleDelete}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-500"
+            className="btn-delete-icon ml-0.5"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="btn-delete-icon__icon h-4 w-4" />
           </button>
         )}
       </div>
@@ -185,6 +184,8 @@ export default function FiltersPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
 
+  const pageRef = useRef(0);
+
   const fetchFilters = useCallback(async (p: number) => {
     setLoading(true);
     try {
@@ -201,8 +202,26 @@ export default function FiltersPage() {
 
   useEffect(() => { fetchFilters(0); }, [fetchFilters]);
 
+  // Refresh when other parts of the app create/update filters
+  useEffect(() => {
+    const handler = () => fetchFilters(pageRef.current);
+    window.addEventListener("balio:filters-updated", handler as EventListener);
+    return () => window.removeEventListener("balio:filters-updated", handler as EventListener);
+  }, [fetchFilters]);
+
+  // Auto-refresh 30 s + visibilidad
+  useEffect(() => {
+    const interval = setInterval(() => fetchFilters(pageRef.current), 30_000);
+    const handleVis = () => {
+      if (document.visibilityState === "visible") fetchFilters(pageRef.current);
+    };
+    document.addEventListener("visibilitychange", handleVis);
+    return () => { clearInterval(interval); document.removeEventListener("visibilitychange", handleVis); };
+  }, [fetchFilters]);
+
   const handlePageChange = (p: number) => {
     setPage(p);
+    pageRef.current = p;
     fetchFilters(p);
   };
 
@@ -237,12 +256,7 @@ export default function FiltersPage() {
           <h1 className="text-3xl font-bold text-slate-800">{t("filters.title")}</h1>
           <p className="mt-1 text-sm text-slate-400">{t("filters.subtitle")}</p>
         </div>
-        <button
-          onClick={() => fetchFilters(page)}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50"
-        >
-          <RefreshCw className="h-4 w-4" />
-        </button>
+        
       </div>
 
       {loading ? (
