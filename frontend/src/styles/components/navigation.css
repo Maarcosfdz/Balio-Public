@@ -74,3 +74,61 @@
   0%, 100% { transform: translateY(0); }
   50%       { transform: translateY(-3px); }
 }
+
+/* Variante compacta para botones de guardar dentro de diálogos */
+.squishy-save-btn--compact {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+}
+
+/* ── Error de campo: slide-down + fade-in ───────────────────────── */
+/*
+ * Usa el componente <FieldError message={...} /> o la clase directamente.
+ * El elemento se monta/desmonta según haya error → la animación se dispara
+ * automáticamente al aparecer.
+ */
+.field-error {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  color: #ef4444;
+  margin-top: 0.25rem;
+  animation: field-error-in 220ms ease-out both;
+}
+
+@keyframes field-error-in {
+  from { opacity: 0; transform: translateY(-5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Variante simple y consistente para botones Guardar en formularios ── */
+.squishy-save-simple {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  font-size: 0.925rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  border: none;
+  color: #ffffff;
+  background: linear-gradient(90deg, #0ea5e9 0%, #10b981 100%);
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.12);
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+
+.squishy-save-simple:hover {
+  transform: translateY(-3px) scale(1.01);
+  box-shadow: 0 10px 20px rgba(16, 185, 129, 0.18);
+  filter: saturate(1.05);
+}
+
+.squishy-save-simple .squishy-save-icon {
+  transition: transform 260ms ease;
+}
+
+.squishy-save-simple:hover .squishy-save-icon {
+  transform: translateY(-2px) rotate(-6deg);
+}
+
+.squishy-save-simple:disabled { opacity: 0.45; transform: none; cursor: not-allowed; }
+

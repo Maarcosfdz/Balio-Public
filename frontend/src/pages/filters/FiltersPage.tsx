@@ -7,9 +7,12 @@ import {
   ArrowRight,
   ArrowUpCircle,
   Bookmark,
+  Check,
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Pencil,
+  SlidersHorizontal,
   Trash2,
   X,
 } from "lucide-react";
@@ -22,9 +25,10 @@ import { ROUTES } from "@/config/routes";
 interface FilterCardProps {
   filter: FilterSummaryDto;
   onDeleted: () => void;
+  onEdited: (id: string, newName: string) => void;
 }
 
-function FilterCard({ filter, onDeleted }: FilterCardProps) {
+function FilterCard({ filter, onDeleted, onEdited }: FilterCardProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -32,6 +36,31 @@ function FilterCard({ filter, onDeleted }: FilterCardProps) {
   const [loadingPreview, setLoadingPreview] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // ── Inline rename ──
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(filter.name);
+  const [saving, setSaving] = useState(false);
+  const editInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing) editInputRef.current?.focus();
+  }, [editing]);
+
+  const handleRename = async () => {
+    const trimmed = editName.trim();
+    if (!trimmed || trimmed === filter.name) { setEditing(false); setEditName(filter.name); return; }
+    setSaving(true);
+    try {
+      await filterService.update(filter.id, { name: trimmed });
+      onEdited(filter.id, trimmed);
+      setEditing(false);
+    } catch {
+      setEditName(filter.name);
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -86,7 +115,35 @@ function FilterCard({ filter, onDeleted }: FilterCardProps) {
           >
             <Bookmark className="h-5 w-5" />
           </div>
-          <p className="font-bold text-slate-800">{filter.name}</p>
+          {editing ? (
+            <div className="flex items-center gap-1">
+              <input
+                ref={editInputRef}
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleRename();
+                  if (e.key === "Escape") { setEditing(false); setEditName(filter.name); }
+                }}
+                className="h-8 rounded-lg border border-sky-300 bg-sky-50/50 px-2 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-sky-100"
+                style={{ width: 160 }}
+              />
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+              ) : (
+                <>
+                  <button onClick={handleRename} className="rounded-md p-0.5 text-emerald-500 hover:bg-emerald-50">
+                    <Check className="h-4 w-4" />
+                  </button>
+                  <button onClick={() => { setEditing(false); setEditName(filter.name); }} className="rounded-md p-0.5 text-slate-400 hover:bg-slate-100">
+                    <X className="h-4 w-4" />
+                  </button>
+                </>
+              )}
+            </div>
+          ) : (
+            <p className="font-bold text-slate-800">{filter.name}</p>
+          )}
         </div>
 
         {confirmDelete ? (
@@ -107,12 +164,32 @@ function FilterCard({ filter, onDeleted }: FilterCardProps) {
             </button>
           </div>
         ) : (
-          <button
-            onClick={handleDelete}
-            className="btn-delete-icon ml-0.5"
-          >
-            <Trash2 className="btn-delete-icon__icon h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-0.5">
+            {!editing && (
+              <>
+                <button
+                  onClick={() => navigate(ROUTES.TRANSACTIONS, { state: { editFilterId: filter.id, filterName: filter.name } })}
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-sky-50 hover:text-sky-600"
+                  title={t("filters.editCriteria", "Editar criterios")}
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => { setEditing(true); setEditName(filter.name); }}
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-sky-50 hover:text-sky-600"
+                  title={t("common.rename", "Renombrar")}
+                >
+                  <Pencil className="btn-edit-icon h-4 w-4" />
+                </button>
+              </>
+            )}
+            <button
+              onClick={handleDelete}
+              className="btn-delete-icon ml-0.5"
+            >
+              <Trash2 className="btn-delete-icon__icon h-4 w-4" />
+            </button>
+          </div>
         )}
       </div>
 
@@ -173,7 +250,7 @@ function FilterCard({ filter, onDeleted }: FilterCardProps) {
 
 // ── Main page ─────────────────────────────────────────────────────────────
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 export default function FiltersPage() {
   const { t } = useTranslation();
@@ -237,6 +314,10 @@ export default function FiltersPage() {
     }
   };
 
+  const handleEdited = (id: string, newName: string) => {
+    setFilters((prev) => prev.map((f) => f.id === id ? { ...f, name: newName } : f));
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -279,6 +360,7 @@ export default function FiltersPage() {
                 key={f.id}
                 filter={f}
                 onDeleted={() => handleDeleted(f.id)}
+                onEdited={handleEdited}
               />
             ))}
           </div>

@@ -19,8 +19,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -174,7 +176,10 @@ public class FilterServiceImpl implements FilterService {
     }
 
     /**
-     * Parses the JSON definition and delegates to {@link TransactionService#findFiltered}.
+     * Parses the JSON definition, delegates the basic fields to
+     * {@link TransactionService#findFiltered} for DB-level filtering, and then
+     * applies in-memory post-filters for the fields the DB query doesn't handle
+     * (multi-category, nameQuery, amountMin/Max, specificDates).
      */
     private List<Transaction> parseAndExecute(UUID userId, String definition) {
         try {
@@ -182,9 +187,14 @@ public class FilterServiceImpl implements FilterService {
 
             TransactionType type = null;
             UUID accountId = null;
-            UUID categoryId = null;
+            UUID dbCategoryId = null;
+            List<UUID> categoryIds = null;
             LocalDate startDate = null;
             LocalDate endDate = null;
+            String nameQuery = null;
+            BigDecimal amountMin = null;
+            BigDecimal amountMax = null;
+            List<LocalDate> specificDates = null;
 
             if (root.has("type") && !root.get("type").isNull()) {
                 type = TransactionType.valueOf(root.get("type").asText());
@@ -192,17 +202,76 @@ public class FilterServiceImpl implements FilterService {
             if (root.has("accountId") && !root.get("accountId").isNull()) {
                 accountId = UUID.fromString(root.get("accountId").asText());
             }
+
+            // Handle both legacy "categoryId" (singular) and "categoryIds" (array)
             if (root.has("categoryId") && !root.get("categoryId").isNull()) {
-                categoryId = UUID.fromString(root.get("categoryId").asText());
+                dbCategoryId = UUID.fromString(root.get("categoryId").asText());
+                categoryIds = List.of(dbCategoryId);
+            } else if (root.has("categoryIds") && root.get("categoryIds").isArray()) {
+                List<UUID> ids = new ArrayList<>();
+                for (JsonNode item : root.get("categoryIds")) {
+                    if (!item.isNull() && !item.asText().isBlank()) {
+                        ids.add(UUID.fromString(item.asText()));
+                    }
+                }
+                if (!ids.isEmpty()) {
+                    categoryIds = ids;
+                    // Use single-category DB filter only when exactly one category selected
+                    dbCategoryId = ids.size() == 1 ? ids.get(0) : null;
+                }
             }
+
             if (root.has("startDate") && !root.get("startDate").isNull()) {
                 startDate = LocalDate.parse(root.get("startDate").asText());
             }
             if (root.has("endDate") && !root.get("endDate").isNull()) {
                 endDate = LocalDate.parse(root.get("endDate").asText());
             }
+            if (root.has("nameQuery") && !root.get("nameQuery").isNull()) {
+                String nq = root.get("nameQuery").asText().trim();
+                if (!nq.isBlank()) nameQuery = nq.toLowerCase();
+            }
+            if (root.has("amountMin") && !root.get("amountMin").isNull()) {
+                amountMin = new BigDecimal(root.get("amountMin").asText());
+            }
+            if (root.has("amountMax") && !root.get("amountMax").isNull()) {
+                amountMax = new BigDecimal(root.get("amountMax").asText());
+            }
+            if (root.has("specificDates") && root.get("specificDates").isArray()) {
+                List<LocalDate> dates = new ArrayList<>();
+                for (JsonNode item : root.get("specificDates")) {
+                    if (!item.isNull() && !item.asText().isBlank()) {
+                        dates.add(LocalDate.parse(item.asText()));
+                    }
+                }
+                if (!dates.isEmpty()) specificDates = dates;
+            }
 
-            return transactionService.findFiltered(userId, type, accountId, categoryId, startDate, endDate);
+            // DB-level filtering (type, accountId, single categoryId, date range)
+            List<Transaction> results = transactionService.findFiltered(
+                    userId, type, accountId, dbCategoryId, startDate, endDate);
+
+            // In-memory post-filtering for fields not supported at DB level
+            final List<UUID> finalCategoryIds =
+                    (categoryIds != null && categoryIds.size() > 1) ? categoryIds : null;
+            final String finalNameQuery = nameQuery;
+            final BigDecimal finalAmountMin = amountMin;
+            final BigDecimal finalAmountMax = amountMax;
+            final List<LocalDate> finalSpecificDates = specificDates;
+
+            return results.stream()
+                    .filter(tx -> finalCategoryIds == null
+                            || (tx.getCategory() != null
+                                    && finalCategoryIds.contains(tx.getCategory().getId())))
+                    .filter(tx -> finalNameQuery == null
+                            || tx.getName().toLowerCase().contains(finalNameQuery))
+                    .filter(tx -> finalAmountMin == null
+                            || tx.getAmount().compareTo(finalAmountMin) >= 0)
+                    .filter(tx -> finalAmountMax == null
+                            || tx.getAmount().compareTo(finalAmountMax) <= 0)
+                    .filter(tx -> finalSpecificDates == null
+                            || finalSpecificDates.contains(tx.getDate()))
+                    .toList();
 
         } catch (JsonProcessingException e) {
             throw new FilterInvalidException("Failed to parse filter definition");

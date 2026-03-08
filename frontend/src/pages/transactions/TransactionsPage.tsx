@@ -39,8 +39,10 @@ export default function TransactionsPage() {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const stateAccountId = (location.state as { accountId?: string; filterId?: string } | null)?.accountId;
-  const stateFilterId  = (location.state as { accountId?: string; filterId?: string } | null)?.filterId;
+  const stateAccountId   = (location.state as { accountId?: string; filterId?: string; editFilterId?: string; filterName?: string } | null)?.accountId;
+  const stateFilterId    = (location.state as { accountId?: string; filterId?: string; editFilterId?: string; filterName?: string } | null)?.filterId;
+  const stateEditFilterId = (location.state as { editFilterId?: string; filterName?: string } | null)?.editFilterId;
+  const stateFilterName   = (location.state as { filterName?: string } | null)?.filterName ?? "";
 
   // ── Data ──
   const [transactions, setTransactions] = useState<TransactionSummaryDto[]>([]);
@@ -50,7 +52,9 @@ export default function TransactionsPage() {
   const [filters, setFilters] = useState<ActiveFilters>(() =>
     stateAccountId ? { accountId: stateAccountId } : {}
   );
-  const [filtersOpen, setFiltersOpen] = useState(!!stateAccountId);
+  const [filtersOpen, setFiltersOpen] = useState(!!stateAccountId || !!stateEditFilterId);
+  /** Populated once when navigating in edit-filter mode; used to seed FilterPanel's internal state */
+  const [editInitialFilters, setEditInitialFilters] = useState<ActiveFilters | undefined>();
 
   // ── Modals ──
   const [expenseOpen, setExpenseOpen] = useState(false);
@@ -166,6 +170,25 @@ export default function TransactionsPage() {
     if (stateFilterId) {
       // Came from FiltersPage "Ver transacciones" button
       handleApplySavedFilter(stateFilterId);
+    } else if (stateEditFilterId) {
+      // Came from FiltersPage "Editar criterios" button
+      setFiltersOpen(true);
+      filterService.getById(stateEditFilterId)
+        .then((details) => {
+          if (details?.definition) {
+            try {
+              const parsed: ActiveFilters = JSON.parse(details.definition);
+              setEditInitialFilters(parsed);
+              setFilters(parsed);
+              fetchTransactions(parsed, true, 0);
+            } catch {
+              fetchTransactions({}, true, 0);
+            }
+          } else {
+            fetchTransactions({}, true, 0);
+          }
+        })
+        .catch(() => fetchTransactions({}, true, 0));
     } else {
       // Restore the last active pinned tab from localStorage, if any
       const storedTab = localStorage.getItem("balio_active_tab");
@@ -389,12 +412,17 @@ export default function TransactionsPage() {
 
       {/* Filters */}
       <FilterPanel
+        key={stateEditFilterId ?? "default"}
         open={filtersOpen}
         onToggle={() => setFiltersOpen((v) => !v)}
         onApply={handleApplyFilters}
         onApplySavedFilter={handleApplySavedFilter}
         defaultAccountId={stateAccountId}
         maxTransactionAmount={maxTxAmount || undefined}
+        initialFilters={editInitialFilters}
+        editFilterId={stateEditFilterId}
+        editFilterName={stateFilterName}
+        onUpdated={() => navigate(ROUTES.FILTERS)}
       />
 
       {/* Transaction list — browser-chrome card (tabs built in) */}

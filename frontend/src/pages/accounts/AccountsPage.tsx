@@ -99,16 +99,6 @@ export default function AccountsPage() {
           <PageHeader
             left={<Wallet className="h-8 w-8 text-sky-500" />}
             title={t("accounts.title")}
-            subtitle={(
-              <div className="flex flex-wrap items-center gap-x-2">
-                <p className="text-sm text-slate-400">{t("accountsPage.totalNetWorth")}</p>
-                <span className="text-slate-300" aria-hidden>·</span>
-                <span className="inline-flex items-center gap-3 rounded-full px-3 py-1 text-sm font-semibold text-slate-700">
-                  <span className="text-xs uppercase tracking-wide text-slate-500">{defaultCurrency}</span>
-                  <span className="tabular-nums">{accounts.length}/{MAX_ACCOUNTS}</span>
-                </span>
-              </div>
-            )}
           />
         </div>
 

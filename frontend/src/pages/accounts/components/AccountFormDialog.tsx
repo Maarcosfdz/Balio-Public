@@ -1,9 +1,10 @@
 import { type FormEvent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Loader2, X } from "lucide-react";
+import { Check, Loader2, Save, X } from "lucide-react";
 import type { AccountDto, AccountSummaryDto, AccountType } from "@/types";
 import { accountService } from "@/backend/accountService";
 import { typeIcon } from "../utils";
+import { FieldError } from "@/components/ui/field-error";
 
 interface AccountFormDialogProps {
   open: boolean;
@@ -144,23 +145,24 @@ export default function AccountFormDialog({ open, initial, onClose, onSaved }: A
             </label>
           )}
 
-          {error && <p className="text-xs text-red-500">{error}</p>}
+          {error && <FieldError message={error} />}
 
           {/* Actions */}
           <div className="flex gap-2 pt-1">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-lg border border-slate-300 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              className="btn-cancel-draw flex-1 justify-center"
             >
               {t("common.cancel")}
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 rounded-lg bg-gradient-to-r from-sky-500 to-emerald-500 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-60"
+              className="squishy-save-simple flex-1 justify-center"
             >
-              {loading ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : t("common.save")}
+              {loading ? <Loader2 className="squishy-save-icon h-4 w-4 animate-spin" /> : <Save className="squishy-save-icon h-4 w-4" />}
+              {t("common.save")}
             </button>
           </div>
         </form>

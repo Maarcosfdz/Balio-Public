@@ -68,7 +68,7 @@ export default function SaveFilterDialog({ open, onClose, onSave }: SaveFilterDi
             <button
               type="button"
               onClick={onClose}
-              className="tx-cancel-draw-btn rounded-lg px-4 py-2 text-sm font-semibold"
+              className="btn-cancel-draw"
             >
               {t("common.cancel")}
             </button>

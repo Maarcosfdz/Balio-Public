@@ -23,10 +23,10 @@ export default function Sidebar() {
           key={key}
           to={path}
           onClick={() => setOpen(false)}
-          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,color,box-shadow] duration-300 ease-in-out ${
             isActive(path)
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              ? "bg-slate-700 text-white shadow-sm"
+              : "text-muted-foreground hover:bg-slate-100 hover:text-slate-800"
           }`}
         >
           <Icon className="h-4 w-4" />

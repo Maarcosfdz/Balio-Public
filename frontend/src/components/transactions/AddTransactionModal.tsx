@@ -362,9 +362,10 @@ export default function AddTransactionModal({
 
   if (!open) return null;
 
-  const accentBg = isExpense ? "bg-red-500" : "bg-emerald-500";
-  const accentText = isExpense ? "text-red-600" : "text-emerald-600";
-  const accentHover = isExpense ? "hover:bg-red-600" : "hover:bg-emerald-600";
+  const accentBg      = isExpense ? "bg-gradient-to-r from-rose-500 to-red-400"    : "bg-gradient-to-r from-sky-500 to-emerald-500";
+  const accentText    = isExpense ? "text-rose-600"     : "text-sky-600";
+  const accentHover   = isExpense ? "hover:opacity-90"  : "hover:opacity-90";
+  const accentBadgeBg = isExpense ? "bg-rose-100"       : "bg-sky-100";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -380,9 +381,7 @@ export default function AddTransactionModal({
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div
-              className={`flex h-9 w-9 items-center justify-center rounded-lg ${
-                isExpense ? "bg-red-100" : "bg-emerald-100"
-              }`}
+              className={`flex h-9 w-9 items-center justify-center rounded-lg ${accentBadgeBg}`}
             >
               <DollarSign className={`h-5 w-5 ${accentText}`} />
             </div>
@@ -512,7 +511,7 @@ export default function AddTransactionModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+              className="btn-cancel-draw"
             >
               {t("common.cancel")}
             </button>

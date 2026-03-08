@@ -37,6 +37,12 @@ interface FilterPanelProps {
   onApplySavedFilter: (filterId: string) => void;
   defaultAccountId?: string;
   maxTransactionAmount?: number;
+  /** Pre-populated from a saved filter when entering edit mode */
+  initialFilters?: ActiveFilters;
+  /** Present when the user is editing an existing saved filter */
+  editFilterId?: string;
+  editFilterName?: string;
+  onUpdated?: () => void;
 }
 
 interface SelectOption {
@@ -339,6 +345,10 @@ export default function FilterPanel({
   onApplySavedFilter,
   defaultAccountId,
   maxTransactionAmount,
+  initialFilters,
+  editFilterId,
+  editFilterName,
+  onUpdated,
 }: FilterPanelProps) {
   const { t } = useTranslation();
 
@@ -350,17 +360,17 @@ export default function FilterPanel({
     categoryService.getAll().then(setCategories).catch(() => {});
   }, []);
 
-  const [type, setType] = useState<TransactionType | "">("");
-  const [accountId, setAccountId] = useState(defaultAccountId ?? "");
-  const [categoryIds, setCategoryIds] = useState<string[]>([]);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [specificDates, setSpecificDates] = useState<string[]>([]);
-  const [nameQuery, setNameQuery] = useState("");
+  const [type, setType] = useState<TransactionType | "">(initialFilters?.type ?? "");
+  const [accountId, setAccountId] = useState(initialFilters?.accountId ?? defaultAccountId ?? "");
+  const [categoryIds, setCategoryIds] = useState<string[]>(initialFilters?.categoryIds ?? []);
+  const [startDate, setStartDate] = useState(initialFilters?.startDate ?? "");
+  const [endDate, setEndDate] = useState(initialFilters?.endDate ?? "");
+  const [specificDates, setSpecificDates] = useState<string[]>(initialFilters?.specificDates ?? []);
+  const [nameQuery, setNameQuery] = useState(initialFilters?.nameQuery ?? "");
 
   const baseMax = Math.max(maxTransactionAmount ?? 0, 100);
-  const [amountMin, setAmountMin] = useState(0);
-  const [amountMax, setAmountMax] = useState(baseMax);
+  const [amountMin, setAmountMin] = useState(initialFilters?.amountMin ?? 0);
+  const [amountMax, setAmountMax] = useState(initialFilters?.amountMax ?? baseMax);
 
   const filteredCategories = type
     ? categories.filter((category) => !category.type || category.type === type)
@@ -423,10 +433,29 @@ export default function FilterPanel({
     try {
       await filterService.create({ name, definition });
       setShowSaveDialog(false);
-      // Notify other pages that filters changed so they can refresh automatically
       try { window.dispatchEvent(new CustomEvent("balio:filters-updated")); } catch {}
     } catch {
       // no-op
+    }
+  };
+
+  const [updating, setUpdating] = useState(false);
+  const [updateOk, setUpdateOk] = useState(false);
+
+  const handleUpdateFilter = async () => {
+    if (!editFilterId) return;
+    setUpdating(true);
+    const definition = JSON.stringify(buildFilters());
+    try {
+      await filterService.update(editFilterId, { definition });
+      try { window.dispatchEvent(new CustomEvent("balio:filters-updated")); } catch {}
+      setUpdateOk(true);
+      setTimeout(() => setUpdateOk(false), 2000);
+      onUpdated?.();
+    } catch {
+      // no-op
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -525,13 +554,28 @@ export default function FilterPanel({
               {t("txPage.applyFilters")}
             </button>
 
-            <button
-              onClick={() => setShowSaveDialog(true)}
-              className="tx-save-draw-btn inline-flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium"
-            >
-              <Save className="h-4 w-4" />
-              {t("txPage.saveFilter")}
-            </button>
+            {editFilterId ? (
+              <button
+                onClick={handleUpdateFilter}
+                disabled={updating}
+                className="tx-save-draw-btn inline-flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium disabled:opacity-60"
+              >
+                <Save className="h-4 w-4" />
+                {updateOk
+                  ? t("common.saved", "¡Guardado!")
+                  : updating
+                    ? t("common.saving", "Guardando…")
+                    : `${t("common.update", "Actualizar")} "${editFilterName}"`}
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowSaveDialog(true)}
+                className="tx-save-draw-btn inline-flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium"
+              >
+                <Save className="h-4 w-4" />
+                {t("txPage.saveFilter")}
+              </button>
+            )}
 
             <button
               onClick={handleClear}

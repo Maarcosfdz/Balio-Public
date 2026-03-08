@@ -46,25 +46,25 @@
   font-weight: 700;
 }
 
-/* Gasto — rojo pastel / rosáceo suave */
+/* Gasto — rosa muy suave, alineado con el tema de la app */
 .tx-squishy-expense {
-  background-color: #fecaca;
-  border-color: #fca5a5;
-  color: #9f1239;
-  box-shadow: 0 1px 3px 0 rgba(239, 68, 68, 0.18), 0 1px 0 0 #fca5a5;
+  background-color: #fff1f2;
+  border-color: #fecdd3;
+  color: #be123c;
+  box-shadow: 0 1px 3px 0 rgba(190, 18, 60, 0.10), 0 1px 0 0 #fecdd3;
 }
 
 .tx-header-cta.tx-squishy-expense {
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 10px rgba(127,29,29,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.30), 0 4px 10px rgba(190,18,60,0.07);
 }
 
 .tx-squishy-expense:hover {
-  background-color: #fbb6b6;
-  box-shadow: 0 2px 8px -2px rgba(239, 68, 68, 0.28);
+  background-color: #ffe4e6;
+  box-shadow: 0 2px 8px -2px rgba(190, 18, 60, 0.18);
 }
 
 .tx-header-cta.tx-squishy-expense:hover {
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 6px 18px rgba(127,29,29,0.06);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 6px 18px rgba(190,18,60,0.06);
 }
 
 /*
@@ -108,25 +108,25 @@
   z-index: 10;
 }
 
-/* Ingreso — verde pastel / esmeralda suave */
+/* Ingreso — azul cielo muy suave, alineado con el tema sky de la app */
 .tx-squishy-income {
-  background-color: #bbf7d0;
-  border-color: #86efac;
-  color: #14532d;
-  box-shadow: 0 1px 3px 0 rgba(16, 185, 129, 0.18), 0 1px 0 0 #86efac;
+  background-color: #f0f9ff;
+  border-color: #bae6fd;
+  color: #0369a1;
+  box-shadow: 0 1px 3px 0 rgba(3, 105, 161, 0.10), 0 1px 0 0 #bae6fd;
 }
 
 .tx-header-cta.tx-squishy-income {
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 10px rgba(20,83,45,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.30), 0 4px 10px rgba(3,105,161,0.07);
 }
 
 .tx-squishy-income:hover {
-  background-color: #a7f3c0;
-  box-shadow: 0 2px 8px -2px rgba(16, 185, 129, 0.28);
+  background-color: #e0f2fe;
+  box-shadow: 0 2px 8px -2px rgba(3, 105, 161, 0.18);
 }
 
 .tx-header-cta.tx-squishy-income:hover {
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 6px 18px rgba(20,83,45,0.06);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 6px 18px rgba(3,105,161,0.06);
 }
 
 /* ── Botones Categorías / Filtros ─ borde animado con rect redondeado ── */

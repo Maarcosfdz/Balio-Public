@@ -14,6 +14,7 @@ import {
   Minus,
   Pencil,
   Plus,
+  Save,
   Sparkles,
   Star,
   Target,
@@ -26,6 +27,7 @@ import {
 import PageHeader from "@/components/layout/PageHeader";
 import type { GoalSummaryDto } from "@/types";
 import { goalService } from "@/backend/goalService";
+import { FieldError } from "@/components/ui/field-error";
 
 const MAX_GOALS = 40;
 
@@ -49,25 +51,21 @@ function isCompleted(g: GoalSummaryDto) {
   return g.currentAmount >= g.targetAmount;
 }
 
-/** Espectro completo: rojo → naranja → violeta → azul → verde */
+/**
+ * 0-50 %: rojo vivo → naranja (evita el amarillo-verde feo de HSL)
+ * 50-100%: azul cielo → esmeralda (del tema de la app)
+ */
 function progressColor(p: number): string {
-  if (p >= 100) return "#16a34a"; // green-600 ✓ completada
-  if (p >= 93)  return "#22c55e"; // green-500
-  if (p >= 86)  return "#10b981"; // emerald-500
-  if (p >= 79)  return "#0d9488"; // teal-600
-  if (p >= 72)  return "#06b6d4"; // cyan-500
-  if (p >= 65)  return "#0ea5e9"; // sky-500
-  if (p >= 58)  return "#2563eb"; // blue-600
-  if (p >= 51)  return "#3b82f6"; // blue-500
-  if (p >= 44)  return "#6366f1"; // indigo-500
-  if (p >= 37)  return "#8b5cf6"; // violet-500
-  if (p >= 30)  return "#a855f7"; // purple-500
-  if (p >= 23)  return "#c026d3"; // fuchsia-600
-  if (p >= 16)  return "#fbbf24"; // amber-400
-  if (p >= 10)  return "#fb923c"; // orange-400
-  if (p >= 5)   return "#f97316"; // orange-500
-  if (p >= 2)   return "#ef4444"; // red-500
-  return "#dc2626";               // red-600
+  const clamped = Math.min(100, Math.max(0, p));
+  if (clamped < 50) {
+    // hsl 0° (rojo) → 30° (naranja): tonos cálidos y vivos
+    const hue = (clamped / 50) * 30;
+    return `hsl(${hue}, 85%, 52%)`;
+  } else {
+    // hsl 205° (sky) → 155° (esmeralda): azul→azul-verdoso
+    const hue = 205 - ((clamped - 50) / 50) * 50;
+    return `hsl(${hue}, 75%, 44%)`;
+  }
 }
 
 // Random-but-stable icon set per goal (seeded by id)
@@ -238,23 +236,29 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
     initial ? String(initial.targetAmount) : ""
   );
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [amountError, setAmountError] = useState("");
+  const [formError, setFormError] = useState("");
 
   useEffect(() => {
     if (open) {
       setName(initial?.name ?? "");
       setTargetAmount(initial ? String(initial.targetAmount) : "");
-      setError("");
+      setNameError("");
+      setAmountError("");
+      setFormError("");
     }
   }, [open, initial]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const amount = parseFloat(targetAmount);
-    if (!name.trim()) { setError(t("goals.errors.nameRequired")); return; }
-    if (isNaN(amount) || amount <= 0) { setError(t("goals.errors.amountPositive")); return; }
+    setNameError("");
+    setAmountError("");
+    setFormError("");
+    if (!name.trim()) { setNameError(t("goals.errors.nameRequired")); return; }
+    if (isNaN(amount) || amount <= 0) { setAmountError(t("goals.errors.amountPositive")); return; }
     setLoading(true);
-    setError("");
     try {
       if (isEdit && initial) {
         await goalService.update(initial.id, { name: name.trim(), targetAmount: amount });
@@ -263,7 +267,7 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
       }
       onSaved();
     } catch {
-      setError(t("common.error"));
+      setFormError(t("common.error"));
     } finally {
       setLoading(false);
     }
@@ -296,6 +300,7 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
               className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
               required
             />
+            <FieldError message={nameError} />
           </div>
 
           <div className="space-y-1">
@@ -313,24 +318,26 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
               />
               <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">EUR</span>
             </div>
+            <FieldError message={amountError} />
           </div>
 
-          {error && <p className="text-xs text-red-500">{error}</p>}
+          {formError && <FieldError message={formError} />}
 
           <div className="flex gap-2 pt-1">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-lg border border-slate-300 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              className="btn-cancel-draw flex-1 justify-center"
             >
               {t("common.cancel")}
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 rounded-lg bg-gradient-to-r from-sky-500 to-emerald-500 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-60"
+              className="squishy-save-simple flex-1 justify-center"
             >
-              {loading ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : t("common.save")}
+              {loading ? <Loader2 className="squishy-save-icon h-4 w-4 animate-spin" /> : <Save className="squishy-save-icon h-4 w-4" />}
+              {t("common.save")}
             </button>
           </div>
         </form>
@@ -406,7 +413,7 @@ function GoalCard({ goal, onEdit, onDelete, onUpdated }: GoalCardProps) {
               onClick={() => onEdit(goal)}
               className="rounded-lg p-1.5 text-slate-400 hover:bg-sky-50 hover:text-sky-600"
             >
-              <Pencil className="h-4 w-4" />
+              <Pencil className="btn-edit-icon h-4 w-4" />
             </button>
             <button
               onClick={() => onDelete(goal)}
@@ -581,8 +588,8 @@ export default function GoalsPage() {
                 {goals.length > 0 && (
                   <>
                     <span className="text-slate-300" aria-hidden>·</span>
-                    <span className="inline-flex items-center gap-3 rounded-full px-3 py-1 text-sm font-semibold text-slate-700">
-                      <span className="text-xs uppercase tracking-wide text-slate-500">{t("goals.totalSaved")}</span>
+                    <span className="inline-flex items-center gap-2 rounded-2xl bg-slate-800 px-3 py-1 text-sm font-semibold text-white shadow-sm">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{t("goals.totalSaved")}</span>
                       <span className="tabular-nums">{fmtAmt(totalSaved)}</span>
                     </span>
                     <span className="text-slate-300" aria-hidden>·</span>

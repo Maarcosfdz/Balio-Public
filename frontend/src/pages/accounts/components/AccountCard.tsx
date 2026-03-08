@@ -95,7 +95,7 @@ export default function AccountCard({
               onClick={() => onEdit(account)}
               className="rounded-lg p-1.5 text-slate-400 transition hover:bg-sky-50 hover:text-sky-600"
             >
-              <Pencil className="h-4 w-4" />
+              <Pencil className="btn-edit-icon h-4 w-4" />
             </button>
             <button
               onClick={() => onDelete(account)}

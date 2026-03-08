@@ -13,6 +13,7 @@ import {
   LayoutTemplate,
   Loader2,
   Pencil,
+  Save,
   ShieldAlert,
   User,
   X,
@@ -20,6 +21,7 @@ import {
 import { authService } from "@/backend/authService";
 import { useAuth } from "@/contexts/AuthContext";
 import { ToastBanner, type ToastBannerTone } from "@/components/ui/toast-banner";
+import { FieldError } from "@/components/ui/field-error";
 
 // ── Small reusable components ────────────────────────────────────────────
 
@@ -98,6 +100,8 @@ function ProfileSection({ onToast }: { onToast: (t: Toast) => void }) {
   const [email, setEmail] = useState(user?.email ?? "");
   const [editingField, setEditingField] = useState<"nickname" | "email" | null>(null);
   const [loading, setLoading] = useState(false);
+  const [nicknameError, setNicknameError] = useState("");
+  const [emailError, setEmailError] = useState("");
 
   useEffect(() => {
     setNickname(user?.nickname ?? "");
@@ -111,8 +115,10 @@ function ProfileSection({ onToast }: { onToast: (t: Toast) => void }) {
   const handleSave = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    if (!nickname.trim()) { onToast({ type: "error", message: t("settings.errors.nicknameRequired") }); return; }
-    if (!email.trim()) { onToast({ type: "error", message: t("settings.errors.emailRequired") }); return; }
+    setNicknameError("");
+    setEmailError("");
+    if (!nickname.trim()) { setNicknameError(t("settings.errors.nicknameRequired")); return; }
+    if (!email.trim()) { setEmailError(t("settings.errors.emailRequired")); return; }
     setLoading(true);
     try {
       const updated = await authService.updateProfile(user.id, {
@@ -125,9 +131,9 @@ function ProfileSection({ onToast }: { onToast: (t: Toast) => void }) {
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
       if (status === 409) {
-        onToast({ type: "error", message: t("settings.errors.emailInUse") });
+        setEmailError(t("settings.errors.emailInUse"));
       } else {
-        onToast({ type: "error", message: t("common.error") });
+        setEmailError(t("common.error"));
       }
     } finally {
       setLoading(false);
@@ -146,6 +152,7 @@ function ProfileSection({ onToast }: { onToast: (t: Toast) => void }) {
     value: string;
     setter: (v: string) => void;
     type: string;
+    fieldError: string;
   }> = [
     {
       key: "nickname",
@@ -153,6 +160,7 @@ function ProfileSection({ onToast }: { onToast: (t: Toast) => void }) {
       value: nickname,
       setter: setNickname,
       type: "text",
+      fieldError: nicknameError,
     },
     {
       key: "email",
@@ -160,13 +168,14 @@ function ProfileSection({ onToast }: { onToast: (t: Toast) => void }) {
       value: email,
       setter: setEmail,
       type: "email",
+      fieldError: emailError,
     },
   ];
 
   return (
     <SectionCard icon={<User className="h-5 w-5" />} title={t("settings.profileDetails")}>
       <form onSubmit={handleSave} className="space-y-4">
-        {fields.map(({ key, label, value, setter, type }) => (
+        {fields.map(({ key, label, value, setter, type, fieldError }) => (
           <div key={key} className="space-y-1">
             <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
               {label}
@@ -194,9 +203,10 @@ function ProfileSection({ onToast }: { onToast: (t: Toast) => void }) {
                     : "border-slate-200 text-slate-400 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600"
                 }`}
               >
-                <Pencil className="h-4 w-4" />
+                <Pencil className="btn-edit-icon h-4 w-4" />
               </button>
             </div>
+            <FieldError message={fieldError} />
           </div>
         ))}
 
@@ -205,16 +215,16 @@ function ProfileSection({ onToast }: { onToast: (t: Toast) => void }) {
             <button
               type="button"
               onClick={handleReset}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
+              className="btn-cancel-draw"
             >
               {t("common.cancel")}
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-sky-500 to-emerald-500 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-60"
+              className="squishy-save-simple"
             >
-              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {loading ? <Loader2 className="squishy-save-icon h-4 w-4 animate-spin" /> : <Save className="squishy-save-icon h-4 w-4" />}
               {t("common.save")}
             </button>
           </div>
@@ -234,12 +244,16 @@ function PasswordSection({ onToast }: { onToast: (t: Toast) => void }) {
   const [newPwd, setNewPwd] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
   const [loading, setLoading] = useState(false);
+  const [oldPwdError, setOldPwdError] = useState("");
+  const [confirmPwdError, setConfirmPwdError] = useState("");
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    setOldPwdError("");
+    setConfirmPwdError("");
     if (newPwd !== confirmPwd) {
-      onToast({ type: "error", message: t("settings.errors.passwordMismatch") });
+      setConfirmPwdError(t("settings.errors.passwordMismatch"));
       return;
     }
     setLoading(true);
@@ -253,9 +267,9 @@ function PasswordSection({ onToast }: { onToast: (t: Toast) => void }) {
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
       if (status === 401 || status === 400) {
-        onToast({ type: "error", message: t("settings.errors.wrongPassword") });
+        setOldPwdError(t("settings.errors.wrongPassword"));
       } else {
-        onToast({ type: "error", message: t("common.error") });
+        setOldPwdError(t("common.error"));
       }
     } finally {
       setLoading(false);
@@ -274,6 +288,7 @@ function PasswordSection({ onToast }: { onToast: (t: Toast) => void }) {
             {t("settings.oldPassword")}
           </label>
           <PasswordInput id="oldPwd" value={oldPwd} onChange={setOldPwd} required />
+          <FieldError message={oldPwdError} />
         </div>
         <div className="space-y-1">
           <label htmlFor="newPwd" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -286,15 +301,16 @@ function PasswordSection({ onToast }: { onToast: (t: Toast) => void }) {
             {t("settings.confirmPassword")}
           </label>
           <PasswordInput id="confirmPwd" value={confirmPwd} onChange={setConfirmPwd} required />
+          <FieldError message={confirmPwdError} />
         </div>
 
         <div className="flex justify-end pt-1">
           <button
             type="submit"
             disabled={loading || !oldPwd || !newPwd || !confirmPwd}
-            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-sky-500 to-emerald-500 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-60"
+            className="squishy-save-simple"
           >
-            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+            {loading ? <Loader2 className="squishy-save-icon h-4 w-4 animate-spin" /> : <Save className="squishy-save-icon h-4 w-4" />}
             {t("common.save")}
           </button>
         </div>
@@ -542,7 +558,7 @@ function DangerSection() {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="flex-1 rounded-lg border border-slate-300 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                className="btn-cancel-draw flex-1 justify-center"
               >
                 {t("common.cancel")}
               </button>

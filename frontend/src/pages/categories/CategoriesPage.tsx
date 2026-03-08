@@ -129,7 +129,7 @@ function CategoryChip({ category, onDeleted, onRenamed }: CategoryChipProps) {
               onClick={() => setEditing(true)}
               className="rounded-md p-1 text-slate-400 hover:bg-sky-50 hover:text-sky-600"
             >
-              <Pencil className="h-3.5 w-3.5" />
+              <Pencil className="btn-edit-icon h-3.5 w-3.5" />
             </button>
             <button
               onClick={handleDelete}
