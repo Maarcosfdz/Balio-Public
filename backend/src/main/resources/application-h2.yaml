@@ -15,3 +15,19 @@ spring:
 
   flyway:
     enabled: false
+
+  h2:
+    console:
+      enabled: true          # accessible at /h2-console when running with h2 profile
+      path: /h2-console
+
+project:
+  jwt:
+    signKey: H2DevKey_ForLocalDevelopmentOnly_NotForProduction_AtLeast256Bits!!
+    accessExpirationMinutes: 15
+    refreshExpirationDays: 7
+
+logging:
+  level:
+    org.flywaydb: WARN
+    org.springframework.boot.autoconfigure: WARN

@@ -27,8 +27,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import javax.management.InstanceNotFoundException;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -538,25 +542,27 @@ class TransactionControllerTest {
             Transaction tx2 = new Transaction("B", VALID_AMOUNT, VALID_DATE, TransactionType.INCOME, testUser);
             setFieldViaReflection(tx2, "id", UUID.randomUUID());
 
-            when(transactionService.findAllByUserId(USER_ID)).thenReturn(List.of(tx1, tx2));
+            when(transactionService.findPaged(eq(USER_ID), isNull(), isNull(), isNull(), isNull(), isNull(), eq(0), eq(20)))
+                    .thenReturn(new PageImpl<>(new ArrayList<>(List.of(tx1, tx2)), PageRequest.of(0, 20), 2));
 
             mockMvc.perform(get("/transaction")
                             .requestAttr("userId", USER_ID))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$", hasSize(2)))
-                    .andExpect(jsonPath("$[0].name", is("A")))
-                    .andExpect(jsonPath("$[1].name", is("B")));
+                    .andExpect(jsonPath("$.content", hasSize(2)))
+                    .andExpect(jsonPath("$.content[0].name", is("A")))
+                    .andExpect(jsonPath("$.content[1].name", is("B")));
         }
 
         @Test
         @DisplayName("200 – returns empty list when no transactions")
         void shouldReturn200_whenNoTransactions() throws Exception {
-            when(transactionService.findAllByUserId(USER_ID)).thenReturn(List.of());
+            when(transactionService.findPaged(eq(USER_ID), isNull(), isNull(), isNull(), isNull(), isNull(), eq(0), eq(20)))
+                    .thenReturn(new PageImpl<>(new ArrayList<>(), PageRequest.of(0, 20), 0));
 
             mockMvc.perform(get("/transaction")
                             .requestAttr("userId", USER_ID))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$", hasSize(0)));
+                    .andExpect(jsonPath("$.content", hasSize(0)));
         }
 
         @Test
@@ -565,28 +571,28 @@ class TransactionControllerTest {
             Transaction tx = new Transaction("Filtered", VALID_AMOUNT, VALID_DATE, TransactionType.EXPENSE, testUser);
             setFieldViaReflection(tx, "id", UUID.randomUUID());
 
-            when(transactionService.findFiltered(USER_ID, TransactionType.EXPENSE, null, null, null, null))
-                    .thenReturn(List.of(tx));
+            when(transactionService.findPaged(eq(USER_ID), eq(TransactionType.EXPENSE), isNull(), isNull(), isNull(), isNull(), eq(0), eq(20)))
+                    .thenReturn(new PageImpl<>(new ArrayList<>(List.of(tx)), PageRequest.of(0, 20), 1));
 
             mockMvc.perform(get("/transaction")
                             .requestAttr("userId", USER_ID)
                             .param("type", "EXPENSE"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$", hasSize(1)))
-                    .andExpect(jsonPath("$[0].name", is("Filtered")));
+                    .andExpect(jsonPath("$.content", hasSize(1)))
+                    .andExpect(jsonPath("$.content[0].name", is("Filtered")));
         }
 
         @Test
         @DisplayName("200 – returns filtered results when accountId filter provided")
         void shouldReturn200_whenAccountIdFilterProvided() throws Exception {
-            when(transactionService.findFiltered(USER_ID, null, ACCOUNT_ID, null, null, null))
-                    .thenReturn(List.of());
+            when(transactionService.findPaged(eq(USER_ID), isNull(), eq(ACCOUNT_ID), isNull(), isNull(), isNull(), eq(0), eq(20)))
+                    .thenReturn(new PageImpl<>(new ArrayList<>(), PageRequest.of(0, 20), 0));
 
             mockMvc.perform(get("/transaction")
                             .requestAttr("userId", USER_ID)
                             .param("accountId", ACCOUNT_ID.toString()))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$", hasSize(0)));
+                    .andExpect(jsonPath("$.content", hasSize(0)));
         }
 
         @Test
@@ -595,15 +601,15 @@ class TransactionControllerTest {
             LocalDate start = LocalDate.of(2025, 1, 1);
             LocalDate end = LocalDate.of(2025, 12, 31);
 
-            when(transactionService.findFiltered(USER_ID, null, null, null, start, end))
-                    .thenReturn(List.of());
+            when(transactionService.findPaged(eq(USER_ID), isNull(), isNull(), isNull(), eq(start), eq(end), eq(0), eq(20)))
+                    .thenReturn(new PageImpl<>(new ArrayList<>(), PageRequest.of(0, 20), 0));
 
             mockMvc.perform(get("/transaction")
                             .requestAttr("userId", USER_ID)
                             .param("startDate", "2025-01-01")
                             .param("endDate", "2025-12-31"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$", hasSize(0)));
+                    .andExpect(jsonPath("$.content", hasSize(0)));
         }
 
         @Test
@@ -612,8 +618,8 @@ class TransactionControllerTest {
             LocalDate start = LocalDate.of(2025, 1, 1);
             LocalDate end = LocalDate.of(2025, 12, 31);
 
-            when(transactionService.findFiltered(USER_ID, TransactionType.EXPENSE, ACCOUNT_ID, CATEGORY_ID, start, end))
-                    .thenReturn(List.of());
+            when(transactionService.findPaged(eq(USER_ID), eq(TransactionType.EXPENSE), eq(ACCOUNT_ID), eq(CATEGORY_ID), eq(start), eq(end), eq(0), eq(20)))
+                    .thenReturn(new PageImpl<>(new ArrayList<>(), PageRequest.of(0, 20), 0));
 
             mockMvc.perform(get("/transaction")
                             .requestAttr("userId", USER_ID)
@@ -623,7 +629,7 @@ class TransactionControllerTest {
                             .param("startDate", "2025-01-01")
                             .param("endDate", "2025-12-31"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$", hasSize(0)));
+                    .andExpect(jsonPath("$.content", hasSize(0)));
         }
     }
 

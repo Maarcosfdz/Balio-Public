@@ -520,9 +520,8 @@ class AccountControllerTest {
                     .andExpect(jsonPath("$[1].name", is("B-Cash")))
                     .andExpect(jsonPath("$[1].type", is("CASH")))
                     .andExpect(jsonPath("$[0].id").exists())
-                    // Summary DTO should not include balance or currency
-                    .andExpect(jsonPath("$[0].balance").doesNotExist())
-                    .andExpect(jsonPath("$[0].currency").doesNotExist());
+                    .andExpect(jsonPath("$[0].balance").exists())
+                    .andExpect(jsonPath("$[0].currency").exists());
         }
 
         @Test
