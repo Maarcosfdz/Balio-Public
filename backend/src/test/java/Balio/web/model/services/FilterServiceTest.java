@@ -4,6 +4,7 @@ import Balio.web.enums.TransactionType;
 import Balio.web.model.Exceptions.FilterInvalidException;
 import Balio.web.model.Exceptions.InstanceNotFoundException;
 import Balio.web.model.Exceptions.UserNotFoundException;
+import Balio.web.model.entities.Category;
 import Balio.web.model.entities.Filter;
 import Balio.web.model.entities.FilterDao;
 import Balio.web.model.entities.Transaction;
@@ -495,6 +496,237 @@ class FilterServiceTest {
 
             assertThrows(InstanceNotFoundException.class,
                     () -> filterService.applyFilter(USER_ID, FILTER_ID));
+        }
+
+        // ── in-memory post-filters ────────────────────────────────────────
+
+        @Test
+        @DisplayName("filters by single categoryId in categoryIds array")
+        void filtersBySingleCategoryId() throws InstanceNotFoundException {
+            UUID catId = UUID.randomUUID();
+            String def = "{\"categoryIds\":[\"" + catId + "\"]}";
+            Filter f = new Filter("Cat", def, user);
+            setFieldViaReflection(f, "id", FILTER_ID);
+
+            Category cat = new Category("Food", TransactionType.EXPENSE, user);
+            setFieldViaReflection(cat, "id", catId);
+
+            Transaction match = new Transaction("Match", new BigDecimal("10"), LocalDate.now(), TransactionType.EXPENSE, user);
+            match.setCategory(cat);
+
+            Category other = new Category("Other", TransactionType.EXPENSE, user);
+            setFieldViaReflection(other, "id", UUID.randomUUID());
+            Transaction noMatch = new Transaction("NoMatch", new BigDecimal("10"), LocalDate.now(), TransactionType.EXPENSE, user);
+            noMatch.setCategory(other);
+
+            when(filterDao.findByIdAndUserId(FILTER_ID, USER_ID)).thenReturn(Optional.of(f));
+            when(transactionService.findFiltered(USER_ID, null, null, catId, null, null))
+                    .thenReturn(List.of(match, noMatch));
+
+            List<Transaction> result = filterService.applyFilter(USER_ID, FILTER_ID);
+            assertEquals(2, result.size()); // single-cat → delegated to DB, no in-memory filter
+        }
+
+        @Test
+        @DisplayName("filters by multiple categoryIds in-memory")
+        void filtersByMultipleCategoryIds() throws InstanceNotFoundException {
+            UUID catId1 = UUID.randomUUID();
+            UUID catId2 = UUID.randomUUID();
+            String def = "{\"categoryIds\":[\"" + catId1 + "\",\"" + catId2 + "\"]}";
+            Filter f = new Filter("MultiCat", def, user);
+            setFieldViaReflection(f, "id", FILTER_ID);
+
+            Category cat1 = new Category("Food", TransactionType.EXPENSE, user);
+            setFieldViaReflection(cat1, "id", catId1);
+            Category cat2 = new Category("Transport", TransactionType.EXPENSE, user);
+            setFieldViaReflection(cat2, "id", catId2);
+            Category cat3 = new Category("Other", TransactionType.EXPENSE, user);
+            setFieldViaReflection(cat3, "id", UUID.randomUUID());
+
+            Transaction t1 = new Transaction("A", new BigDecimal("10"), LocalDate.now(), TransactionType.EXPENSE, user);
+            t1.setCategory(cat1);
+            Transaction t2 = new Transaction("B", new BigDecimal("20"), LocalDate.now(), TransactionType.EXPENSE, user);
+            t2.setCategory(cat2);
+            Transaction t3 = new Transaction("C", new BigDecimal("30"), LocalDate.now(), TransactionType.EXPENSE, user);
+            t3.setCategory(cat3);
+
+            when(filterDao.findByIdAndUserId(FILTER_ID, USER_ID)).thenReturn(Optional.of(f));
+            when(transactionService.findFiltered(USER_ID, null, null, null, null, null))
+                    .thenReturn(List.of(t1, t2, t3));
+
+            List<Transaction> result = filterService.applyFilter(USER_ID, FILTER_ID);
+
+            assertEquals(2, result.size());
+            assertTrue(result.contains(t1));
+            assertTrue(result.contains(t2));
+        }
+
+        @Test
+        @DisplayName("filters by nameQuery in-memory (case-insensitive)")
+        void filtersByNameQuery() throws InstanceNotFoundException {
+            String def = "{\"nameQuery\":\"grocery\"}";
+            Filter f = new Filter("Name", def, user);
+            setFieldViaReflection(f, "id", FILTER_ID);
+
+            Transaction match = new Transaction("Grocery Store", new BigDecimal("50"), LocalDate.now(), TransactionType.EXPENSE, user);
+            Transaction noMatch = new Transaction("Gas Station", new BigDecimal("40"), LocalDate.now(), TransactionType.EXPENSE, user);
+
+            when(filterDao.findByIdAndUserId(FILTER_ID, USER_ID)).thenReturn(Optional.of(f));
+            when(transactionService.findFiltered(USER_ID, null, null, null, null, null))
+                    .thenReturn(List.of(match, noMatch));
+
+            List<Transaction> result = filterService.applyFilter(USER_ID, FILTER_ID);
+
+            assertEquals(1, result.size());
+            assertEquals("Grocery Store", result.get(0).getName());
+        }
+
+        @Test
+        @DisplayName("blank nameQuery is ignored (no filtering)")
+        void blankNameQueryIgnored() throws InstanceNotFoundException {
+            String def = "{\"nameQuery\":\"   \"}";
+            Filter f = new Filter("Blank", def, user);
+            setFieldViaReflection(f, "id", FILTER_ID);
+
+            Transaction t1 = new Transaction("A", new BigDecimal("10"), LocalDate.now(), TransactionType.EXPENSE, user);
+            Transaction t2 = new Transaction("B", new BigDecimal("20"), LocalDate.now(), TransactionType.EXPENSE, user);
+
+            when(filterDao.findByIdAndUserId(FILTER_ID, USER_ID)).thenReturn(Optional.of(f));
+            when(transactionService.findFiltered(USER_ID, null, null, null, null, null))
+                    .thenReturn(List.of(t1, t2));
+
+            List<Transaction> result = filterService.applyFilter(USER_ID, FILTER_ID);
+            assertEquals(2, result.size());
+        }
+
+        @Test
+        @DisplayName("filters by amountMin in-memory")
+        void filtersByAmountMin() throws InstanceNotFoundException {
+            String def = "{\"amountMin\":\"50.00\"}";
+            Filter f = new Filter("Min", def, user);
+            setFieldViaReflection(f, "id", FILTER_ID);
+
+            Transaction t1 = new Transaction("Cheap", new BigDecimal("30.00"), LocalDate.now(), TransactionType.EXPENSE, user);
+            Transaction t2 = new Transaction("Exact", new BigDecimal("50.00"), LocalDate.now(), TransactionType.EXPENSE, user);
+            Transaction t3 = new Transaction("Expensive", new BigDecimal("100.00"), LocalDate.now(), TransactionType.EXPENSE, user);
+
+            when(filterDao.findByIdAndUserId(FILTER_ID, USER_ID)).thenReturn(Optional.of(f));
+            when(transactionService.findFiltered(USER_ID, null, null, null, null, null))
+                    .thenReturn(List.of(t1, t2, t3));
+
+            List<Transaction> result = filterService.applyFilter(USER_ID, FILTER_ID);
+
+            assertEquals(2, result.size());
+            assertTrue(result.contains(t2));
+            assertTrue(result.contains(t3));
+        }
+
+        @Test
+        @DisplayName("filters by amountMax in-memory")
+        void filtersByAmountMax() throws InstanceNotFoundException {
+            String def = "{\"amountMax\":\"50.00\"}";
+            Filter f = new Filter("Max", def, user);
+            setFieldViaReflection(f, "id", FILTER_ID);
+
+            Transaction t1 = new Transaction("Cheap", new BigDecimal("30.00"), LocalDate.now(), TransactionType.EXPENSE, user);
+            Transaction t2 = new Transaction("Exact", new BigDecimal("50.00"), LocalDate.now(), TransactionType.EXPENSE, user);
+            Transaction t3 = new Transaction("Expensive", new BigDecimal("100.00"), LocalDate.now(), TransactionType.EXPENSE, user);
+
+            when(filterDao.findByIdAndUserId(FILTER_ID, USER_ID)).thenReturn(Optional.of(f));
+            when(transactionService.findFiltered(USER_ID, null, null, null, null, null))
+                    .thenReturn(List.of(t1, t2, t3));
+
+            List<Transaction> result = filterService.applyFilter(USER_ID, FILTER_ID);
+
+            assertEquals(2, result.size());
+            assertTrue(result.contains(t1));
+            assertTrue(result.contains(t2));
+        }
+
+        @Test
+        @DisplayName("filters by specificDates in-memory")
+        void filtersBySpecificDates() throws InstanceNotFoundException {
+            LocalDate target = LocalDate.of(2025, 3, 15);
+            String def = "{\"specificDates\":[\"" + target + "\"]}";
+            Filter f = new Filter("Dates", def, user);
+            setFieldViaReflection(f, "id", FILTER_ID);
+
+            Transaction tMatch = new Transaction("Match", new BigDecimal("10"), target, TransactionType.EXPENSE, user);
+            Transaction tNoMatch = new Transaction("NoMatch", new BigDecimal("20"), target.plusDays(1), TransactionType.EXPENSE, user);
+
+            when(filterDao.findByIdAndUserId(FILTER_ID, USER_ID)).thenReturn(Optional.of(f));
+            when(transactionService.findFiltered(USER_ID, null, null, null, null, null))
+                    .thenReturn(List.of(tMatch, tNoMatch));
+
+            List<Transaction> result = filterService.applyFilter(USER_ID, FILTER_ID);
+
+            assertEquals(1, result.size());
+            assertEquals("Match", result.get(0).getName());
+        }
+
+        @Test
+        @DisplayName("empty categoryIds array is ignored")
+        void emptyCategoryIdsIgnored() throws InstanceNotFoundException {
+            String def = "{\"categoryIds\":[]}";
+            Filter f = new Filter("Empty", def, user);
+            setFieldViaReflection(f, "id", FILTER_ID);
+
+            Transaction t1 = new Transaction("A", new BigDecimal("10"), LocalDate.now(), TransactionType.EXPENSE, user);
+
+            when(filterDao.findByIdAndUserId(FILTER_ID, USER_ID)).thenReturn(Optional.of(f));
+            when(transactionService.findFiltered(USER_ID, null, null, null, null, null))
+                    .thenReturn(List.of(t1));
+
+            List<Transaction> result = filterService.applyFilter(USER_ID, FILTER_ID);
+            assertEquals(1, result.size());
+        }
+
+        @Test
+        @DisplayName("multi-filter: nameQuery + amountMin combined")
+        void combinedFilters() throws InstanceNotFoundException {
+            String def = "{\"nameQuery\":\"rent\",\"amountMin\":\"500.00\"}";
+            Filter f = new Filter("Combined", def, user);
+            setFieldViaReflection(f, "id", FILTER_ID);
+
+            Transaction t1 = new Transaction("Rent Payment", new BigDecimal("800.00"), LocalDate.now(), TransactionType.EXPENSE, user);
+            Transaction t2 = new Transaction("Rent cheap", new BigDecimal("100.00"), LocalDate.now(), TransactionType.EXPENSE, user);
+            Transaction t3 = new Transaction("Groceries", new BigDecimal("700.00"), LocalDate.now(), TransactionType.EXPENSE, user);
+
+            when(filterDao.findByIdAndUserId(FILTER_ID, USER_ID)).thenReturn(Optional.of(f));
+            when(transactionService.findFiltered(USER_ID, null, null, null, null, null))
+                    .thenReturn(List.of(t1, t2, t3));
+
+            List<Transaction> result = filterService.applyFilter(USER_ID, FILTER_ID);
+
+            assertEquals(1, result.size());
+            assertEquals("Rent Payment", result.get(0).getName());
+        }
+
+        @Test
+        @DisplayName("transaction with null category is excluded when categoryIds filter active")
+        void nullCategoryExcluded() throws InstanceNotFoundException {
+            UUID catId1 = UUID.randomUUID();
+            UUID catId2 = UUID.randomUUID();
+            String def = "{\"categoryIds\":[\"" + catId1 + "\",\"" + catId2 + "\"]}";
+            Filter f = new Filter("Multi", def, user);
+            setFieldViaReflection(f, "id", FILTER_ID);
+
+            Transaction withCat = new Transaction("A", new BigDecimal("10"), LocalDate.now(), TransactionType.EXPENSE, user);
+            Category cat = new Category("Food", TransactionType.EXPENSE, user);
+            setFieldViaReflection(cat, "id", catId1);
+            withCat.setCategory(cat);
+
+            Transaction noCat = new Transaction("B", new BigDecimal("20"), LocalDate.now(), TransactionType.EXPENSE, user);
+            // no category set
+
+            when(filterDao.findByIdAndUserId(FILTER_ID, USER_ID)).thenReturn(Optional.of(f));
+            when(transactionService.findFiltered(USER_ID, null, null, null, null, null))
+                    .thenReturn(List.of(withCat, noCat));
+
+            List<Transaction> result = filterService.applyFilter(USER_ID, FILTER_ID);
+
+            assertEquals(1, result.size());
+            assertEquals("A", result.get(0).getName());
         }
     }
 

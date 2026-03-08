@@ -181,6 +181,8 @@
                         <exclude>Balio/web/config/ScheduledTasks.class</exclude>
                         <exclude>Balio/web/config/JacksonConfig.class</exclude>
                         <exclude>Balio/web/config/OpenApiConfig.class</exclude>
+                        <exclude>Balio/web/config/SecurityConfig.class</exclude>
+                        <exclude>Balio/web/config/SecurityEnvironmentValidator.class</exclude>
                         <exclude>Balio/web/model/Exceptions/*.class</exclude>
                     </excludes>
                 </configuration>

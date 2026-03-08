@@ -229,7 +229,9 @@ public class FilterServiceImpl implements FilterService {
             }
             if (root.has("nameQuery") && !root.get("nameQuery").isNull()) {
                 String nq = root.get("nameQuery").asText().trim();
-                if (!nq.isBlank()) nameQuery = nq.toLowerCase();
+                if (!nq.isBlank()) {
+                    nameQuery = nq.toLowerCase();
+                }
             }
             if (root.has("amountMin") && !root.get("amountMin").isNull()) {
                 amountMin = new BigDecimal(root.get("amountMin").asText());
@@ -240,11 +242,13 @@ public class FilterServiceImpl implements FilterService {
             if (root.has("specificDates") && root.get("specificDates").isArray()) {
                 List<LocalDate> dates = new ArrayList<>();
                 for (JsonNode item : root.get("specificDates")) {
-                    if (!item.isNull() && !item.asText().isBlank()) {
-                        dates.add(LocalDate.parse(item.asText()));
+                        if (!item.isNull() && !item.asText().isBlank()) {
+                            dates.add(LocalDate.parse(item.asText()));
+                        }
                     }
-                }
-                if (!dates.isEmpty()) specificDates = dates;
+                    if (!dates.isEmpty()) {
+                        specificDates = dates;
+                    }
             }
 
             // DB-level filtering (type, accountId, single categoryId, date range)

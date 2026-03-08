@@ -4,6 +4,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
+import java.time.Instant;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("LoginRateLimiter unit tests")
@@ -137,5 +142,92 @@ class LoginRateLimiterTest {
         }
         assertThat(limiter.isBlocked("blocked@test.com")).isTrue();
         assertThat(limiter.isBlocked("clean@test.com")).isFalse();
+    }
+
+    // ─── cleanupExpired ────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("cleanupExpired: removes entry whose blockedUntil is in the past")
+    void cleanupExpired_removesExpiredBlockEntry() throws Exception {
+        // Block the user
+        for (int i = 0; i < 5; i++) {
+            limiter.registerFailedAttempt("user@test.com");
+        }
+        // Force blockedUntil to the past via reflection
+        setBlockedUntilInPast("user@test.com");
+
+        limiter.cleanupExpired();
+
+        // After cleanup the entry is gone so isBlocked should return false
+        assertThat(limiter.isBlocked("user@test.com")).isFalse();
+    }
+
+    @Test
+    @DisplayName("cleanupExpired: removes entry with very old lastAttempt (no block set)")
+    void cleanupExpired_removesStaleEntry() throws Exception {
+        limiter.registerFailedAttempt("user@test.com"); // 1 attempt, no block
+        // Move lastAttempt far into the past
+        setLastAttemptFarPast("user@test.com");
+
+        limiter.cleanupExpired();
+
+        // Entry should be gone
+        assertThat(limiter.getRemainingBlockSeconds("user@test.com")).isZero();
+    }
+
+    @Test
+    @DisplayName("cleanupExpired: does not remove an active (not expired) block")
+    void cleanupExpired_keepsActiveBlock() {
+        for (int i = 0; i < 5; i++) {
+            limiter.registerFailedAttempt("user@test.com");
+        }
+
+        limiter.cleanupExpired();
+
+        assertThat(limiter.isBlocked("user@test.com")).isTrue();
+    }
+
+    // ─── isBlocked with expired block ─────────────────────────────────────────
+
+    @Test
+    @DisplayName("isBlocked: returns false and cleans up when block period has expired")
+    void isBlocked_expiredBlock_returnsFalseAndRemoves() throws Exception {
+        for (int i = 0; i < 5; i++) {
+            limiter.registerFailedAttempt("user@test.com");
+        }
+        // Force expiry
+        setBlockedUntilInPast("user@test.com");
+
+        assertThat(limiter.isBlocked("user@test.com")).isFalse();
+        // After returning false the entry should be removed → remaining = 0
+        assertThat(limiter.getRemainingBlockSeconds("user@test.com")).isZero();
+    }
+
+    // ─── helpers ──────────────────────────────────────────────────────────────
+
+    @SuppressWarnings("unchecked")
+    private void setBlockedUntilInPast(String email) throws Exception {
+        Field attemptsField = LoginRateLimiter.class.getDeclaredField("attempts");
+        attemptsField.setAccessible(true);
+        ConcurrentHashMap<String, ?> map = (ConcurrentHashMap<String, ?>) attemptsField.get(limiter);
+        Object info = map.get(email.toLowerCase().trim());
+        if (info != null) {
+            Field blockedUntil = info.getClass().getDeclaredField("blockedUntil");
+            blockedUntil.setAccessible(true);
+            blockedUntil.set(info, Instant.now().minusSeconds(3600));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void setLastAttemptFarPast(String email) throws Exception {
+        Field attemptsField = LoginRateLimiter.class.getDeclaredField("attempts");
+        attemptsField.setAccessible(true);
+        ConcurrentHashMap<String, ?> map = (ConcurrentHashMap<String, ?>) attemptsField.get(limiter);
+        Object info = map.get(email.toLowerCase().trim());
+        if (info != null) {
+            Field lastAttempt = info.getClass().getDeclaredField("lastAttempt");
+            lastAttempt.setAccessible(true);
+            lastAttempt.set(info, Instant.now().minusSeconds(3600));
+        }
     }
 }
