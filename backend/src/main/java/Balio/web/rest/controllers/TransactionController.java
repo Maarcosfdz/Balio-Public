@@ -2,7 +2,6 @@ package Balio.web.rest.controllers;
 
 import java.net.URI;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
