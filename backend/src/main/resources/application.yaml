@@ -1,8 +1,10 @@
+CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:3000
+
 spring:
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:balio}
     username: ${DB_USERNAME:balio}
-    password: ${DB_PASSWORD:baliopass}
+    password: ${DB_PASSWORD:baliopass}   # Override via env var in production
 
   flyway:
     enabled: true
@@ -16,7 +18,7 @@ spring:
 
 project:
   jwt:
-    signKey: ${JWT_SIGN_KEY:YourSuperSecretKeyForJWTMustBeAtLeast256BitsLong!!}
+    signKey: ${JWT_SIGN_KEY:DevOnlyKey_MustBeAtLeast256Bits_ChangeInProduction!!}  # Override via env var in production
     accessExpirationMinutes: ${JWT_ACCESS_EXPIRATION:15}
     refreshExpirationDays: ${JWT_REFRESH_EXPIRATION_DAYS:7}
 

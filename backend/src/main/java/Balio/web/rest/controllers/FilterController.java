@@ -14,6 +14,9 @@ import Balio.web.rest.dtos.TransactionSummaryDto;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -57,6 +60,16 @@ public class FilterController {
         return filterService.findAllByUserId(userId).stream()
                 .map(filterConverter::toSummaryDto)
                 .toList();
+    }
+
+    // ── LIST paged (summary) ──────────────────────────────────────
+
+    @GetMapping("/paged")
+    public Page<FilterSummaryDto> getPagedFilters(
+            @RequestAttribute UUID userId,
+            @PageableDefault(size = 20, sort = "name") Pageable pageable) {
+        return filterService.findPagedByUserId(userId, pageable)
+                .map(filterConverter::toSummaryDto);
     }
 
     // ── DETAIL ───────────────────────────────────────────────────────────

@@ -139,15 +139,13 @@ public class TransactionServiceImpl implements TransactionService {
             throw new IllegalArgumentException("Amount must be positive");
         }
 
-        Account account = null;
-
-        if ( accountId != null ) {
-            account = accountDao
-                    .findByIdAndUserId(accountId, userId)
-                    .orElseThrow(() -> new AccountInvalidException("Account not linked"));
-        } else {
-            throw new AccountInvalidException("Account not found");
+        if ( accountId == null ) {
+            throw new AccountInvalidException("Account is required");
         }
+
+        Account account = accountDao
+                .findByIdAndUserId(accountId, userId)
+                .orElseThrow(() -> new AccountInvalidException("Account not linked"));
 
         if ( date == null ) {
             date = LocalDate.now();
@@ -173,7 +171,7 @@ public class TransactionServiceImpl implements TransactionService {
         transactionDao.save(transaction);
 
         // Update account balance
-        if ( affects ) {
+        if ( affects && account != null ) {
             applyBalance(account, amount, type, false);
         }
 
@@ -216,5 +214,16 @@ public class TransactionServiceImpl implements TransactionService {
     public List<Transaction> findFiltered(UUID userId, TransactionType type, UUID accountId,
                                           UUID categoryId, LocalDate startDate, LocalDate endDate) {
         return transactionDao.findFiltered(userId, type, accountId, categoryId, startDate, endDate);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<Transaction> findPaged(
+            UUID userId, TransactionType type, UUID accountId, UUID categoryId,
+            LocalDate startDate, LocalDate endDate, int page, int size) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
+                page, size,
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "date"));
+        return transactionDao.findFilteredPaged(userId, type, accountId, categoryId, startDate, endDate, pageable);
     }
 }

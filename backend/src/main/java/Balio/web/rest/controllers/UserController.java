@@ -62,6 +62,12 @@ public class UserController {
             @Validated({UserDto.AllValidations.class}) @RequestBody UserDto userDto)
             throws DuplicateInstanceException, IncorrectLoginException {
 
+        // Rate limit signup to prevent registration spam
+        if (loginRateLimiter.isBlocked(userDto.getEmail())) {
+            long remaining = loginRateLimiter.getRemainingBlockSeconds(userDto.getEmail());
+            throw new IncorrectLoginException("Too many attempts. Try again in " + remaining + " seconds.");
+        }
+
         userService.signUp(userDto.getNickname(), userDto.getEmail(), userDto.getPassword());
 
         User user = userService.login(userDto.getEmail(), userDto.getPassword());

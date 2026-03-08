@@ -47,8 +47,10 @@ public class AccountController {
 
     @GetMapping
     public List<AccountSummaryDto> getAllAccounts(@RequestAttribute UUID userId) {
-        return accountService.findAllByUserId(userId).stream()
-                .map(accountConverter::toSummaryDto)
+        List<Account> accounts = accountService.findAllByUserId(userId);
+        UUID defaultAccountId = accountService.getDefaultAccountId(userId);
+        return accounts.stream()
+                .map(a -> accountConverter.toSummaryDto(a, defaultAccountId))
                 .toList();
     }
 

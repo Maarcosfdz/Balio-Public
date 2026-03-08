@@ -1,0 +1,189 @@
+/* ── Goals page ─────────────────────────────────────────────────────── */
+
+/* ── Botón "Nueva meta" ─ estilo squishy-tech con gradiente de metas ── */
+/*
+ * Técnica squishy: capas de box-shadow crean el efecto 3D "bloque apilado".
+ * En hover translateY(4px) baja el botón para simular que lo presionas.
+ * Shimmer: pseudo-elemento que recorre el botón de izq→der en loop.
+ */
+.goal-new-btn {
+  position: relative;
+  font-size: 0.825rem;
+  padding: 0.38rem 0.9rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 180ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: linear-gradient(90deg, #0ea5e9 0%, #10b981 100%);
+  color: white;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 10px rgba(15,23,42,0.08);
+}
+
+/* Shimmer */
+.goal-new-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.10), transparent);
+  transform: translateX(-100%);
+  animation: goal-shimmer 2.5s linear infinite;
+  pointer-events: none;
+}
+
+/* Hover: baja el botón y reduce la sombra */
+.goal-new-btn:hover {
+  transform: translateY(1px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 6px 18px rgba(15,23,42,0.06);
+}
+
+.goal-new-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.goal-new-btn:hover .goal-new-icon {
+  animation: goal-bounce 0.85s ease-in-out 1;
+}
+
+@keyframes goal-shimmer {
+  100% { transform: translateX(100%); }
+}
+
+@keyframes goal-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-3px); }
+}
+
+/* ── Status pills con efecto gooey ─────────────────────────────────── */
+/*
+ * Colores neutros (slate) para no competir con el progreso de las metas.
+ * El efecto gooey viene del SVG <filter id="goal-goo"> en el DOM.
+ */
+.goal-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.38em 0.85em;
+  border-radius: 1.5em;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: default;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  z-index: 0;
+  transition: color 350ms ease;
+}
+
+.goal-pill::before,
+.goal-pill::after {
+  width: 2.2em;
+  height: 1.7em;
+  position: absolute;
+  content: "";
+  display: block;
+  border-radius: 50%;
+  transition: transform 700ms ease;
+  transform: scale(0);
+  z-index: -1;
+  background: #e2e8f0;
+}
+
+.goal-pill::before { top: -28%; left: 18%; }
+.goal-pill::after  { bottom: -28%; right: 18%; }
+
+.goal-pill:hover::before,
+.goal-pill:hover::after { transform: scale(1); }
+
+.goal-pill-active  { background: #f8fafc; border-color: #e6e9ef; color: #475569; }
+.goal-pill-active::before,
+.goal-pill-active::after  { background: #edf2f7; }
+
+.goal-pill-completed { background: #f8fafc; border-color: #e6e9ef; color: #475569; }
+.goal-pill-completed::before,
+.goal-pill-completed::after { background: #edf2f7; }
+
+/* Badge número */
+.goal-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25em;
+  height: 1.25em;
+  border-radius: 1em;
+  background: #94a3b8;
+  color: white;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0 0.25em;
+}
+.goal-pill-active   .goal-pill-badge { background: #94a3b8; }
+.goal-pill-completed .goal-pill-badge { background: #94a3b8; }
+
+/* ── Botones ajuste anchos (/- en la tarjeta) ──────────────────────── */
+/*
+ * `flex-1` lo aplica el componente vía clase utilitaria `w-full`.
+ * El color (border, bg, text) se pasa dinámicamente como inline style
+ * desde el componente para que coincida con el color de progreso.
+ */
+.goal-adjust-wide {
+  height: 2.375rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e6e9ef;
+  background: #ffffff;
+  color: #111827;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: filter 150ms ease, transform 120ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+}
+
+.goal-adjust-wide:hover {
+  filter: brightness(1.08) saturate(1.15);
+  transform: translateY(-1px);
+}
+
+.goal-adjust-wide:active {
+  filter: brightness(0.94);
+  transform: translateY(1px);
+}
+
+/* ── Botones redondos (fallback, por si se usan sin wide) ──────────── */
+.goal-adjust-btn-add {
+  display: flex; align-items: center; justify-content: center;
+  width: 2.5rem; height: 2.5rem;
+  border-radius: 50%;
+  border: 1px solid #e6e9ef;
+  background: #ffffff; color: #065f46;
+  cursor: pointer;
+  transition: background 150ms, border-color 150ms, transform 120ms;
+  flex-shrink: 0;
+}
+.goal-adjust-btn-add:hover {
+  background: #f8fafc; transform: scale(1.04);
+}
+
+.goal-adjust-btn-withdraw {
+  display: flex; align-items: center; justify-content: center;
+  width: 2.5rem; height: 2.5rem;
+  border-radius: 50%;
+  border: 1px solid #e6e9ef;
+  background: #ffffff; color: #86181d;
+  cursor: pointer;
+  transition: background 150ms, border-color 150ms, transform 120ms;
+  flex-shrink: 0;
+}
+.goal-adjust-btn-withdraw:hover {
+  background: #f8fafc; transform: scale(1.04);
+}

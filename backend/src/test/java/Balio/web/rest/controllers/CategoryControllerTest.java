@@ -381,9 +381,8 @@ class CategoryControllerTest {
                     .andExpect(jsonPath("$", hasSize(2)))
                     .andExpect(jsonPath("$[0].name", is("A-Category")))
                     .andExpect(jsonPath("$[1].name", is("B-Category")))
-                    // Summary DTO only has id and name
                     .andExpect(jsonPath("$[0].id").exists())
-                    .andExpect(jsonPath("$[0].type").doesNotExist());
+                    .andExpect(jsonPath("$[0].type").exists());
         }
 
         @Test

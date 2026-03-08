@@ -35,6 +35,15 @@ public class TransactionConverter {
         dto.setType(transaction.getType());
         dto.setAmount(transaction.getAmount());
         dto.setDate(transaction.getDate());
+
+        if (transaction.getAccount() != null) {
+            dto.setAccountName(transaction.getAccount().getName());
+        }
+        if (transaction.getCategory() != null) {
+            dto.setCategoryName(transaction.getCategory().getName());
+            dto.setCategoryId(transaction.getCategory().getId().toString());
+        }
+
         return dto;
     }
 }

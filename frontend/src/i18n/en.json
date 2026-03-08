@@ -1,0 +1,402 @@
+{
+  "main": {
+    "badge": "Your personal finance manager",
+    "titleLine1": "Manage your",
+    "titleHighlight": "personal finances",
+    "titleLine2": "simply.",
+    "subtitle": "Take control of your financial life with our comprehensive suite of tools designed for simplicity and power. Track, save, and grow your wealth.",
+    "trusted": "Trusted by students and professionals",
+    "featuresTitle": "Everything you need to master your money",
+    "featuresSubtitle": "Balio provides a complete 360-degree view of your financial health with intuitive tools.",
+    "feat1Title": "Smart Transactions",
+    "feat1Desc": "Automatically categorize expenses and visualize your spending habits over time.",
+    "feat2Title": "Account Management",
+    "feat2Desc": "Keep track of all your accounts (cash, bank...) and check your balance in real time.",
+    "feat3Title": "Savings Goals",
+    "feat3Desc": "Set financial objectives and track your progress to reach them ahead of schedule.",
+    "feat4Title": "Deep Analytics",
+    "feat4Desc": "Visualize your wealth growth and discover trends with interactive charts.",
+    "ctaTitle": "Ready to take control?",
+    "ctaSubtitle": "Join others who are mastering their money with Balio today.",
+    "ctaButton": "Get Started for Free",
+    "allRights": "All rights reserved."
+  },
+  "common": {
+    "save": "Save",
+    "saved": "Preferences saved",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "confirm": "Confirm",
+    "loading": "Loading...",
+    "optional": "optional",
+    "noResults": "No results",
+    "error": "An error occurred",
+    "success": "Operation completed successfully",
+    "currency": "€"
+  },
+  "auth": {
+    "login": "Log in",
+    "signUp": "Sign up",
+    "loginTitle": "Welcome Back",
+    "signUpTitle": "Create Account",
+    "loginSubtitle": "Enter your details to access your dashboard.",
+    "signUpSubtitle": "Start managing your finances today.",
+    "logout": "Log out",
+    "email": "Email",
+    "password": "Password",
+    "nickname": "Username",
+    "confirmPassword": "Confirm password",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "loginError": "Incorrect email or password",
+    "signUpError": "Could not create account",
+    "passwordRequirements": "At least 8 characters, 1 uppercase, 1 lowercase and 1 number",
+    "forgotPassword": "Forgot password?",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "submitting": "Submitting...",
+    "close": "Close",
+    "sessionWarningTitle": "Your session is about to expire",
+    "sessionWarningMessage": "If you remain inactive, your session will close automatically in {{minutes}} minute(s).",
+    "sessionWarningAction": "Stay signed in",
+    "sessionExpiredTitle": "Your session has expired",
+    "sessionExpiredMessage": "We could not renew your session. To keep using the application, please log in again.",
+    "sessionExpiredInactive": "You have been inactive for too long. For security reasons, your session has been closed and you need to log in again.",
+    "sessionExpiredAction": "Go to home page",
+    "acceptTerms": "I agree to the Terms of Service and Privacy Policy",
+    "placeholders": {
+      "nickname": "Enter your username",
+      "email": "name@example.com",
+      "password": "Enter your password",
+      "confirmPassword": "Repeat your password"
+    },
+    "errors": {
+      "required": "This field is required",
+      "invalidEmail": "Enter a valid email",
+      "passwordMinLength": "Password must have at least 8 characters",
+      "passwordMaxLength": "Password cannot exceed 255 characters",
+      "passwordPattern": "Password must include uppercase, lowercase and a number",
+      "passwordMismatch": "Passwords do not match",
+      "nicknameMaxLength": "Username cannot exceed 60 characters",
+      "acceptTerms": "You must accept the terms",
+      "emailInUse": "This email is already registered"
+    }
+  },
+  "publicNav": {
+    "home": "Home",
+    "about": "About"
+  },
+  "about": {
+    "hero": {
+      "badge": "About",
+      "title": "A final degree project on personal finance with a practical, technical and realistic approach.",
+      "description": "Balio was developed as a final degree project by Marcos Romay Fernandez to provide a simple yet powerful personal finance management tool, with account tracking, transactions, categories, savings goals and visual analysis.",
+      "illustration": {
+        "frontendBackend": "Frontend + backend",
+        "secureSession": "Secure session",
+        "visualization": "Visualization",
+        "stackTitle": "Stack used in Balio"
+      },
+      "architecture": {
+        "items": {
+          "technical": {
+            "title": "Technical architecture",
+            "description": "A React SPA frontend with strict typing and a decoupled Spring Boot backend, connected through an authenticated REST API."
+          },
+          "security": {
+            "title": "Security",
+            "description": "JWT-based authentication with rotating refresh tokens, session control, inactivity logout and protected routes."
+          },
+          "persistence": {
+            "title": "Persistence",
+            "description": "A relational model focused on users, accounts, transactions, categories, filters and savings goals."
+          }
+        }
+      }
+    },
+    "project": {
+      "eyebrow": "About the project",
+      "lead": "This project was developed as a final degree project by Marcos Romay Fernandez.",
+      "body": "Balio was created to offer a simple yet powerful tool for personal finance management, allowing users to keep a clear view of their income, expenses and savings goals."
+    },
+    "technical": {
+      "eyebrow": "Technical overview",
+      "paragraph1": "The application combines a modern visual layer with a robust backend focused on financial data management, secure authentication and consistent persistence.",
+      "paragraph2": "Its design seeks a balance between clarity for end users and enough structure to grow in areas such as filters, goals, budgets and statistics."
+    },
+    "origin": {
+      "title": "Origin of the idea",
+      "paragraph1": "Throughout my life I developed the habit of saving small amounts of money from family gifts or occasional tasks. Over time, as I started taking on more personal expenses, I began working in hospitality to maintain some financial independence.",
+      "paragraph2": "This meant I had more money both in cash and in bank accounts, which created the need for more accurate control over income and expenses.",
+      "paragraph3": "I tried several financial management applications, but none of them fully matched the features I considered necessary. Most offered only a basic income and expense log, while lacking other capabilities that I believe are important for more detailed control and effective financial planning."
+    },
+    "objective": {
+      "title": "Application objective",
+      "paragraph1": "The objective of this final degree project is to design and develop a personal finance management application that fills those gaps and provides a more complete experience.",
+      "paragraph2": "Its main functionality is the recording of income and expenses, which can be associated with different accounts: user-linked bank accounts and manual accounts such as cash.",
+      "paragraph3": "Each transaction can be assigned to a category, making it possible to generate clear and useful statistics to better understand a person's financial situation."
+    },
+    "features": {
+      "title": "Main features",
+      "description": "The application includes the key building blocks needed to register movements, organize accounts and turn financial data into useful information for decision-making.",
+      "items": {
+        "transactions": {
+          "title": "Transaction tracking",
+          "description": "Allows income and expenses to be recorded quickly, clearly and in an organized way."
+        },
+        "accounts": {
+          "title": "Account management",
+          "description": "Supports working with multiple accounts, both bank-based and manual."
+        },
+        "categories": {
+          "title": "Custom categories",
+          "description": "Help classify expenses and better analyze financial behavior."
+        },
+        "budgets": {
+          "title": "Budgets and statistics",
+          "description": "Support future planning and provide clear views of income, expenses and amounts."
+        },
+        "goals": {
+          "title": "Savings goals",
+          "description": "Allow users to define specific goals and track their progress over time."
+        }
+      }
+    },
+    "usefulness": {
+      "title": "Approach and usefulness",
+      "description": "Thanks to its level of customization, the application can also adapt to small businesses or personal projects, offering a simple, effective financial management system designed for day-to-day control."
+    },
+    "links": {
+      "title": "More information",
+      "backHome": "Back to home"
+    }
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "transactions": "Transactions",
+    "accounts": "Accounts",
+    "categories": "Categories",
+    "goals": "Goals",
+    "filters": "Filters",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "totalBalance": "Total Balance",
+    "recentTransactions": "Recent Transactions",
+    "expensesByCategory": "Expenses by Category",
+    "monthlyOverview": "Monthly Overview"
+  },
+  "accounts": {
+    "title": "My Accounts",
+    "create": "New Account",
+    "name": "Name",
+    "type": "Type",
+    "currency": "Currency",
+    "balance": "Current Balance",
+    "setDefault": "Default",
+    "clearDefault": "Clear default",
+    "maxAccounts": "You have reached the maximum of 5 accounts",
+    "types": {
+      "CASH": "Cash",
+      "BANK": "Bank",
+      "OTHER": "Other"
+    },
+    "deleteConfirm": "Are you sure you want to delete this account?"
+  },
+  "accountsPage": {
+    "totalNetWorth": "Total Net Worth",
+    "liquidAssets": "Liquid Assets",
+    "totalLiabilities": "Total Liabilities",
+    "accountCount": "{{current}} of {{max}} accounts",
+    "activeAccounts": "{{count}} active accounts",
+    "editAccount": "Edit account",
+    "newAccount": "New account",
+    "namePlaceholder": "e.g. Checking, Savings...",
+    "currencyError": "Currency must be a 3-letter code (e.g. EUR)",
+    "setDefaultLabel": "Set as default account",
+    "recentActivity": "Recent Activity",
+    "viewAll": "View All",
+    "noTransactions": "No transactions yet",
+    "connectNew": "Add New Account",
+    "connectNewDesc": "Manage up to 5 accounts"
+  },
+  "transactions": {
+    "title": "Transactions",
+    "create": "New Transaction",
+    "expense": "Expense",
+    "income": "Income",
+    "name": "Description",
+    "amount": "Amount",
+    "date": "Date",
+    "account": "Account",
+    "category": "Category",
+    "type": "Type",
+    "affectsBalance": "Affects balance",
+    "revertBalance": "Revert balance effect",
+    "noCategory": "No category",
+    "deleteConfirm": "Are you sure you want to delete this transaction?"
+  },
+  "categories": {
+    "title": "Categories",
+    "subtitle": "Manage your expense and income categories.",
+    "create": "New category",
+    "createNew": "New category",
+    "createNewDesc": "Add a custom category",
+    "name": "Name",
+    "namePlaceholder": "e.g. Food, Salary...",
+    "type": "Type",
+    "expense": "Expense",
+    "income": "Income",
+    "expenseSection": "Expense categories",
+    "incomeSection": "Income categories",
+    "noCategories": "No categories yet",
+    "editName": "Edit name",
+    "deleteConfirm": "Are you sure you want to delete this category?",
+    "errors": {
+      "nameRequired": "Name is required"
+    }
+  },
+  "goals": {
+    "title": "Savings Goals",
+    "subtitle": "Track your savings progress and reach your targets faster.",
+    "create": "New Goal",
+    "editGoal": "Edit Goal",
+    "createNew": "Create New Goal",
+    "createNewDesc": "Set a target and start saving today",
+    "name": "Name",
+    "namePlaceholder": "e.g. Vacation, New Car...",
+    "targetAmount": "Target Amount (€)",
+    "currentAmount": "Current Savings",
+    "progress": "Progress",
+    "of": "of",
+    "remaining": "remaining",
+    "adjustPlaceholder": "Amount",
+    "completed": "Completed",
+    "goalReached": "Goal Reached!",
+    "totalSaved": "Total Saved",
+    "activeGoals": "Active Goals",
+    "completedGoals": "Goals Completed",
+    "totalGoals": "goals total",
+    "inProgress": "In progress",
+    "thisYear": "This year",
+    "tabActive": "Active",
+    "tabCompleted": "Completed",
+    "noCompleted": "No completed goals yet",
+    "noGoals": "You have no savings goals yet",
+    "goalsCount": "goals",
+    "addAmount": "Add",
+    "withdrawAmount": "Withdraw",
+    "adjustLabel": "Adjust",
+    "deleteConfirm": "Are you sure you want to delete this goal?",
+    "errors": {
+      "nameRequired": "Name is required",
+      "amountPositive": "Amount must be greater than 0",
+      "adjustError": "Could not update the amount"
+    }
+  },
+  "filters": {
+    "title": "Saved Filters",
+    "subtitle": "Apply your saved filters directly in transactions.",
+    "create": "New filter",
+    "name": "Name",
+    "apply": "Apply filter",
+    "applyAndGo": "View transactions",
+    "definition": "Definition",
+    "preview": "Recent transactions",
+    "noFilters": "No saved filters yet",
+    "noFiltersDesc": "Create filters from the transactions page",
+    "noPreview": "No transactions with this filter",
+    "loadingPreview": "Loading...",
+    "deleteConfirm": "Are you sure you want to delete this filter?"
+  },
+  "settings": {
+    "title": "User Settings",
+    "subtitle": "Manage your account preferences and customize your Balio experience.",
+    "profileDetails": "Profile Details",
+    "profile": "Profile",
+    "nickname": "Nickname",
+    "nicknamePlaceholder": "Your username",
+    "emailAddress": "Email Address",
+    "profileUpdated": "Profile updated successfully",
+    "changePassword": "Change Password",
+    "changePwdDesc": "For security, choose a strong password you don't use elsewhere.",
+    "oldPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "passwordChanged": "Password changed successfully",
+    "navigationStyle": "Navigation Style",
+    "navDesc": "Choose how you want to navigate between sections of the app.",
+    "navVertical": "Vertical (Lateral)",
+    "navHorizontal": "Horizontal (Top)",
+    "language": "Language",
+    "langDesc": "Select your preferred interface language.",
+    "savePreferences": "Save Preferences",
+    "resetChanges": "Reset Changes",
+    "dangerZone": "Danger Zone",
+    "dangerDesc": "Once you delete your account, there is no going back. Please be certain.",
+    "deleteAccount": "Delete Account",
+    "deleteConfirmTitle": "Delete your account?",
+    "deleteConfirmDesc": "This action is irreversible. Type \"delete\" to confirm.",
+    "deleteTypePlaceholder": "Type \"delete\"",
+    "errors": {
+      "emailInUse": "This email is already in use",
+      "wrongPassword": "Current password is incorrect",
+      "passwordSame": "New password must be different from the current one",
+      "passwordMismatch": "Passwords do not match",
+      "nicknameRequired": "Nickname is required",
+      "emailRequired": "Email is required"
+    }
+  },
+  "txPage": {
+    "addExpense": "New Expense",
+    "addIncome": "New Income",
+    "saveExpense": "Save Expense",
+    "saveIncome": "Save Income",
+    "expenseName": "Expense description",
+    "incomeName": "Income description",
+    "expenseNamePlaceholder": "e.g. Groceries, Rent...",
+    "incomeNamePlaceholder": "e.g. Salary, Freelance...",
+    "selectAccount": "Select account",
+    "selectCategory": "Select category",
+    "searchCategory": "Search category...",
+    "createCategory": "Create \"{{name}}\"",
+    "affectsBalanceDesc": "Affect the selected account balance",
+    "filters": "Filters",
+    "savedFilters": "Saved filters",
+    "applyFilters": "Apply filters",
+    "saveFilter": "Save filter",
+    "clearFilters": "Clear",
+    "filterNamePlaceholder": "Filter name",
+    "allTypes": "All types",
+    "allAccounts": "All accounts",
+    "allCategories": "All categories",
+    "selectedCategories": "{{count}} categories",
+    "searchByName": "Search by name",
+    "searchByNamePlaceholder": "Type description...",
+    "dateFrom": "From",
+    "dateTo": "To",
+    "today": "Today",
+    "thisMonth": "This month",
+    "clearDates": "Clear dates",
+    "multipleDates": "Multiple dates",
+    "multipleDatesPlaceholder": "2026-03-01, 2026-03-05",
+    "multipleDatesHint": "Separate dates with commas, spaces or ;",
+    "selectedDatesCount": "{{count}} valid dates selected",
+    "amountMin": "Min amount",
+    "amountMax": "Max amount",
+    "name": "Description",
+    "date": "Date",
+    "noTransactions": "No transactions found",
+    "baseTab": "Base",
+    "selectDate": "Select date",
+    "selectDates": "Select date/s",
+    "looseDates": "loose dates",
+    "looseDatesLabel": "Loose dates",
+    "clearLooseDates": "Clear loose dates",
+    "singleDate": "Day",
+    "dateRange": "Range"
+  }
+}

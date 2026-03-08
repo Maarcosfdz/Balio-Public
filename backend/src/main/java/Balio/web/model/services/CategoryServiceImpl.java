@@ -8,6 +8,8 @@ import Balio.web.model.entities.Category;
 import Balio.web.model.entities.CategoryDao;
 import Balio.web.model.entities.User;
 import Balio.web.model.entities.UserDao;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -79,6 +81,15 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional(readOnly = true)
     public List<Category> findAllByUserId(UUID userId) {
         return categoryDao.findAllByUserIdOrderByNameAsc(userId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Category> findPagedByUserId(UUID userId, TransactionType type, Pageable pageable) {
+        if (type != null) {
+            return categoryDao.findAllByUserIdAndTypeOrderByNameAsc(userId, type, pageable);
+        }
+        return categoryDao.findAllByUserIdOrderByNameAsc(userId, pageable);
     }
 
     @Override

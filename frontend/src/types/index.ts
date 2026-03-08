@@ -1,0 +1,243 @@
+// ============================================
+// Enums (mirror del backend como const objects)
+// ============================================
+
+export const AccountType = {
+  CASH: "CASH",
+  BANK: "BANK",
+  OTHER: "OTHER",
+} as const;
+export type AccountType = (typeof AccountType)[keyof typeof AccountType];
+
+export const TransactionType = {
+  EXPENSE: "EXPENSE",
+  INCOME: "INCOME",
+} as const;
+export type TransactionType = (typeof TransactionType)[keyof typeof TransactionType];
+
+// ============================================
+// Auth DTOs
+// ============================================
+
+export interface UserDto {
+  nickname: string;
+  email: string;
+  password?: string;
+}
+
+export interface LoginParamsDto {
+  email: string;
+  password: string;
+}
+
+export interface ChangePasswordParamsDto {
+  oldPassword: string;
+  newPassword: string;
+}
+
+export interface RefreshTokenRequestDto {
+  refreshToken: string;
+}
+
+export interface AuthenticatedUserDto {
+  id: string;
+  nickname: string;
+  email: string;
+  accessToken: string;
+  refreshToken: string;
+}
+
+// ============================================
+// Account DTOs
+// ============================================
+
+export interface AccountDto {
+  name?: string;
+  type?: AccountType;
+  currency?: string;
+  setDefault?: boolean;
+}
+
+export interface AccountSummaryDto {
+  id: string;
+  name: string;
+  type: AccountType;
+  currency: string;
+  balance: number;
+  isDefault: boolean;
+}
+
+export interface AccountResponseDto {
+  id: string;
+  name: string;
+  type: AccountType;
+  currency: string;
+  balance: number;
+}
+
+// ============================================
+// Transaction DTOs
+// ============================================
+
+export interface TransactionDto {
+  name: string;
+  amount: number;
+  accountId?: string;
+  type?: TransactionType;
+  date?: string;
+  categoryId?: string;
+  affectsBalance?: boolean;
+}
+
+export interface TransactionSummaryDto {
+  id: string;
+  name: string;
+  type: TransactionType;
+  amount: number;
+  date: string;
+  accountName?: string;
+  categoryName?: string;
+  categoryId?: string | null;
+}
+
+export interface TransactionSummaryDtoWithCategoryIds extends TransactionSummaryDto {
+  // helper alias — same shape
+}
+
+export interface TransactionResponseDto {
+  id: string;
+  name: string;
+  amount: number;
+  date: string;
+  type: TransactionType;
+  affectsBalance: boolean;
+  accountId: string;
+  accountName: string;
+  categoryId: string | null;
+  categoryName: string | null;
+}
+
+export interface TransactionFilters {
+  type?: TransactionType;
+  accountId?: string;
+  categoryId?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface TransactionPage {
+  content: TransactionSummaryDto[];
+  totalPages: number;
+  totalElements: number;
+  number: number;   // 0-based page index
+  size: number;
+}
+
+export interface CategoryPage {
+  content: CategorySummaryDto[];
+  totalPages: number;
+  totalElements: number;
+  number: number;
+  size: number;
+}
+
+export interface FilterPage {
+  content: FilterSummaryDto[];
+  totalPages: number;
+  totalElements: number;
+  number: number;
+  size: number;
+}
+
+// ============================================
+// Category DTOs
+// ============================================
+
+export interface CategoryDto {
+  name: string;
+  type?: TransactionType;
+}
+
+export interface CategorySummaryDto {
+  id: string;
+  name: string;
+  type?: TransactionType;
+}
+
+export interface CategoryResponseDto {
+  id: string;
+  name: string;
+  type: TransactionType;
+  userId: string;
+}
+
+// ============================================
+// Filter DTOs
+// ============================================
+
+export interface FilterDto {
+  name: string;
+  definition: string;
+}
+
+export interface FilterUpdateDto {
+  name?: string;
+  definition?: string;
+}
+
+export interface FilterSummaryDto {
+  id: string;
+  name: string;
+}
+
+export interface FilterResponseDto {
+  id: string;
+  name: string;
+  definition: string;
+}
+
+// ============================================
+// Goal DTOs
+// ============================================
+
+export interface GoalDto {
+  name: string;
+  targetAmount: number;
+}
+
+export interface GoalUpdateDto {
+  name?: string;
+  targetAmount?: number;
+}
+
+export interface GoalSummaryDto {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+}
+
+export interface GoalResponseDto {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+}
+
+export interface GoalAmountDto {
+  amount: number;
+}
+
+// ============================================
+// Error DTOs
+// ============================================
+
+export interface ErrorResponseDto {
+  globalError: string;
+  fieldErrors?: FieldErrorDto[];
+}
+
+export interface FieldErrorDto {
+  fieldName: string;
+  message: string;
+}
