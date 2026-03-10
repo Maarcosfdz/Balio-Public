@@ -52,4 +52,8 @@ public interface TransactionDao extends JpaRepository<Transaction, UUID> {
                                         @Param("endDate") LocalDate endDate,
                                         Pageable pageable);
 
+    // ── BANK SYNC ────────────────────────────────────────────────────────
+
+    boolean existsByAccountIdAndExternalId(UUID accountId, String externalId);
+
 }

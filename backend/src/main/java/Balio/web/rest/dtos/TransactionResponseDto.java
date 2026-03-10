@@ -17,6 +17,7 @@ public class TransactionResponseDto {
     private String accountName;
     private String categoryId;
     private String categoryName;
+    private String bankCategory;
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -47,4 +48,7 @@ public class TransactionResponseDto {
 
     public String getCategoryName() { return categoryName; }
     public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
+
+    public String getBankCategory() { return bankCategory; }
+    public void setBankCategory(String bankCategory) { this.bankCategory = bankCategory; }
 }

@@ -39,6 +39,14 @@ public class Transaction {
     @Column(nullable = false, length = 10)
     private TransactionType type; // EXPENSE / INCOME
 
+    // -------- BANK METADATA --------
+
+    @Column(name = "bank_category", length = 100)
+    private String bankCategory;
+
+    @Column(name = "external_id", length = 150)
+    private String externalId;
+
     // -------- RELATIONS --------
 
     @ManyToOne(optional = false)
@@ -133,4 +141,10 @@ public class Transaction {
     public void setCategory(Category category) {
         this.category = category;
     }
+
+    public String getBankCategory() { return bankCategory; }
+    public void setBankCategory(String bankCategory) { this.bankCategory = bankCategory; }
+
+    public String getExternalId() { return externalId; }
+    public void setExternalId(String externalId) { this.externalId = externalId; }
 }

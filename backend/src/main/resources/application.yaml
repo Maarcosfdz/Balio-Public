@@ -22,6 +22,17 @@ project:
     accessExpirationMinutes: ${JWT_ACCESS_EXPIRATION:15}
     refreshExpirationDays: ${JWT_REFRESH_EXPIRATION_DAYS:7}
 
+# ── TrueLayer (Open Banking) ──────────────────────────────────
+truelayer:
+  client-id: ${TRUELAYER_CLIENT_ID:}
+  client-secret: ${TRUELAYER_CLIENT_SECRET:}
+  redirect-uri: ${TRUELAYER_REDIRECT_URI:http://localhost:8080/bank/callback}
+  auth-base-url: ${TRUELAYER_AUTH_URL:https://auth.truelayer-sandbox.com}
+  api-base-url: ${TRUELAYER_API_URL:https://api.truelayer-sandbox.com}
+
+# ── Frontend redirect ─────────────────────────────────────────
+FRONTEND_URL: ${FRONTEND_URL:http://localhost:5173}
+
 logging:
   level:
     org.flywaydb: ${LOG_FLYWAY:DEBUG}
