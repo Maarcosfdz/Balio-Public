@@ -22,8 +22,11 @@ public class BankConverter {
     public BankRuleResponseDto toRuleResponseDto(BankTransactionRule rule) {
         BankRuleResponseDto dto = new BankRuleResponseDto();
         dto.setId(rule.getId().toString());
+        dto.setAccountId(rule.getAccount().getId().toString());
+        dto.setAccountName(rule.getAccount().getName());
         dto.setNamePattern(rule.getNamePattern());
         dto.setBankCategory(rule.getBankCategory());
+        dto.setTransactionType(rule.getTransactionType());
         dto.setMappedName(rule.getMappedName());
         dto.setPriority(rule.getPriority());
 

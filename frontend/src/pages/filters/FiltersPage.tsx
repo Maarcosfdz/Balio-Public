@@ -259,7 +259,7 @@ export default function FiltersPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalElements, setTotalElements] = useState(0);
+  const [, setTotalElements] = useState(0);
 
   const pageRef = useRef(0);
 

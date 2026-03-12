@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -99,8 +100,14 @@ public class AccountController {
     @DeleteMapping("/{accountId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteAccount(@RequestAttribute UUID userId,
-                              @PathVariable UUID accountId) throws InstanceNotFoundException {
-        accountService.deleteAccount(userId, accountId);
+                              @PathVariable UUID accountId,
+                              @RequestParam(name = "deleteTransactions", defaultValue = "false")
+                              boolean deleteTransactions) throws InstanceNotFoundException {
+        if (deleteTransactions) {
+            accountService.deleteAccount(userId, accountId, true);
+        } else {
+            accountService.deleteAccount(userId, accountId);
+        }
         log.info("Account deleted: accountId={}, userId={}", accountId, userId);
     }
 

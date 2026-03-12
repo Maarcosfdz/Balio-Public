@@ -1,5 +1,6 @@
 package Balio.web.rest.dtos;
 
+import Balio.web.enums.TransactionType;
 import jakarta.validation.constraints.Size;
 
 public class BankRuleDto {
@@ -17,6 +18,12 @@ public class BankRuleDto {
 
     private Integer priority;
 
+    private Boolean applyToExisting;
+
+    private Integer applyWindowDays;
+
+    private TransactionType transactionType;
+
     public String getNamePattern() { return namePattern; }
     public void setNamePattern(String namePattern) { this.namePattern = namePattern; }
 
@@ -33,4 +40,13 @@ public class BankRuleDto {
 
     public Integer getPriority() { return priority; }
     public void setPriority(Integer priority) { this.priority = priority; }
+
+    public Boolean getApplyToExisting() { return applyToExisting; }
+    public void setApplyToExisting(Boolean applyToExisting) { this.applyToExisting = applyToExisting; }
+
+    public Integer getApplyWindowDays() { return applyWindowDays; }
+    public void setApplyWindowDays(Integer applyWindowDays) { this.applyWindowDays = applyWindowDays; }
+
+    public TransactionType getTransactionType() { return transactionType; }
+    public void setTransactionType(TransactionType transactionType) { this.transactionType = transactionType; }
 }

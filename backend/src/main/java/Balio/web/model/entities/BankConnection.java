@@ -34,13 +34,17 @@ public class BankConnection {
     @Column(name = "truelayer_account_id", length = 100)
     private String truelayerAccountId;
 
-    @Column(name = "access_token", nullable = false, columnDefinition = "TEXT")
+    /** Enable Banking session ID — used to check consent status and retrieve accounts. */
+    @Column(name = "session_id", length = 200)
+    private String sessionId;
+
+    @Column(name = "access_token", columnDefinition = "TEXT")
     private String accessToken;
 
-    @Column(name = "refresh_token", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "refresh_token", columnDefinition = "TEXT")
     private String refreshToken;
 
-    @Column(name = "token_expiry", nullable = false)
+    @Column(name = "token_expiry")
     private Instant tokenExpiry;
 
     @Column(name = "consent_expires")
@@ -76,6 +80,9 @@ public class BankConnection {
     public void setTruelayerAccountId(String truelayerAccountId) {
         this.truelayerAccountId = truelayerAccountId;
     }
+
+    public String getSessionId() { return sessionId; }
+    public void setSessionId(String sessionId) { this.sessionId = sessionId; }
 
     public String getAccessToken() { return accessToken; }
     public void setAccessToken(String accessToken) { this.accessToken = accessToken; }

@@ -30,7 +30,9 @@ import java.util.stream.Collectors;
 public class TrueLayerClient implements OAuthClient {
 
     private static final Logger log = LoggerFactory.getLogger(TrueLayerClient.class);
-    private static final String SCOPES = "info accounts balance transactions";
+    private static final String SCOPES =
+            "info accounts balance cards transactions direct_debits standing_orders offline_access";
+    private static final String PROVIDERS = "uk-cs-mock uk-ob-all uk-oauth-all";
 
     private final TrueLayerProperties props;
     private final HttpClient httpClient;
@@ -52,7 +54,7 @@ public class TrueLayerClient implements OAuthClient {
                + "&scope=" + encode(SCOPES)
                + "&redirect_uri=" + encode(props.getRedirectUri())
                + "&state=" + encode(state)
-               + "&providers=uk-ob-all+uk-oauth-all";
+               + "&providers=" + encode(PROVIDERS);
     }
 
     @Override

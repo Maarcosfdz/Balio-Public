@@ -70,7 +70,8 @@ public class TrueLayerSyncService {
         UUID userId = user.getId();
 
         // ── Fetch and import transactions ────────────────────────────────
-        List<BankTransactionRule> rules = ruleDao.findAllByUserIdOrderByPriorityDesc(userId);
+        List<BankTransactionRule> rules = ruleDao.findAllByUserIdAndAccountIdOrderByPriorityDesc(
+            userId, account.getId());
         JsonNode txNodes = trueLayerClient.fetchTransactions(accessToken, tlAccountId);
 
         int imported = 0;
@@ -126,7 +127,7 @@ public class TrueLayerSyncService {
         Category resolvedCategory = null;
 
         for (BankTransactionRule rule : rules) {
-            if (matches(rule, merchantName, bankCategory)) {
+            if (matches(rule, merchantName, bankCategory, type)) {
                 if (rule.getMappedName() != null && !rule.getMappedName().isBlank()) {
                     resolvedName = rule.getMappedName();
                 }
@@ -146,7 +147,8 @@ public class TrueLayerSyncService {
         return 1;
     }
 
-    private boolean matches(BankTransactionRule rule, String name, String bankCategory) {
+    private boolean matches(BankTransactionRule rule, String name, String bankCategory,
+                            TransactionType type) {
         boolean nameMatch = rule.getNamePattern() == null
                 || rule.getNamePattern().isBlank()
                 || (name != null && name.toLowerCase().contains(rule.getNamePattern().toLowerCase()));
@@ -158,9 +160,13 @@ public class TrueLayerSyncService {
 
         // At least one criterion must be specified for the rule to be meaningful
         boolean hasAnyCriterion = (rule.getNamePattern() != null && !rule.getNamePattern().isBlank())
-                || (rule.getBankCategory() != null && !rule.getBankCategory().isBlank());
+            || (rule.getBankCategory() != null && !rule.getBankCategory().isBlank())
+            || rule.getTransactionType() != null;
 
-        return hasAnyCriterion && nameMatch && categoryMatch;
+        boolean typeMatch = rule.getTransactionType() == null
+            || rule.getTransactionType() == type;
+
+        return hasAnyCriterion && nameMatch && categoryMatch && typeMatch;
     }
 
     private void updateBalance(String accessToken, String tlAccountId, Account account) {

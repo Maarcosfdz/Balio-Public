@@ -1,6 +1,7 @@
 import api from "./api";
 import type {
   AccountDto,
+  AccountDeleteOptions,
   AccountResponseDto,
   AccountSummaryDto,
 } from "@/types";
@@ -22,8 +23,12 @@ export const accountService = {
     return api.put(`/account/${accountId}`, data).then((r) => r.data);
   },
 
-  remove(accountId: string): Promise<void> {
-    return api.delete(`/account/${accountId}`);
+  remove(accountId: string, options?: AccountDeleteOptions): Promise<void> {
+    return api.delete(`/account/${accountId}`, {
+      params: {
+        deleteTransactions: options?.deleteTransactions ?? false,
+      },
+    });
   },
 
   setDefault(accountId: string): Promise<void> {

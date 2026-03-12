@@ -10,6 +10,7 @@ import Balio.web.model.Exceptions.IncorrectPasswordException;
 import Balio.web.model.Exceptions.InstanceNotFoundException;
 import Balio.web.model.Exceptions.PermissionException;
 import Balio.web.model.Exceptions.UserNotFoundException;
+import Balio.web.enablebanking.EnableBankingException;
 import Balio.web.truelayer.TrueLayerException;
 
 import org.slf4j.Logger;
@@ -168,6 +169,17 @@ public class CommonControllerAdvice {
     public Map<String, String> handleIllegalArgumentException(IllegalArgumentException exception) {
         return Map.of("code", "project.exceptions.IllegalArgumentException",
                        "message", exception.getMessage() != null ? exception.getMessage() : "Invalid request");
+    }
+
+    // --- EnableBankingException (bank API errors) ---
+
+    @ExceptionHandler(EnableBankingException.class)
+    @ResponseStatus(HttpStatus.BAD_GATEWAY)
+    @ResponseBody
+    public Map<String, String> handleEnableBankingException(EnableBankingException exception) {
+        log.error("Enable Banking API error", exception);
+        return Map.of("code", "project.exceptions.BankApiException",
+                       "message", exception.getMessage() != null ? exception.getMessage() : "Enable Banking error");
     }
 
     // --- TrueLayerException (bank API errors) ---

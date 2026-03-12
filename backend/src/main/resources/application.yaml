@@ -33,6 +33,22 @@ truelayer:
 # ── Frontend redirect ─────────────────────────────────────────
 FRONTEND_URL: ${FRONTEND_URL:http://localhost:5173}
 
+# ── Enable Banking (Open Banking / PSD2) ─────────────────────
+enable-banking:
+  application-id: ${ENABLE_BANKING_APP_ID:}
+  private-key-path: ${ENABLE_BANKING_PRIVATE_KEY_PATH:}
+  redirect-uri: ${ENABLE_BANKING_REDIRECT_URI:http://localhost:8080/bank/enablebanking/callback}
+  api-base-url: https://api.enablebanking.com
+  # Metadata for Enable Banking control panel (sandbox)
+  # Replace these example values with your real application URLs/emails when applying for production/trial
+  allowed-redirect-urls:
+    - http://localhost:8080/bank/enablebanking/callback
+    - http://localhost:5173/bank-link/callback
+  application-description: "Balio - Gestor personal de finanzas (TFG / sandbox). Uso educativo y de pruebas."
+  data-protection-email: dpo@balio.example.com
+  privacy-url: http://localhost:5173/privacy
+  teams-url: https://teams.microsoft.com/l/team/19:balio-team@thread.tacv2
+
 logging:
   level:
     org.flywaydb: ${LOG_FLYWAY:DEBUG}

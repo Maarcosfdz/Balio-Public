@@ -8,6 +8,7 @@ import {
   Bookmark,
   Loader2,
   Plus,
+  RefreshCw,
   Tag,
   X,
   } from "lucide-react";
@@ -20,6 +21,7 @@ import type {
   TransactionType,
 } from "@/types";
 import { transactionService } from "@/backend/transactionService";
+import { bankService } from "@/backend/bankService";
 import { filterService } from "@/backend/filterService";
 import AddTransactionModal from "@/components/transactions/AddTransactionModal";
 import Pagination from "@/components/transactions/Pagination";
@@ -47,6 +49,8 @@ export default function TransactionsPage() {
   // ── Data ──
   const [transactions, setTransactions] = useState<TransactionSummaryDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncingAll, setSyncingAll] = useState(false);
+  const [syncSummary, setSyncSummary] = useState<string | null>(null);
 
   // ── Filters — pre-populate from navigation state ──
   const [filters, setFilters] = useState<ActiveFilters>(() =>
@@ -163,45 +167,63 @@ export default function TransactionsPage() {
     []
   );
 
+  const syncStaleIfNeeded = useCallback(async () => {
+    try {
+      const result = await bankService.syncStale(15);
+      if (result.syncedAccounts > 0) {
+        setSyncSummary(
+          result.imported > 0
+            ? `Sincronización automática: ${result.imported} transacción${result.imported !== 1 ? "es" : ""} nueva${result.imported !== 1 ? "s" : ""}.`
+            : "Sincronización automática completada.",
+        );
+      }
+    } catch {
+      // ignore auto-sync errors here; page data still loads afterwards
+    }
+  }, []);
+
   // Initial / per-navigation load.
   // location.key changes on every navigation event so this runs whenever the
   // user arrives at this page (fresh mount OR back-navigation).
   useEffect(() => {
-    if (stateFilterId) {
-      // Came from FiltersPage "Ver transacciones" button
-      handleApplySavedFilter(stateFilterId);
-    } else if (stateEditFilterId) {
-      // Came from FiltersPage "Editar criterios" button
-      setFiltersOpen(true);
-      filterService.getById(stateEditFilterId)
-        .then((details) => {
-          if (details?.definition) {
-            try {
-              const parsed: ActiveFilters = JSON.parse(details.definition);
-              setEditInitialFilters(parsed);
-              setFilters(parsed);
-              fetchTransactions(parsed, true, 0);
-            } catch {
+    const load = async () => {
+      await syncStaleIfNeeded();
+
+      if (stateFilterId) {
+        handleApplySavedFilter(stateFilterId);
+      } else if (stateEditFilterId) {
+        setFiltersOpen(true);
+        filterService.getById(stateEditFilterId)
+          .then((details) => {
+            if (details?.definition) {
+              try {
+                const parsed: ActiveFilters = JSON.parse(details.definition);
+                setEditInitialFilters(parsed);
+                setFilters(parsed);
+                fetchTransactions(parsed, true, 0);
+              } catch {
+                fetchTransactions({}, true, 0);
+              }
+            } else {
               fetchTransactions({}, true, 0);
             }
-          } else {
-            fetchTransactions({}, true, 0);
-          }
-        })
-        .catch(() => fetchTransactions({}, true, 0));
-    } else {
-      // Restore the last active pinned tab from localStorage, if any
-      const storedTab = localStorage.getItem("balio_active_tab");
-      const storedPinned: FilterSummaryDto[] = (() => {
-        try { return JSON.parse(localStorage.getItem("balio_pinned_filters") ?? "[]"); }
-        catch { return []; }
-      })();
-      if (storedTab && storedPinned.some((p) => p.id === storedTab)) {
-        handleApplySavedFilter(storedTab);
+          })
+          .catch(() => fetchTransactions({}, true, 0));
       } else {
-        fetchTransactions(filtersRef.current, true, 0);
+        const storedTab = localStorage.getItem("balio_active_tab");
+        const storedPinned: FilterSummaryDto[] = (() => {
+          try { return JSON.parse(localStorage.getItem("balio_pinned_filters") ?? "[]"); }
+          catch { return []; }
+        })();
+        if (storedTab && storedPinned.some((p) => p.id === storedTab)) {
+          handleApplySavedFilter(storedTab);
+        } else {
+          fetchTransactions(filtersRef.current, true, 0);
+        }
       }
-    }
+    };
+
+    void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key]);
 
@@ -307,6 +329,28 @@ export default function TransactionsPage() {
     }
   };
 
+  const handleSyncAll = async () => {
+    if (syncingAll) return;
+    setSyncingAll(true);
+    setSyncSummary(null);
+    try {
+      const result = await bankService.syncAll();
+      setSyncSummary(
+        result.syncedAccounts === 0
+          ? "No hay cuentas bancarias enlazadas para sincronizar."
+          : result.imported === 0
+            ? `Se sincronizaron ${result.syncedAccounts} cuenta${result.syncedAccounts !== 1 ? "s" : ""} y no había movimientos nuevos.`
+            : `Se sincronizaron ${result.syncedAccounts} cuenta${result.syncedAccounts !== 1 ? "s" : ""} y entraron ${result.imported} transacción${result.imported !== 1 ? "es" : ""} nueva${result.imported !== 1 ? "s" : ""}.`,
+      );
+      const cp = isServerPagedRef.current ? pageRef.current - 1 : 0;
+      await fetchTransactions(filtersRef.current, false, cp);
+    } catch {
+      setSyncSummary("No se pudo sincronizar ahora mismo.");
+    } finally {
+      setSyncingAll(false);
+    }
+  };
+
   const handleTransactionCreated = () => {
     setExpenseOpen(false);
     setIncomeOpen(false);
@@ -346,6 +390,12 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-6">
+      {syncSummary && (
+        <div className="rounded-xl border border-sky-200 bg-sky-50 px-5 py-3 text-sm font-semibold text-sky-700">
+          {syncSummary}
+        </div>
+      )}
+
       {/* ── Cabecera ── */}
       <div className="rounded-xl bg-white px-5 py-4">
         <PageHeader
@@ -389,6 +439,29 @@ export default function TransactionsPage() {
                 <span className="relative z-10 hidden sm:inline">{t("nav.filters")}</span>
               </button>
 
+              <button
+                onClick={handleSyncAll}
+                disabled={syncingAll}
+                title="Sincronizar cuentas bancarias"
+                className="group tx-outline-hover-btn self-center disabled:opacity-60"
+              >
+                <svg
+                  className="tx-outline-hover-border"
+                  viewBox="0 0 100 36"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                >
+                  <rect className="tx-outline-hover-bg" x="1" y="1" width="98" height="34" rx="10" />
+                  <rect className="tx-outline-hover-hl" x="1" y="1" width="98" height="34" rx="10" />
+                </svg>
+                {syncingAll ? (
+                  <Loader2 className="relative z-10 h-4 w-4 animate-spin text-slate-400" />
+                ) : (
+                  <RefreshCw className="relative z-10 h-4 w-4 text-slate-400 transition-colors duration-200 group-hover:text-sky-500" />
+                )}
+                <span className="relative z-10 hidden sm:inline">Sync bancos</span>
+              </button>
+
               <div className="flex items-center gap-2.5 ml-3">
                 <button
                   onClick={() => setExpenseOpen(true)}
@@ -416,7 +489,6 @@ export default function TransactionsPage() {
         open={filtersOpen}
         onToggle={() => setFiltersOpen((v) => !v)}
         onApply={handleApplyFilters}
-        onApplySavedFilter={handleApplySavedFilter}
         defaultAccountId={stateAccountId}
         maxTransactionAmount={maxTxAmount || undefined}
         initialFilters={editInitialFilters}

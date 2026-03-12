@@ -1,8 +1,9 @@
 package Balio.web.rest.controllers;
 
+import Balio.web.enablebanking.EnableBankingClient;
 import Balio.web.model.Exceptions.InstanceNotFoundException;
+import Balio.web.model.entities.AccountDao;
 import Balio.web.model.entities.BankConnection;
-import Balio.web.model.entities.BankTransactionRule;
 import Balio.web.model.services.BankRuleService;
 import Balio.web.model.services.BankService;
 import Balio.web.rest.dtos.BankConnectionDto;
@@ -11,6 +12,8 @@ import Balio.web.rest.dtos.BankRuleDto;
 import Balio.web.rest.dtos.BankRuleResponseDto;
 import Balio.web.rest.dtos.BankSyncResultDto;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -43,17 +47,23 @@ public class BankController {
     private final BankService bankService;
     private final BankRuleService bankRuleService;
     private final BankConverter bankConverter;
+    private final EnableBankingClient enableBankingClient;
+    private final ObjectMapper objectMapper;
+    private final AccountDao accountDao;
 
-    @Value("${FRONTEND_URL:http://localhost:5173}")
-    private String frontendUrl;
-
-    public BankController(BankService bankService,
-                          BankRuleService bankRuleService,
-                          BankConverter bankConverter) {
+    public BankController(BankService bankService, BankRuleService bankRuleService,
+                          BankConverter bankConverter, EnableBankingClient enableBankingClient,
+                          ObjectMapper objectMapper, AccountDao accountDao) {
         this.bankService = bankService;
         this.bankRuleService = bankRuleService;
         this.bankConverter = bankConverter;
+        this.enableBankingClient = enableBankingClient;
+        this.objectMapper = objectMapper;
+        this.accountDao = accountDao;
     }
+
+    @Value("${FRONTEND_URL:http://localhost:5173}")
+    private String frontendUrl;
 
     // ── CONNECTION: initiate OAuth ───────────────────────────────────────
 
@@ -74,9 +84,60 @@ public class BankController {
         BankConnection connection = bankService.completeConnection(state, code);
         log.info("OAuth callback completed for accountId={}", connection.getAccount().getId());
 
-        // Redirect back to the frontend account page
-        URI redirect = URI.create(frontendUrl + "/accounts/" + connection.getAccount().getId() + "?linked=true");
+        // Redirect back to the frontend accounts page with success flag
+        URI redirect = URI.create(frontendUrl + "/accounts?linked=true");
         return ResponseEntity.status(HttpStatus.FOUND).location(redirect).build();
+    }
+
+    // ── ENABLE BANKING: list ASPSPs (banks) ────────────────────────────
+
+    @GetMapping(value = "/enablebanking/aspsps", produces = "application/json")
+    public ResponseEntity<String> listAspsps(
+            @RequestParam(defaultValue = "ES") String country) throws IOException {
+        JsonNode node = enableBankingClient.listAspsps(country);
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/json")
+                .body(objectMapper.writeValueAsString(node));
+    }
+
+    // ── ENABLE BANKING: initiate connection ──────────────────────────────
+
+    @GetMapping("/enablebanking/connect/{accountId}")
+    public Map<String, String> initEnableBankingConnect(
+            @RequestAttribute UUID userId,
+            @PathVariable UUID accountId,
+            @RequestParam String aspspName,
+            @RequestParam(defaultValue = "ES") String aspspCountry)
+            throws InstanceNotFoundException {
+        String link = bankService.initEnableBankingConnection(
+                userId, accountId, aspspName, aspspCountry);
+        return Map.of("authUrl", link);
+    }
+
+    // ── ENABLE BANKING: callback (public, no JWT required) ───────────────
+
+    @GetMapping("/enablebanking/callback")
+    public ResponseEntity<Void> handleEnableBankingCallback(
+            @RequestParam String code,
+            @RequestParam String state) {
+        try {
+            bankService.completeEnableBankingConnection(state, code);
+            URI redirect = URI.create(frontendUrl + "/accounts?linked=true");
+            return ResponseEntity.status(HttpStatus.FOUND).location(redirect).build();
+        } catch (Exception e) {
+            log.error("Enable Banking OAuth callback failed, rolling back account: state={}, error={}",
+                    state, e.getMessage(), e);
+            // state == accountId, delete the pre-created account
+            try {
+                UUID accountId = UUID.fromString(state);
+                accountDao.deleteById(accountId);
+                log.info("Rolled back account {} after failed OAuth", accountId);
+            } catch (Exception rollbackEx) {
+                log.warn("Could not rollback account during OAuth error: {}", rollbackEx.getMessage());
+            }
+            URI redirect = URI.create(frontendUrl + "/accounts?link_error=true");
+            return ResponseEntity.status(HttpStatus.FOUND).location(redirect).build();
+        }
     }
 
     // ── CONNECTION: status ───────────────────────────────────────────────
@@ -101,7 +162,20 @@ public class BankController {
                                               @PathVariable UUID accountId)
             throws InstanceNotFoundException {
         int imported = bankService.syncTransactions(userId, accountId);
-        return new BankSyncResultDto(imported);
+        return new BankSyncResultDto(imported, 1);
+    }
+
+    @PostMapping("/sync-stale")
+    public BankSyncResultDto syncStaleTransactions(@RequestAttribute UUID userId,
+                                                   @RequestParam(defaultValue = "15") int minutes) {
+        int imported = bankService.syncStaleConnections(userId, minutes);
+        return new BankSyncResultDto(imported, bankService.findLinkedConnections(userId).size());
+    }
+
+    @PostMapping("/sync-all")
+    public BankSyncResultDto syncAllTransactions(@RequestAttribute UUID userId) {
+        int imported = bankService.syncAllConnections(userId);
+        return new BankSyncResultDto(imported, bankService.findLinkedConnections(userId).size());
     }
 
     // ── UNLINK ───────────────────────────────────────────────────────────
@@ -118,55 +192,70 @@ public class BankController {
     // ── MAPPING RULES ────────────────────────────────────────────────────
     // ══════════════════════════════════════════════════════════════════════
 
-    @GetMapping("/rules")
-    public List<BankRuleResponseDto> listRules(@RequestAttribute UUID userId) {
-        return bankRuleService.findAllByUserId(userId).stream()
+    @GetMapping("/accounts/{accountId}/rules")
+    public List<BankRuleResponseDto> listRules(@RequestAttribute UUID userId,
+                                               @PathVariable UUID accountId)
+            throws InstanceNotFoundException {
+        return bankRuleService.findAllByUserIdAndAccountId(userId, accountId).stream()
                 .map(bankConverter::toRuleResponseDto)
                 .toList();
     }
 
-    @PostMapping("/rules")
+    @PostMapping("/accounts/{accountId}/rules")
     public ResponseEntity<BankRuleResponseDto> createRule(@RequestAttribute UUID userId,
+                                                          @PathVariable UUID accountId,
                                                           @Validated @RequestBody BankRuleDto dto)
             throws InstanceNotFoundException {
         UUID categoryId = dto.getMappedCategoryId() != null
                 ? UUID.fromString(dto.getMappedCategoryId()) : null;
 
-        BankTransactionRule rule = bankRuleService.createRule(
+        BankRuleService.RuleCreationResult result = bankRuleService.createRule(
                 userId,
+                accountId,
                 dto.getNamePattern(),
                 dto.getBankCategory(),
+                dto.getTransactionType(),
                 dto.getMappedName(),
                 categoryId,
-                dto.getPriority() != null ? dto.getPriority() : 0);
+                Boolean.TRUE.equals(dto.getApplyToExisting()),
+                dto.getApplyWindowDays());
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(bankConverter.toRuleResponseDto(rule));
+        BankRuleResponseDto response = bankConverter.toRuleResponseDto(result.rule());
+        response.setAppliedTransactions(result.appliedTransactions());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PutMapping("/rules/{ruleId}")
+    @PutMapping("/accounts/{accountId}/rules/{ruleId}")
     public BankRuleResponseDto updateRule(@RequestAttribute UUID userId,
+                                          @PathVariable UUID accountId,
                                           @PathVariable UUID ruleId,
                                           @Validated @RequestBody BankRuleDto dto)
             throws InstanceNotFoundException {
         UUID categoryId = dto.getMappedCategoryId() != null
                 ? UUID.fromString(dto.getMappedCategoryId()) : null;
 
-        BankTransactionRule rule = bankRuleService.updateRule(
-                userId, ruleId,
+        BankRuleService.RuleUpdateResult result = bankRuleService.updateRule(
+                userId, accountId, ruleId,
                 dto.getNamePattern(),
                 dto.getBankCategory(),
+                dto.getTransactionType(),
                 dto.getMappedName(),
-                categoryId,
-                dto.getPriority());
+            categoryId,
+            Boolean.TRUE.equals(dto.getApplyToExisting()),
+            dto.getApplyWindowDays());
 
-        return bankConverter.toRuleResponseDto(rule);
+        BankRuleResponseDto response = bankConverter.toRuleResponseDto(result.rule());
+        response.setAppliedTransactions(result.appliedTransactions());
+        return response;
     }
 
-    @DeleteMapping("/rules/{ruleId}")
+    @DeleteMapping("/accounts/{accountId}/rules/{ruleId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteRule(@RequestAttribute UUID userId,
+                           @PathVariable UUID accountId,
                            @PathVariable UUID ruleId)
             throws InstanceNotFoundException {
-        bankRuleService.deleteRule(userId, ruleId);
+        bankRuleService.deleteRule(userId, accountId, ruleId);
     }
 }

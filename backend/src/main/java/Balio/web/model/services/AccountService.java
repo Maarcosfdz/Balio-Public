@@ -32,6 +32,16 @@ public interface AccountService {
      */
     void deleteAccount(UUID userId, UUID accountId) throws InstanceNotFoundException;
 
+        /**
+         * Deletes an account owned by the user and optionally removes its transactions.
+         * When {@code deleteTransactions} is false, existing transactions are preserved and detached
+         * from the deleted account.
+         *
+         * @throws InstanceNotFoundException if the account does not exist or does not belong to the user
+         */
+        void deleteAccount(UUID userId, UUID accountId, boolean deleteTransactions)
+            throws InstanceNotFoundException;
+
     /**
      * Modifies the fields of an existing account. Only non-null parameters are applied.
      *

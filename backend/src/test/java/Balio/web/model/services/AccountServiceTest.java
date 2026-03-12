@@ -6,6 +6,9 @@ import Balio.web.model.Exceptions.InstanceNotFoundException;
 import Balio.web.model.Exceptions.UserNotFoundException;
 import Balio.web.model.entities.Account;
 import Balio.web.model.entities.AccountDao;
+import Balio.web.model.entities.BankConnectionDao;
+import Balio.web.model.entities.BankTransactionRuleDao;
+import Balio.web.model.entities.TransactionDao;
 import Balio.web.model.entities.User;
 import Balio.web.model.entities.UserDao;
 
@@ -32,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -56,6 +60,15 @@ class AccountServiceTest {
     @Mock
     private AccountDao accountDao;
 
+    @Mock
+    private TransactionDao transactionDao;
+
+    @Mock
+    private BankConnectionDao bankConnectionDao;
+
+    @Mock
+    private BankTransactionRuleDao bankTransactionRuleDao;
+
     @InjectMocks
     private AccountServiceImpl accountService;
 
@@ -69,6 +82,13 @@ class AccountServiceTest {
 
         existingAccount = new Account(VALID_NAME, AccountType.BANK, "EUR", new BigDecimal("1000.00"), user);
         setFieldViaReflection(existingAccount, "id", ACCOUNT_ID);
+
+        lenient().when(bankTransactionRuleDao.findAllByUserIdAndAccountIdOrderByPriorityDesc(USER_ID, ACCOUNT_ID))
+            .thenReturn(List.of());
+        lenient().when(bankConnectionDao.findByAccountIdAndUserId(ACCOUNT_ID, USER_ID))
+            .thenReturn(Optional.empty());
+        lenient().when(transactionDao.findAllByUserIdAndAccountIdOrderByDateDesc(USER_ID, ACCOUNT_ID))
+            .thenReturn(List.of());
     }
 
     /* ═══════════════════════════════════════════════════════════

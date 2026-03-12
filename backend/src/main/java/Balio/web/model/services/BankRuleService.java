@@ -1,5 +1,6 @@
 package Balio.web.model.services;
 
+import Balio.web.enums.TransactionType;
 import Balio.web.model.Exceptions.InstanceNotFoundException;
 import Balio.web.model.entities.BankTransactionRule;
 
@@ -11,15 +12,24 @@ import java.util.UUID;
  */
 public interface BankRuleService {
 
-    BankTransactionRule createRule(UUID userId, String namePattern, String bankCategory,
-                                  String mappedName, UUID mappedCategoryId, int priority);
+    record RuleCreationResult(BankTransactionRule rule, int appliedTransactions) {}
 
-    BankTransactionRule updateRule(UUID userId, UUID ruleId, String namePattern,
-                                  String bankCategory, String mappedName,
-                                  UUID mappedCategoryId, Integer priority)
+        record RuleUpdateResult(BankTransactionRule rule, int appliedTransactions) {}
+
+    RuleCreationResult createRule(UUID userId, UUID accountId, String namePattern, String bankCategory,
+                                  TransactionType transactionType, String mappedName,
+                                  UUID mappedCategoryId, boolean applyToExisting,
+                                  Integer applyWindowDays)
             throws InstanceNotFoundException;
 
-    void deleteRule(UUID userId, UUID ruleId) throws InstanceNotFoundException;
+        RuleUpdateResult updateRule(UUID userId, UUID accountId, UUID ruleId, String namePattern,
+                                                                String bankCategory, TransactionType transactionType,
+                                                                String mappedName, UUID mappedCategoryId,
+                                                                boolean applyToExisting, Integer applyWindowDays)
+            throws InstanceNotFoundException;
 
-    List<BankTransactionRule> findAllByUserId(UUID userId);
+    void deleteRule(UUID userId, UUID accountId, UUID ruleId) throws InstanceNotFoundException;
+
+    List<BankTransactionRule> findAllByUserIdAndAccountId(UUID userId, UUID accountId)
+            throws InstanceNotFoundException;
 }

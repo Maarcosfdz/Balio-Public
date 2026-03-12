@@ -8,7 +8,7 @@ import java.util.UUID;
 
 public interface BankTransactionRuleDao extends JpaRepository<BankTransactionRule, UUID> {
 
-    List<BankTransactionRule> findAllByUserIdOrderByPriorityDesc(UUID userId);
+    List<BankTransactionRule> findAllByUserIdAndAccountIdOrderByPriorityDesc(UUID userId, UUID accountId);
 
-    Optional<BankTransactionRule> findByIdAndUserId(UUID id, UUID userId);
+    Optional<BankTransactionRule> findByIdAndUserIdAndAccountId(UUID id, UUID userId, UUID accountId);
 }
