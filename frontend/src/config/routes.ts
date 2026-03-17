@@ -12,6 +12,7 @@ export const ROUTES = {
   // Protegidas (requieren sesión)
   DASHBOARD: "/dashboard",
   TRANSACTIONS: "/transactions",
+  ANALYSIS: "/analysis",
   ACCOUNTS: "/accounts",
   CATEGORIES: "/categories",
   GOALS: "/goals",

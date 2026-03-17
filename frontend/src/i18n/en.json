@@ -175,6 +175,7 @@
   },
   "nav": {
     "dashboard": "Dashboard",
+    "analysis": "Analysis",
     "transactions": "Transactions",
     "accounts": "Accounts",
     "categories": "Categories",

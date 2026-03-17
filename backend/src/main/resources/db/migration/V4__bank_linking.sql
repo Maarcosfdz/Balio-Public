@@ -49,3 +49,28 @@ CREATE UNIQUE INDEX ix_transactions_external
 -- 4. Indices
 CREATE INDEX ix_bank_connections_user ON bank_connections(user_id);
 CREATE INDEX ix_bank_transaction_rules_user ON bank_transaction_rules(user_id);
+
+-- 5. chart_widgets: persisted user-defined analytics widgets
+CREATE TABLE chart_widgets (
+        id              UUID PRIMARY KEY,
+        user_id         UUID NOT NULL,
+        name            VARCHAR(100) NOT NULL,
+        widget_type     VARCHAR(20) NOT NULL,
+        chart_type      VARCHAR(30) NOT NULL,
+        configuration   JSONB NOT NULL,
+        is_pinned       BOOLEAN NOT NULL DEFAULT false,
+        is_visible      BOOLEAN NOT NULL DEFAULT true,
+        display_order   INT,
+        layout_size     VARCHAR(20),
+
+        CHECK (widget_type IN ('CHART', 'KPI', 'TABLE')),
+        CHECK (chart_type IN ('BAR', 'LINE', 'AREA', 'PIE', 'DONUT',
+                              'STACKED_BAR', 'KPI_CARD', 'SUMMARY_TABLE')),
+
+        CONSTRAINT fk_chart_widgets_user
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX ix_chart_widgets_user ON chart_widgets(user_id);
+CREATE INDEX ix_chart_widgets_user_pinned ON chart_widgets(user_id, is_pinned);
+CREATE INDEX ix_chart_widgets_user_visible ON chart_widgets(user_id, is_visible);

@@ -16,6 +16,12 @@ spring:
   flyway:
     enabled: false
 
+  cache:
+    type: caffeine
+    cache-names: chartPreviewSaved,chartPreviewConfig
+    caffeine:
+      spec: maximumSize=${CHARTS_PREVIEW_CACHE_MAX_SIZE:300},expireAfterWrite=${CHARTS_PREVIEW_CACHE_TTL:5m}
+
   h2:
     console:
       enabled: true          # accessible at /h2-console when running with h2 profile
@@ -31,6 +37,11 @@ logging:
   level:
     org.flywaydb: WARN
     org.springframework.boot.autoconfigure: WARN
+
+charts:
+  preview:
+    max-points: 100
+    max-table-rows: 200
 
 # TrueLayer sandbox settings (local dev). These can be overridden via environment variables.
 truelayer:

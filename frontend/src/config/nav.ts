@@ -1,5 +1,6 @@
 import {
   LayoutDashboard,
+  ChartNoAxesCombined,
   ArrowLeftRight,
   Wallet,
   Target,
@@ -22,6 +23,7 @@ export interface NavItem {
  */
 export const NAV_ITEMS: NavItem[] = [
   { key: "dashboard",    path: ROUTES.DASHBOARD,    icon: LayoutDashboard },
+  { key: "analysis",     path: ROUTES.ANALYSIS,     icon: ChartNoAxesCombined },
   { key: "transactions", path: ROUTES.TRANSACTIONS, icon: ArrowLeftRight },
   { key: "accounts",     path: ROUTES.ACCOUNTS,     icon: Wallet },
   { key: "goals",        path: ROUTES.GOALS,        icon: Target },

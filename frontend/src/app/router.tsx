@@ -8,6 +8,7 @@ import AboutPage from "@/pages/mainPage/AboutPage";
 import LoginPage from "@/pages/auth/LoginPage";
 import SignUpPage from "@/pages/auth/SignUpPage";
 import DashboardPage from "@/pages/dashboard/DashboardPage";
+import AnalysisPage from "@/pages/analysis/AnalysisPage";
 import AccountsPage from "@/pages/accounts/AccountsPage";
 import TransactionsPage from "@/pages/transactions/TransactionsPage";
 import CategoriesPage from "@/pages/categories/CategoriesPage";
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { path: ROUTES.DASHBOARD,    element: <DashboardPage /> },
+          { path: ROUTES.ANALYSIS,     element: <AnalysisPage /> },
           { path: ROUTES.ACCOUNTS,     element: <AccountsPage /> },
           { path: ROUTES.TRANSACTIONS, element: <TransactionsPage /> },
           { path: ROUTES.CATEGORIES,   element: <CategoriesPage /> },
