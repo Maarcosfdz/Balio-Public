@@ -12,6 +12,7 @@ target/
 .settings
 .springBeans
 .sts4-cache
+.claude
 
 ### IntelliJ IDEA ###
 .idea
@@ -37,4 +38,4 @@ build/
 *.env
 !.env.example
 *.pem
-backend/secrets/
+backend/secrets/*

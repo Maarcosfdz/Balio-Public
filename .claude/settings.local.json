@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(npx vite:*)",
+      "Bash(node -e \"const rgl = require\\(''react-grid-layout''\\); console.log\\(Object.keys\\(rgl\\)\\)\")",
+      "Bash(node -e \"console.log\\(require\\(''react-grid-layout/package.json''\\).version\\)\")",
+      "Bash(node -e \"process.stdin.setEncoding\\(''''utf8''''\\); let d=''''''''; process.stdin.on\\(''''data'''',c=>d+=c\\); process.stdin.on\\(''''end'''',\\(\\)=>{const p=JSON.parse\\(d\\); console.log\\(''''version:'''', p.version\\)}\\)\")",
+      "Bash(node -e \"const rgl = require\\(''react-grid-layout''\\); console.log\\(typeof rgl.ResponsiveGridLayout, typeof rgl.Responsive, typeof rgl.useContainerWidth\\)\")"
+    ]
+  }
+}

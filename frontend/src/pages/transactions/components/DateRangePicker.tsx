@@ -39,6 +39,14 @@ export default function DateRangePicker({
   const [portalStyle, setPortalStyle] = useState<React.CSSProperties>({});
   const today = new Date();
 
+  const dayPickerClassNames = {
+    selected: "!bg-sky-500 !text-white rounded-md",
+    range_start: "!bg-sky-600 !text-white rounded-md",
+    range_end: "!bg-sky-600 !text-white rounded-md",
+    range_middle: "!bg-sky-100 !text-sky-800 rounded-md",
+    today: "!text-sky-700 font-semibold",
+  };
+
   // ── Portal position ───────────────────────────────────────────────────
   useEffect(() => {
     if (!open) return;
@@ -204,6 +212,7 @@ export default function DateRangePicker({
               <DayPicker
                 mode="single"
                 selected={parseIso(startDate)}
+                classNames={dayPickerClassNames}
                 onSelect={(date) => {
                   const iso = date ? toInputDate(date) : "";
                   onChangeStart(iso);
@@ -214,6 +223,7 @@ export default function DateRangePicker({
               <DayPicker
                 mode="range"
                 selected={rangeValue}
+                classNames={dayPickerClassNames}
                 onSelect={handleRangeSelect}
               />
             )}
@@ -288,6 +298,7 @@ export default function DateRangePicker({
                 <DayPicker
                   mode="multiple"
                   selected={multipleDates}
+                  classNames={dayPickerClassNames}
                   onSelect={handleMultipleSelect}
                 />
                 {specificDates.length > 0 && (

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChartNoAxesCombined, Plus, RefreshCw } from "lucide-react";
+import { ChartNoAxesCombined, LayoutDashboard, RefreshCw } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { ToastBanner } from "@/components/ui/toast-banner";
@@ -20,13 +20,14 @@ import type {
 import AnalysisBoard from "./components/AnalysisBoard";
 import AnalysisConfigurator from "./components/AnalysisConfigurator";
 import {
+  buildConfigForType,
   buildInitialWidgets,
   copyConfig,
   draftFromTemplate,
   emptyDraftFromType,
   widgetTemplates,
 } from "./mocks";
-import type { AnalysisTransaction, AnalysisWidget, WidgetDraft, WidgetType } from "./types";
+import type { AnalysisTransaction, AnalysisWidget, WidgetDraft, WidgetSize, WidgetType } from "./types";
 import type {
   BackendChartType,
   BackendWidgetType,
@@ -48,10 +49,19 @@ interface FilterDefinitionLike {
 }
 
 function normalizeOrder(widgets: AnalysisWidget[]): AnalysisWidget[] {
-  return widgets
+  const visible = widgets
+    .filter((widget) => widget.visible)
     .slice()
     .sort((a, b) => a.order - b.order)
     .map((widget, idx) => ({ ...widget, order: idx }));
+
+  const hidden = widgets
+    .filter((widget) => !widget.visible)
+    .slice()
+    .sort((a, b) => a.order - b.order)
+    .map((widget, idx) => ({ ...widget, order: visible.length + idx }));
+
+  return [...visible, ...hidden];
 }
 
 function toAccountId(accountName?: string): string {
@@ -119,6 +129,7 @@ function mergeFilterIntoConfig<T extends AnalysisWidget["config"]>(
 ): T {
   return {
     ...config,
+    dateRange: "custom",
     transactionType: filter.type,
     accountId: filter.accountId,
     categoryIds: filter.categoryIds ?? [],
@@ -176,14 +187,25 @@ function buildConfiguration(
     .filter((id): id is string => Boolean(id));
   const categoryIds = selectedCategoryIds.length > 0 ? selectedCategoryIds : legacyCategoryIds;
 
-  const commonFilter: Record<string, unknown> = {
-    startDate: typeof cfg.startDate === "string" && cfg.startDate.length > 0
-      ? cfg.startDate
-      : dateRangeStart(widget.config.dateRange),
-    endDate: typeof cfg.endDate === "string" && cfg.endDate.length > 0
-      ? cfg.endDate
-      : todayIso(),
-  };
+  const commonFilter: Record<string, unknown> = {};
+  const dateRange = typeof cfg.dateRange === "string" ? cfg.dateRange : "custom";
+  const explicitStartDate = typeof cfg.startDate === "string" && cfg.startDate.length > 0
+    ? cfg.startDate
+    : undefined;
+  const explicitEndDate = typeof cfg.endDate === "string" && cfg.endDate.length > 0
+    ? cfg.endDate
+    : undefined;
+  const specificDates = toStringArray(cfg.specificDates);
+
+  if (specificDates.length > 0) {
+    commonFilter.specificDates = specificDates;
+  } else if (explicitStartDate || explicitEndDate) {
+    if (explicitStartDate) commonFilter.startDate = explicitStartDate;
+    if (explicitEndDate) commonFilter.endDate = explicitEndDate;
+  } else if (dateRange !== "custom") {
+    commonFilter.startDate = dateRangeStart(widget.config.dateRange);
+    commonFilter.endDate = todayIso();
+  }
 
   if (cfg.transactionType === "INCOME" || cfg.transactionType === "EXPENSE") {
     commonFilter.type = cfg.transactionType;
@@ -198,9 +220,6 @@ function buildConfiguration(
 
   if (categoryIds.length === 1) commonFilter.categoryId = categoryIds[0];
   if (categoryIds.length > 1) commonFilter.categoryIds = categoryIds;
-
-  const specificDates = toStringArray(cfg.specificDates);
-  if (specificDates.length > 0) commonFilter.specificDates = specificDates;
 
   const nameQuery = typeof cfg.nameQuery === "string" ? cfg.nameQuery.trim() : "";
   if (nameQuery) commonFilter.nameQuery = nameQuery;
@@ -224,24 +243,28 @@ function buildConfiguration(
 
   if (widget.type === "table" && "groupBy" in widget.config) {
     backendSpecific.groupBy = widget.config.groupBy === "account" ? "ACCOUNT" : "CATEGORY";
-    backendSpecific.metric = "SUM";
+    backendSpecific.metric = widget.config.valueMode === "count" ? "COUNT" : "SUM";
   }
 
-  if (widget.type === "bar") {
+  if (widget.type === "bar" && "valueMode" in widget.config) {
     backendSpecific.groupBy = "CATEGORY";
-    backendSpecific.metric = "SUM";
+    backendSpecific.metric = widget.config.valueMode === "count" ? "COUNT" : "SUM";
     backendSpecific.orientation = "VERTICAL";
   }
 
-  if (widget.type === "line" && "mode" in widget.config) {
+  if (widget.type === "line" && "mode" in widget.config && "valueMode" in widget.config) {
     backendSpecific.groupBy = "MONTH";
-    backendSpecific.metric = widget.config.mode === "balanceTrend" ? "NET" : "SUM";
+    backendSpecific.metric = widget.config.valueMode === "count"
+      ? "COUNT"
+      : widget.config.mode === "balanceTrend"
+        ? "NET"
+        : "SUM";
     backendSpecific.orientation = "VERTICAL";
   }
 
-  if (widget.type === "donut") {
+  if (widget.type === "donut" && "valueMode" in widget.config) {
     backendSpecific.groupBy = "CATEGORY";
-    backendSpecific.metric = "SUM";
+    backendSpecific.metric = widget.config.valueMode === "count" ? "COUNT" : "SUM";
   }
 
   if (widget.type === "stackedBar") {
@@ -254,8 +277,13 @@ function buildConfiguration(
     backendSpecific.metric = "SUM";
   }
 
-  if (widget.type === "comparison") {
-    backendSpecific.groupBy = "MONTH";
+  if (widget.type === "comparison" && "compare" in widget.config) {
+    backendSpecific.groupBy =
+      widget.config.compare === "weekVsPrevious"
+        ? "DAY"
+        : widget.config.compare === "yearVsPrevious"
+          ? "MONTH"
+          : "MONTH";
     backendSpecific.metric = "NET";
   }
 
@@ -310,6 +338,20 @@ function mapBackendToFrontend(
   const config = {
     ...fallback.config,
     ...(widgetConfig as object),
+    dateRange:
+      widgetConfig.dateRange === "30d"
+      || widgetConfig.dateRange === "90d"
+      || widgetConfig.dateRange === "365d"
+      || widgetConfig.dateRange === "ytd"
+      || widgetConfig.dateRange === "custom"
+        ? widgetConfig.dateRange
+        : toStringArray(widgetConfig.specificDates).length > 0
+          || typeof widgetConfig.startDate === "string"
+          || typeof widgetConfig.endDate === "string"
+          || typeof rawFilter?.startDate === "string"
+          || typeof rawFilter?.endDate === "string"
+            ? "custom"
+            : fallback.config.dateRange,
     transactionType:
       widgetConfig.transactionType === "INCOME" || widgetConfig.transactionType === "EXPENSE"
         ? widgetConfig.transactionType
@@ -361,6 +403,7 @@ function mapBackendToFrontend(
     description: (parsedConfig.description as string | undefined) ?? fallback.description,
     type: frontendType,
     size: mappedSize,
+    visible: dto.visible ?? true,
     order: dto.displayOrder ?? 0,
     config: config as AnalysisWidget["config"],
   };
@@ -375,8 +418,10 @@ export default function AnalysisPage() {
   const [widgets, setWidgets] = useState<AnalysisWidget[]>([]);
   const [transactions, setTransactions] = useState<AnalysisTransaction[]>([]);
   const [savedFilters, setSavedFilters] = useState<FilterSummaryDto[]>([]);
+  const [categoryCatalog, setCategoryCatalog] = useState<CategorySummaryDto[]>([]);
   const [previewsByWidgetId, setPreviewsByWidgetId] = useState<Record<string, unknown>>({});
   const [draftPreviewData, setDraftPreviewData] = useState<unknown>(undefined);
+  const [refreshingDraftPreview, setRefreshingDraftPreview] = useState(false);
   const [categoryIdsByName, setCategoryIdsByName] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -384,6 +429,75 @@ export default function AnalysisPage() {
   const [activeWidgetId, setActiveWidgetId] = useState<string | undefined>(undefined);
 
   const sortedWidgets = useMemo(() => normalizeOrder(widgets), [widgets]);
+  const dashboardWidgets = useMemo(
+    () => sortedWidgets.filter((widget) => widget.visible),
+    [sortedWidgets],
+  );
+
+  const [editMode, setEditMode] = useState(false);
+
+  const resizeWidget = (widgetId: string, size: WidgetSize) => {
+    setWidgets((prev) =>
+      normalizeOrder(prev.map((w) => (w.id === widgetId ? { ...w, size } : w))),
+    );
+  };
+
+  const handleLayoutChange = (updates: { id: string; order: number; size: WidgetSize }[]) => {
+    setWidgets((prev) => {
+      const next = prev.map((w) => {
+        const update = updates.find((u) => u.id === w.id);
+        if (!update) return w;
+        return { ...w, order: update.order, size: update.size };
+      });
+      return normalizeOrder(next);
+    });
+  };
+
+  const toggleWidgetVisibility = (widgetId: string) => {
+    setWidgets((prev) => {
+      const next = prev.map((widget) =>
+        widget.id === widgetId ? { ...widget, visible: !widget.visible } : widget,
+      );
+      return normalizeOrder(next);
+    });
+
+    if (activeWidgetId === widgetId) {
+      const target = widgets.find((widget) => widget.id === widgetId);
+      if (target?.visible) {
+        setActiveWidgetId(undefined);
+      }
+    }
+  };
+
+  const saveEditChanges = useCallback(async () => {
+    await Promise.allSettled(
+      sortedWidgets
+        .filter((w) => !isLocalWidgetId(w.id))
+        .map((widget) => {
+          const backendKind = mapFrontendToBackend(widget);
+          return chartService.update(widget.id, {
+            name: widget.title,
+            ...backendKind,
+            configuration: buildConfiguration(widget, categoryIdsByName),
+            displayOrder: widget.order,
+            layoutSize: widget.size.toUpperCase(),
+            visible: widget.visible,
+            pinned: false,
+          });
+        }),
+    );
+  }, [sortedWidgets, categoryIdsByName]);
+
+  const toggleEditMode = () => {
+    if (editMode) {
+      void saveEditChanges().then(() => {
+        setToastMessage("Cambios del dashboard guardados.");
+      });
+      setEditMode(false);
+    } else {
+      setEditMode(true);
+    }
+  };
 
   const loadAnalysisData = useCallback(async () => {
     setLoading(true);
@@ -407,6 +521,7 @@ export default function AnalysisPage() {
       }, {} as Record<string, string>);
 
       setCategoryIdsByName(nextCategoryIdsByName);
+      setCategoryCatalog(categories);
       setSavedFilters(filters);
       setTransactions(mapTransactions(txPage.content, nextAccountIdsByName));
 
@@ -444,6 +559,7 @@ export default function AnalysisPage() {
     } catch {
       setTransactions([]);
       setSavedFilters([]);
+      setCategoryCatalog([]);
       setWidgets(normalizeOrder(buildInitialWidgets()));
       setPreviewsByWidgetId({});
     } finally {
@@ -475,33 +591,58 @@ export default function AnalysisPage() {
     return () => clearTimeout(timer);
   }, [toastMessage]);
 
-  useEffect(() => {
-    if (!draft) {
-      setDraftPreviewData(undefined);
-      return;
-    }
-
-    const timer = setTimeout(() => {
+  const refreshDraftPreview = useCallback(async () => {
+    if (!draft) return;
+    setRefreshingDraftPreview(true);
+    try {
       const backendKind = mapFrontendToBackend(draft);
       const configuration = buildConfiguration(draft, categoryIdsByName);
-      chartService.previewFromConfig({
+      const response = await chartService.previewFromConfig({
         widgetType: backendKind.widgetType,
         chartType: backendKind.chartType,
         configuration,
         importFilterId: draft.importedFilterId,
-      }).then((response) => {
-        setDraftPreviewData(response.data);
-      }).catch(() => {
-        setDraftPreviewData(undefined);
       });
-    }, 350);
-
-    return () => clearTimeout(timer);
+      setDraftPreviewData(response.data);
+    } catch {
+      setDraftPreviewData(undefined);
+      setToastMessage("No se pudo recalcular la previsualizacion.");
+    } finally {
+      setRefreshingDraftPreview(false);
+    }
   }, [draft, categoryIdsByName]);
 
-  const startCreate = (templateId?: string) => {
-    const template = templateId
-      ? widgetTemplates.find((tpl) => tpl.id === templateId)
+  useEffect(() => {
+    setDraftPreviewData(undefined);
+    if (!draft) return;
+    const timer = setTimeout(() => {
+      void refreshDraftPreview();
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [draft, refreshDraftPreview]);
+
+  const startCreate = (typeOrTemplateId?: string) => {
+    // If called with a WidgetType (from type picker), create with empty title/description
+    const isType = typeOrTemplateId && ["kpi", "table", "bar", "line", "donut", "stackedBar", "heatmap", "comparison"].includes(typeOrTemplateId);
+
+    if (isType) {
+      const type = typeOrTemplateId as WidgetType;
+      setDraft({
+        mode: "create",
+        importedFilterId: undefined,
+        title: "",
+        description: "",
+        type,
+        size: "md",
+        config: buildConfigForType(type),
+      });
+      setActiveWidgetId(undefined);
+      return;
+    }
+
+    // Otherwise use template id
+    const template = typeOrTemplateId
+      ? widgetTemplates.find((tpl) => tpl.id === typeOrTemplateId)
       : widgetTemplates[0];
 
     if (!template) {
@@ -571,6 +712,10 @@ export default function AnalysisPage() {
   const saveDraft = async () => {
     if (!draft) return;
 
+    const baseWidget = draft.mode === "edit"
+      ? widgets.find((widget) => widget.id === draft.baseId)
+      : undefined;
+
     const payloadBase = {
       name: draft.title,
       ...mapFrontendToBackend(draft),
@@ -580,7 +725,7 @@ export default function AnalysisPage() {
         ? widgets.length
         : widgets.find((w) => w.id === draft.baseId)?.order ?? 0,
       layoutSize: draft.size.toUpperCase(),
-      visible: true,
+      visible: baseWidget?.visible ?? true,
       pinned: false,
     };
 
@@ -651,43 +796,6 @@ export default function AnalysisPage() {
     }
   };
 
-  const persistOrder = async (orderedWidgets: AnalysisWidget[]) => {
-    await Promise.all(
-      orderedWidgets
-        .filter((item) => !isLocalWidgetId(item.id))
-        .map((item) => chartService.update(item.id, { displayOrder: item.order })),
-    ).catch(() => {
-      setToastMessage("Se movio el grafico localmente, pero no se pudo guardar el orden.");
-    });
-  };
-
-  const reorderWidgets = async (fromId: string, toId: string) => {
-    if (fromId === toId) return;
-    const ordered = normalizeOrder(widgets);
-    const fromIndex = ordered.findIndex((item) => item.id === fromId);
-    const toIndex = ordered.findIndex((item) => item.id === toId);
-    if (fromIndex < 0 || toIndex < 0) return;
-
-    const copy = ordered.slice();
-    const [moved] = copy.splice(fromIndex, 1);
-    copy.splice(toIndex, 0, moved);
-
-    const normalized = normalizeOrder(copy);
-    setWidgets(normalized);
-    await persistOrder(normalized);
-  };
-
-  const moveWidget = async (widgetId: string, direction: "up" | "down") => {
-    const ordered = normalizeOrder(widgets);
-    const index = ordered.findIndex((item) => item.id === widgetId);
-    if (index < 0) return;
-
-    const target = direction === "up" ? index - 1 : index + 1;
-    if (target < 0 || target >= ordered.length) return;
-
-    await reorderWidgets(widgetId, ordered[target].id);
-  };
-
   if (loading) {
     return <div className="py-8 text-sm text-slate-500">Cargando analisis...</div>;
   }
@@ -703,6 +811,7 @@ export default function AnalysisPage() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
+                className="analysis-sync-btn"
                 onClick={() => {
                   void synchronizeAndReload();
                 }}
@@ -712,9 +821,12 @@ export default function AnalysisPage() {
                 {syncing ? "Sincronizando..." : "Sincronizar"}
               </Button>
 
-              <Button onClick={() => startCreate()}>
-                <Plus className="mr-2 h-4 w-4" />
-                Nuevo gráfico
+              <Button
+                className={`analysis-edit-btn ${editMode ? "is-active" : ""}`}
+                onClick={toggleEditMode}
+              >
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                {editMode ? "Salir edición" : "Editar dashboard"}
               </Button>
             </div>
           )}
@@ -722,23 +834,25 @@ export default function AnalysisPage() {
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
           <AnalysisBoard
-            widgets={sortedWidgets}
+            widgets={dashboardWidgets}
             transactions={transactions}
             previewsByWidgetId={previewsByWidgetId}
             activeWidgetId={activeWidgetId}
+            editMode={editMode}
             onCreate={() => startCreate()}
             onEdit={startEdit}
             onDelete={deleteWidget}
-            onMove={moveWidget}
-            onReorder={reorderWidgets}
+            onLayoutChange={handleLayoutChange}
           />
 
           <AnalysisConfigurator
             draft={draft}
             draftPreviewData={draftPreviewData}
-            templates={widgetTemplates}
             transactions={transactions}
+            categories={categoryCatalog}
             savedFilters={savedFilters}
+            editMode={editMode}
+            widgets={sortedWidgets}
             onStartCreate={startCreate}
             onDraftChange={handleDraftChange}
             onImportFilter={(filterId) => {
@@ -748,6 +862,16 @@ export default function AnalysisPage() {
               void saveDraft();
             }}
             onCancel={() => setDraft(null)}
+            onEditWidget={startEdit}
+            onDeleteWidget={(id) => {
+              void deleteWidget(id);
+            }}
+            onResizeWidget={resizeWidget}
+            onToggleWidgetVisibility={toggleWidgetVisibility}
+            onRefreshPreview={() => {
+              void refreshDraftPreview();
+            }}
+            refreshingPreview={refreshingDraftPreview}
           />
         </div>
       </div>

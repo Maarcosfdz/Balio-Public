@@ -1,4 +1,4 @@
-export type DateRangePreset = "30d" | "90d" | "365d" | "ytd";
+export type DateRangePreset = "30d" | "90d" | "365d" | "ytd" | "custom";
 
 export type WidgetType =
   | "kpi"
@@ -32,22 +32,29 @@ export interface KpiWidgetConfig extends WidgetCommonConfig {
 export interface TableWidgetConfig extends WidgetCommonConfig {
   groupBy: "category" | "account";
   limit: number;
+  valueMode: "amount" | "count";
 }
 
 export interface BarWidgetConfig extends WidgetCommonConfig {
   mode: "expensesByCategory" | "incomeByMonth";
+  valueMode: "amount" | "count";
+  seriesColors?: Record<string, string>;
 }
 
 export interface LineWidgetConfig extends WidgetCommonConfig {
   mode: "balanceTrend" | "incomeVsExpense";
+  valueMode: "amount" | "count";
 }
 
 export interface DonutWidgetConfig extends WidgetCommonConfig {
   mode: "expensesByCategory" | "expensesByAccount";
+  valueMode: "amount" | "count";
+  seriesColors?: Record<string, string>;
 }
 
 export interface StackedBarWidgetConfig extends WidgetCommonConfig {
   mode: "monthlyIncomeExpenseByAccount";
+  stackBy: "type" | "account";
 }
 
 export interface HeatmapWidgetConfig extends WidgetCommonConfig {
@@ -55,7 +62,7 @@ export interface HeatmapWidgetConfig extends WidgetCommonConfig {
 }
 
 export interface ComparisonWidgetConfig extends WidgetCommonConfig {
-  compare: "monthVsPrevious" | "quarterVsPrevious";
+  compare: "weekVsPrevious" | "monthVsPrevious" | "quarterVsPrevious" | "yearVsPrevious";
 }
 
 export type WidgetConfig =
@@ -74,6 +81,7 @@ export interface AnalysisWidget {
   description: string;
   type: WidgetType;
   size: WidgetSize;
+  visible: boolean;
   order: number;
   config: WidgetConfig;
 }
