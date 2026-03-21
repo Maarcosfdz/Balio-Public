@@ -31,8 +31,8 @@ public class BankConnection {
     @Column(length = 100)
     private String provider;
 
-    @Column(name = "truelayer_account_id", length = 100)
-    private String truelayerAccountId;
+    @Column(name = "external_account_id", length = 100)
+    private String externalAccountId;
 
     /** Enable Banking session ID — used to check consent status and retrieve accounts. */
     @Column(name = "session_id", length = 200)
@@ -76,9 +76,9 @@ public class BankConnection {
     public String getProvider() { return provider; }
     public void setProvider(String provider) { this.provider = provider; }
 
-    public String getTruelayerAccountId() { return truelayerAccountId; }
-    public void setTruelayerAccountId(String truelayerAccountId) {
-        this.truelayerAccountId = truelayerAccountId;
+    public String getExternalAccountId() { return externalAccountId; }
+    public void setExternalAccountId(String externalAccountId) {
+        this.externalAccountId = externalAccountId;
     }
 
     public String getSessionId() { return sessionId; }

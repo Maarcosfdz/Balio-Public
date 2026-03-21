@@ -12,14 +12,13 @@ import {
   ArrowLeft,
   ArrowUpCircle,
   Check,
-  ChevronLeft,
-  ChevronRight,
   Loader2,
   Pencil,
   Plus,
   Trash2,
   X,
 } from "lucide-react";
+import Pagination from "@/components/ui/Pagination";
 import type { CategorySummaryDto, TransactionType } from "@/types";
 import { categoryService } from "@/backend/categoryService";
 import { ROUTES } from "@/config/routes";
@@ -261,7 +260,7 @@ function CategoryColumn({
         </div>
         <div>
           <p className="text-sm font-bold text-slate-800">{title}</p>
-          <p className="text-xs text-slate-400">{totalElements} categorías</p>
+          <p className="text-xs text-slate-400">{totalElements} categories</p>
         </div>
       </div>
 
@@ -279,27 +278,11 @@ function CategoryColumn({
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="mt-1 flex items-center justify-center gap-2">
-          <button
-            disabled={currentPage === 0}
-            onClick={() => onPageChange(currentPage - 1)}
-            className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-sky-300 hover:text-sky-600 disabled:opacity-30"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" />
-          </button>
-          <span className="text-xs text-slate-500">
-            {currentPage + 1} / {totalPages}
-          </span>
-          <button
-            disabled={currentPage >= totalPages - 1}
-            onClick={() => onPageChange(currentPage + 1)}
-            className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-sky-300 hover:text-sky-600 disabled:opacity-30"
-          >
-            <ChevronRight className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      )}
+      <Pagination
+        currentPage={currentPage + 1}
+        totalPages={totalPages}
+        onPageChange={(p) => onPageChange(p - 1)}
+      />
     </div>
   );
 }

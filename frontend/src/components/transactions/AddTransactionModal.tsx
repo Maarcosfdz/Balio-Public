@@ -14,7 +14,7 @@ import type {
 import { transactionService } from "@/backend/transactionService";
 import { accountService } from "@/backend/accountService";
 import { categoryService } from "@/backend/categoryService";
-import CategoryCombobox from "./CategoryCombobox";
+import CategoryCombobox from "@/components/ui/CategoryCombobox";
 
 interface AddTransactionModalProps {
   type: TransactionType;
@@ -23,7 +23,7 @@ interface AddTransactionModalProps {
   onCreated: (tx: TransactionResponseDto) => void;
 }
 
-// ── Helpers compartidos por los sub-componentes ────────────────────────
+// ── Shared helpers for subcomponents ──────────────────────────────────
 function _toISO(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
@@ -34,7 +34,7 @@ function _parseISO(s: string): Date | undefined {
   return new Date(y, m - 1, d);
 }
 
-// ── Selector de fecha con portal ──────────────────────────────────────
+// ── Date selector with portal ─────────────────────────────────────────
 function ModalDatePicker({ date, onChange }: { date: string; onChange: (v: string) => void }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -78,7 +78,7 @@ function ModalDatePicker({ date, onChange }: { date: string; onChange: (v: strin
   const parsed = _parseISO(date);
   const displayText = parsed
     ? parsed.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })
-    : t("txPage.selectDate", "Seleccionar fecha");
+    : t("txPage.selectDate", "Select date");
 
   return (
     <>
@@ -129,7 +129,7 @@ function ModalDatePicker({ date, onChange }: { date: string; onChange: (v: strin
   );
 }
 
-// ── Select estilizado con portal ──────────────────────────────────────
+// ── Styled select with portal ─────────────────────────────────--------
 function ModalSelect({
   value, onChange, options, placeholder,
 }: {

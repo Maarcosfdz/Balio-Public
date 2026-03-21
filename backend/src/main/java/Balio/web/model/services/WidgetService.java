@@ -11,7 +11,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.UUID;
 
-public interface ChartWidgetService {
+public interface WidgetService {
 
     ChartWidget createWidget(UUID userId, String name, WidgetType widgetType,
                              WidgetChartType chartType, String configuration,

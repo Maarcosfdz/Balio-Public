@@ -9,12 +9,17 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
-    baseline-on-migrate: true
 
   jpa:
     hibernate:
       ddl-auto: none
     show-sql: ${SHOW_SQL:false}
+
+  cache:
+    type: caffeine
+    cache-names: chartPreviewSaved,chartPreviewConfig
+    caffeine:
+      spec: maximumSize=${CHARTS_PREVIEW_CACHE_MAX_SIZE:300},expireAfterWrite=${CHARTS_PREVIEW_CACHE_TTL:5m}
 
 project:
   jwt:
@@ -22,21 +27,13 @@ project:
     accessExpirationMinutes: ${JWT_ACCESS_EXPIRATION:15}
     refreshExpirationDays: ${JWT_REFRESH_EXPIRATION_DAYS:7}
 
-# ── TrueLayer (Open Banking) ──────────────────────────────────
-truelayer:
-  client-id: ${TRUELAYER_CLIENT_ID:}
-  client-secret: ${TRUELAYER_CLIENT_SECRET:}
-  redirect-uri: ${TRUELAYER_REDIRECT_URI:http://localhost:8080/bank/callback}
-  auth-base-url: ${TRUELAYER_AUTH_URL:https://auth.truelayer-sandbox.com}
-  api-base-url: ${TRUELAYER_API_URL:https://api.truelayer-sandbox.com}
-
 # ── Frontend redirect ─────────────────────────────────────────
-FRONTEND_URL: ${FRONTEND_URL:http://localhost:5173}
+FRONTEND_URL: http://localhost:5173
 
 # ── Enable Banking (Open Banking / PSD2) ─────────────────────
 enable-banking:
-  application-id: ${ENABLE_BANKING_APP_ID:}
-  private-key-path: ${ENABLE_BANKING_PRIVATE_KEY_PATH:}
+  application-id: ${ENABLE_BANKING_APP_ID:9b6d5e63-03cd-4732-8b7a-75f298dc43fc}
+  private-key-path: ${ENABLE_BANKING_PRIVATE_KEY_PATH:secrets/enablebanking.pem}
   redirect-uri: ${ENABLE_BANKING_REDIRECT_URI:http://localhost:8080/bank/enablebanking/callback}
   api-base-url: https://api.enablebanking.com
   # Metadata for Enable Banking control panel (sandbox)
@@ -48,6 +45,11 @@ enable-banking:
   data-protection-email: dpo@balio.example.com
   privacy-url: http://localhost:5173/privacy
   teams-url: https://teams.microsoft.com/l/team/19:balio-team@thread.tacv2
+
+charts:
+  preview:
+    max-points: ${CHARTS_PREVIEW_MAX_POINTS:100}
+    max-table-rows: ${CHARTS_PREVIEW_MAX_TABLE_ROWS:200}
 
 logging:
   level:

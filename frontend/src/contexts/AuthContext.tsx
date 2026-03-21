@@ -36,7 +36,7 @@ import {
   updateStoredUser,
 } from "@/lib/session";
 
-// ── Tipos del contexto ──
+// ── Context types ──
 interface User {
   id: string;
   nickname: string;
@@ -241,7 +241,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authService.logout();
     } catch {
-      // Ignorar errores en logout (token expirado, etc.)
+      // Ignore logout errors (token expired, etc.)
     } finally {
       clearSessionData();
       setSessionNoticeReason(null);

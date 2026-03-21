@@ -3,8 +3,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ROUTES } from "@/config/routes";
 
 /**
- * Si el usuario YA está autenticado, lo manda al dashboard.
- * Si no, muestra la página pública (login/signup).
+ * If the user is ALREADY authenticated, redirect them to the dashboard.
+ * Otherwise, show the public page (login/signup).
  */
 export default function PublicRoute() {
   const { isAuthenticated, isLoading } = useAuth();

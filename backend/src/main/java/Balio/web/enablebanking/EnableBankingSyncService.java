@@ -64,8 +64,7 @@ public class EnableBankingSyncService {
      */
     @Transactional
     public int sync(BankConnection connection) {
-        // The Enable Banking account ID is stored in truelayerAccountId (reused field)
-        String ebAccountId = connection.getTruelayerAccountId();
+        String ebAccountId = connection.getExternalAccountId();
         Account account = connection.getAccount();
         User user = connection.getUser();
         UUID userId = user.getId();

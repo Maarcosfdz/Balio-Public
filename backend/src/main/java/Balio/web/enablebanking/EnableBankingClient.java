@@ -2,8 +2,6 @@ package Balio.web.enablebanking;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -15,15 +13,16 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
+import java.security.Signature;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
-import java.util.Date;
 import java.util.Map;
 
 /**
@@ -131,20 +130,51 @@ public class EnableBankingClient {
         return cachedJwt;
     }
 
+    /**
+     * Builds the RS256 JWT manually to guarantee exact claim serialization.
+     * JJWT 0.12.x routes `.claim("aud", ...)` through its audience builder which
+     * may serialize to a JSON array; Enable Banking requires a plain string value.
+     */
     private String buildJwt() {
-        java.security.interfaces.RSAPrivateKey key =
-                (java.security.interfaces.RSAPrivateKey) resolvePrivateKey();
+        PrivateKey key = resolvePrivateKey();
         Instant now = Instant.now();
-        String jwt = Jwts.builder()
-                .header().keyId(props.getApplicationId()).and()
-                .issuer("enablebanking.com")
-                .claim("aud", "api.enablebanking.com")
-                .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plusSeconds(3600)))
-                .signWith(key, Jwts.SIG.RS256)
-                .compact();
-        log.debug("Generated JWT (decode at jwt.io): {}", jwt);
-        return jwt;
+        try {
+            Base64.Encoder b64 = Base64.getUrlEncoder().withoutPadding();
+
+            // Header — {"typ":"JWT","alg":"RS256","kid":"<applicationId>"}
+            String headerJson = objectMapper.writeValueAsString(Map.of(
+                    "typ", "JWT",
+                    "alg", "RS256",
+                    "kid", props.getApplicationId()
+            ));
+            String headerPart = b64.encodeToString(
+                    headerJson.getBytes(StandardCharsets.UTF_8));
+
+            // Payload — per Enable Banking docs:
+            //   iss = "enablebanking.com" (constant, NOT the app ID)
+            //   aud = "api.enablebanking.com"
+            String payloadJson = objectMapper.writeValueAsString(Map.of(
+                    "iss", "enablebanking.com",
+                    "aud", "api.enablebanking.com",
+                    "iat", now.getEpochSecond(),
+                    "exp", now.plusSeconds(3600).getEpochSecond()
+            ));
+            String payloadPart = b64.encodeToString(
+                    payloadJson.getBytes(StandardCharsets.UTF_8));
+
+            // Signature
+            String signingInput = headerPart + "." + payloadPart;
+            Signature signer = Signature.getInstance("SHA256withRSA");
+            signer.initSign(key);
+            signer.update(signingInput.getBytes(StandardCharsets.UTF_8));
+            String signaturePart = b64.encodeToString(signer.sign());
+
+            String jwt = signingInput + "." + signaturePart;
+            log.info("Generated JWT (decode at jwt.io to verify): {}", jwt);
+            return jwt;
+        } catch (Exception e) {
+            throw new EnableBankingException("Failed to build Enable Banking JWT", e);
+        }
     }
 
     /**

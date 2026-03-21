@@ -81,7 +81,8 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public void deleteAccount(UUID userId, UUID accountId, boolean deleteTransactions) throws InstanceNotFoundException {
+        public void deleteAccount(UUID userId, UUID accountId, boolean deleteTransactions)
+            throws InstanceNotFoundException {
 
         Account account = accountDao.findByIdAndUserId(accountId, userId)
                 .orElseThrow(() -> new InstanceNotFoundException("Account", accountId));
@@ -103,7 +104,8 @@ public class AccountServiceImpl implements AccountService {
         bankConnectionDao.findByAccountIdAndUserId(accountId, userId)
                 .ifPresent(bankConnectionDao::delete);
 
-        List<Transaction> transactions = transactionDao.findAllByUserIdAndAccountIdOrderByDateDesc(userId, accountId);
+        List<Transaction> transactions = transactionDao
+            .findAllByUserIdAndAccountIdOrderByDateDesc(userId, accountId);
         if (!transactions.isEmpty()) {
             if (deleteTransactions) {
                 transactionDao.deleteAll(transactions);

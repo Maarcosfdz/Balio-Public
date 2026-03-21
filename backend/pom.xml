@@ -194,6 +194,10 @@
                         <exclude>Balio/web/config/SecurityConfig.class</exclude>
                         <exclude>Balio/web/config/SecurityEnvironmentValidator.class</exclude>
                         <exclude>Balio/web/model/Exceptions/*.class</exclude>
+                        <!-- External bank integration clients — untestable without live OAuth -->
+                        <exclude>Balio/web/enablebanking/*.class</exclude>
+                        <exclude>Balio/web/oauth/*.class</exclude>
+                        <exclude>Balio/web/BalioApplication.class</exclude>
                     </excludes>
                 </configuration>
 

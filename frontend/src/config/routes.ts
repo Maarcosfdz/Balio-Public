@@ -1,15 +1,15 @@
 /**
- * Fuente de verdad de todas las rutas de la app.
- * Importa desde aquí en lugar de escribir strings a mano.
+ * Source of truth for all app routes.
+ * Import from here instead of hardcoding route strings.
  */
 export const ROUTES = {
-  // Públicas
+  // Public
   HOME: "/",
   ABOUT: "/about",
   LOGIN: "/login",
   SIGNUP: "/signup",
 
-  // Protegidas (requieren sesión)
+  // Protected (require session)
   DASHBOARD: "/dashboard",
   TRANSACTIONS: "/transactions",
   ANALYSIS: "/analysis",

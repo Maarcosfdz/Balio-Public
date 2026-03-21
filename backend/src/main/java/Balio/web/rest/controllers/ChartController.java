@@ -2,7 +2,7 @@ package Balio.web.rest.controllers;
 
 import Balio.web.model.Exceptions.InstanceNotFoundException;
 import Balio.web.model.entities.ChartWidget;
-import Balio.web.model.services.ChartWidgetService;
+import Balio.web.model.services.WidgetService;
 import Balio.web.rest.dtos.ChartWidgetConverter;
 import Balio.web.rest.dtos.ChartWidgetDto;
 import Balio.web.rest.dtos.ChartWidgetPreviewRequestDto;
@@ -42,19 +42,19 @@ public class ChartController {
 
     private static final Logger log = LoggerFactory.getLogger(ChartController.class);
 
-    private final ChartWidgetService chartWidgetService;
+    private final WidgetService widgetService;
     private final ChartWidgetConverter chartWidgetConverter;
 
-    public ChartController(ChartWidgetService chartWidgetService,
+    public ChartController(WidgetService widgetService,
                            ChartWidgetConverter chartWidgetConverter) {
-        this.chartWidgetService = chartWidgetService;
+        this.widgetService = widgetService;
         this.chartWidgetConverter = chartWidgetConverter;
     }
 
     @GetMapping
     public List<ChartWidgetSummaryDto> getAllWidgets(@RequestAttribute UUID userId,
                                                      @RequestParam(required = false) Boolean pinned) {
-        return chartWidgetService.findAllByUserId(userId, pinned).stream()
+        return widgetService.findAllByUserId(userId, pinned).stream()
                 .map(chartWidgetConverter::toSummaryDto)
                 .toList();
     }
@@ -64,14 +64,14 @@ public class ChartController {
             @RequestAttribute UUID userId,
             @RequestParam(required = false) Boolean pinned,
             @PageableDefault(size = 20, sort = "displayOrder") Pageable pageable) {
-        return chartWidgetService.findPagedByUserId(userId, pinned, pageable)
+        return widgetService.findPagedByUserId(userId, pinned, pageable)
                 .map(chartWidgetConverter::toSummaryDto);
     }
 
     @GetMapping("/{widgetId}")
     public ChartWidgetResponseDto getWidget(@RequestAttribute UUID userId,
                                             @PathVariable UUID widgetId) throws InstanceNotFoundException {
-        ChartWidget widget = chartWidgetService.findByIdAndUserId(widgetId, userId);
+        ChartWidget widget = widgetService.findByIdAndUserId(widgetId, userId);
         return chartWidgetConverter.toResponseDto(widget);
     }
 
@@ -79,7 +79,7 @@ public class ChartController {
     public ResponseEntity<ChartWidgetResponseDto> createWidget(@RequestAttribute UUID userId,
                                                                 @Validated @RequestBody ChartWidgetDto dto) {
         UUID importFilterId = parseOptionalUuid(dto.getImportFilterId());
-        ChartWidget widget = chartWidgetService.createWidget(
+        ChartWidget widget = widgetService.createWidget(
                 userId,
                 dto.getName(),
                 dto.getWidgetType(),
@@ -108,7 +108,7 @@ public class ChartController {
                                                @Validated @RequestBody ChartWidgetUpdateDto dto)
             throws InstanceNotFoundException {
         UUID importFilterId = parseOptionalUuid(dto.getImportFilterId());
-        ChartWidget widget = chartWidgetService.modifyWidget(
+        ChartWidget widget = widgetService.modifyWidget(
                 userId,
                 widgetId,
                 dto.getName(),
@@ -129,7 +129,7 @@ public class ChartController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteWidget(@RequestAttribute UUID userId,
                              @PathVariable UUID widgetId) throws InstanceNotFoundException {
-        chartWidgetService.deleteWidget(userId, widgetId);
+        widgetService.deleteWidget(userId, widgetId);
         log.info("Chart widget deleted: widgetId={}, userId={}", widgetId, userId);
     }
 
@@ -137,8 +137,8 @@ public class ChartController {
     public ChartWidgetPreviewResponseDto previewSavedWidget(@RequestAttribute UUID userId,
                                                             @PathVariable UUID widgetId)
             throws InstanceNotFoundException {
-        ChartWidget widget = chartWidgetService.findByIdAndUserId(widgetId, userId);
-        JsonNode data = chartWidgetService.preview(userId, widgetId);
+        ChartWidget widget = widgetService.findByIdAndUserId(widgetId, userId);
+        JsonNode data = widgetService.preview(userId, widgetId);
         return chartWidgetConverter.toPreviewDto(
                 widget.getWidgetType().name(),
                 widget.getChartType().name(),
@@ -149,7 +149,7 @@ public class ChartController {
     @PostMapping("/preview")
     public ChartWidgetPreviewResponseDto previewFromConfig(@RequestAttribute UUID userId,
                                                            @Validated @RequestBody ChartWidgetPreviewRequestDto dto) {
-        JsonNode data = chartWidgetService.previewConfiguration(
+        JsonNode data = widgetService.previewConfiguration(
                 userId,
                 dto.getWidgetType(),
                 dto.getChartType(),
@@ -166,7 +166,7 @@ public class ChartController {
         @PostMapping("/sync")
         @ResponseStatus(HttpStatus.NO_CONTENT)
         public void synchronizeChartCache(@RequestAttribute UUID userId) {
-                chartWidgetService.recalculatePreviewCache();
+                widgetService.recalculatePreviewCache();
                 log.info("Chart preview cache synchronized by userId={}", userId);
         }
 

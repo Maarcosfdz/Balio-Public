@@ -1,27 +1,24 @@
 package Balio.web.model.services;
 
+import Balio.web.enums.TransactionType;
 import Balio.web.model.Exceptions.InstanceNotFoundException;
 import Balio.web.model.entities.BankConnection;
+import Balio.web.model.entities.BankTransactionRule;
 
 import java.util.List;
 import java.util.UUID;
 
 /**
- * Handles bank-account linking via TrueLayer or Enable Banking and transaction synchronization.
+ * Handles bank-account linking via Enable Banking, transaction synchronization,
+ * and bank transaction mapping rules.
  */
 public interface BankService {
 
-    /**
-     * Generates the TrueLayer authorization URL for the given account.
-     * The account must be of type BANK and not already linked.
-     */
-    String initConnection(UUID userId, UUID accountId) throws InstanceNotFoundException;
+    // ── Rule result records ───────────────────────────────────────────────
 
-    /**
-     * Completes the TrueLayer OAuth flow: exchanges the authorization code for tokens,
-     * selects the first TrueLayer account, and persists the BankConnection.
-     */
-    BankConnection completeConnection(String state, String code) throws InstanceNotFoundException;
+    record RuleCreationResult(BankTransactionRule rule, int appliedTransactions) {}
+
+    record RuleUpdateResult(BankTransactionRule rule, int appliedTransactions) {}
 
     // ── Enable Banking ───────────────────────────────────────────────────
 
@@ -49,8 +46,7 @@ public interface BankService {
     // ── Common ───────────────────────────────────────────────────────────
 
     /**
-     * Triggers a manual synchronization: fetches transactions and updates the balance.
-     * Routes to the correct provider based on the stored connection.
+     * Triggers a manual synchronization via Enable Banking: fetches transactions and updates the balance.
      *
      * @return number of new transactions imported
      */
@@ -71,4 +67,23 @@ public interface BankService {
      * Removes the bank link (tokens, connection) but keeps the account and its transactions.
      */
     void unlinkAccount(UUID userId, UUID accountId) throws InstanceNotFoundException;
+
+    // ── Mapping rules ─────────────────────────────────────────────────────
+
+    RuleCreationResult createRule(UUID userId, UUID accountId, String namePattern, String bankCategory,
+                                  TransactionType transactionType, String mappedName,
+                                  UUID mappedCategoryId, boolean applyToExisting,
+                                  Integer applyWindowDays)
+            throws InstanceNotFoundException;
+
+    RuleUpdateResult updateRule(UUID userId, UUID accountId, UUID ruleId, String namePattern,
+                                String bankCategory, TransactionType transactionType,
+                                String mappedName, UUID mappedCategoryId,
+                                boolean applyToExisting, Integer applyWindowDays)
+            throws InstanceNotFoundException;
+
+    void deleteRule(UUID userId, UUID accountId, UUID ruleId) throws InstanceNotFoundException;
+
+    List<BankTransactionRule> findAllRulesByUserIdAndAccountId(UUID userId, UUID accountId)
+            throws InstanceNotFoundException;
 }

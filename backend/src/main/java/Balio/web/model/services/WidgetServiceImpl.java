@@ -28,7 +28,7 @@ import java.util.UUID;
 
 @Service
 @Transactional
-public class ChartWidgetServiceImpl implements ChartWidgetService {
+public class WidgetServiceImpl implements WidgetService {
 
     private static final String PREVIEW_SAVED_CACHE = "chartPreviewSaved";
     private static final String PREVIEW_CONFIG_CACHE = "chartPreviewConfig";
@@ -39,11 +39,11 @@ public class ChartWidgetServiceImpl implements ChartWidgetService {
     private final WidgetResolverRegistry resolverRegistry;
     private final ObjectMapper objectMapper;
 
-    public ChartWidgetServiceImpl(UserDao userDao,
-                                  FilterDao filterDao,
-                                  ChartWidgetDao chartWidgetDao,
-                                  WidgetResolverRegistry resolverRegistry,
-                                  ObjectMapper objectMapper) {
+    public WidgetServiceImpl(UserDao userDao,
+                             FilterDao filterDao,
+                             ChartWidgetDao chartWidgetDao,
+                             WidgetResolverRegistry resolverRegistry,
+                             ObjectMapper objectMapper) {
         this.userDao = userDao;
         this.filterDao = filterDao;
         this.chartWidgetDao = chartWidgetDao;
@@ -52,10 +52,10 @@ public class ChartWidgetServiceImpl implements ChartWidgetService {
     }
 
     @Override
-        @Caching(evict = {
-            @CacheEvict(cacheNames = PREVIEW_SAVED_CACHE, allEntries = true),
-            @CacheEvict(cacheNames = PREVIEW_CONFIG_CACHE, allEntries = true)
-        })
+    @Caching(evict = {
+        @CacheEvict(cacheNames = PREVIEW_SAVED_CACHE, allEntries = true),
+        @CacheEvict(cacheNames = PREVIEW_CONFIG_CACHE, allEntries = true)
+    })
     public ChartWidget createWidget(UUID userId, String name, WidgetType widgetType,
                                     WidgetChartType chartType, String configuration,
                                     Boolean pinned, Boolean visible, Integer displayOrder,
@@ -83,10 +83,10 @@ public class ChartWidgetServiceImpl implements ChartWidgetService {
     }
 
     @Override
-        @Caching(evict = {
-            @CacheEvict(cacheNames = PREVIEW_SAVED_CACHE, allEntries = true),
-            @CacheEvict(cacheNames = PREVIEW_CONFIG_CACHE, allEntries = true)
-        })
+    @Caching(evict = {
+        @CacheEvict(cacheNames = PREVIEW_SAVED_CACHE, allEntries = true),
+        @CacheEvict(cacheNames = PREVIEW_CONFIG_CACHE, allEntries = true)
+    })
     public ChartWidget modifyWidget(UUID userId, UUID widgetId, String name, WidgetType widgetType,
                                     WidgetChartType chartType, String configuration,
                                     Boolean pinned, Boolean visible, Integer displayOrder,
@@ -131,8 +131,8 @@ public class ChartWidgetServiceImpl implements ChartWidgetService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = PREVIEW_SAVED_CACHE, allEntries = true),
-            @CacheEvict(cacheNames = PREVIEW_CONFIG_CACHE, allEntries = true)
+        @CacheEvict(cacheNames = PREVIEW_SAVED_CACHE, allEntries = true),
+        @CacheEvict(cacheNames = PREVIEW_CONFIG_CACHE, allEntries = true)
     })
     public void deleteWidget(UUID userId, UUID widgetId) throws InstanceNotFoundException {
         ChartWidget widget = findByIdAndUserId(widgetId, userId);
@@ -166,11 +166,11 @@ public class ChartWidgetServiceImpl implements ChartWidgetService {
 
     @Override
     @Transactional(readOnly = true)
-        @Cacheable(
-            cacheNames = PREVIEW_SAVED_CACHE,
-            key = "#userId + ':' + #widgetId",
-            unless = "#result == null"
-        )
+    @Cacheable(
+        cacheNames = PREVIEW_SAVED_CACHE,
+        key = "#userId + ':' + #widgetId",
+        unless = "#result == null"
+    )
     public JsonNode preview(UUID userId, UUID widgetId) throws InstanceNotFoundException {
         ChartWidget widget = findByIdAndUserId(widgetId, userId);
         JsonNode configuration = parseJson(widget.getConfiguration());
@@ -181,9 +181,10 @@ public class ChartWidgetServiceImpl implements ChartWidgetService {
     @Override
     @Transactional(readOnly = true)
     @Cacheable(
-            cacheNames = PREVIEW_CONFIG_CACHE,
-            key = "#userId + ':' + #widgetType.name() + ':' + #chartType.name() + ':' + #configuration + ':' + #importFilterId",
-            unless = "#result == null"
+        cacheNames = PREVIEW_CONFIG_CACHE,
+        key = "#userId + ':' + #widgetType.name() + ':' + #chartType.name()"
+                + " + ':' + #configuration + ':' + #importFilterId",
+        unless = "#result == null"
     )
     public JsonNode previewConfiguration(UUID userId, WidgetType widgetType,
                                          WidgetChartType chartType, String configuration,
@@ -196,8 +197,8 @@ public class ChartWidgetServiceImpl implements ChartWidgetService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = PREVIEW_SAVED_CACHE, allEntries = true),
-            @CacheEvict(cacheNames = PREVIEW_CONFIG_CACHE, allEntries = true)
+        @CacheEvict(cacheNames = PREVIEW_SAVED_CACHE, allEntries = true),
+        @CacheEvict(cacheNames = PREVIEW_CONFIG_CACHE, allEntries = true)
     })
     public void recalculatePreviewCache() {
         // Metodo de sincronizacion explicito para forzar recalculo en siguiente preview.
@@ -232,9 +233,7 @@ public class ChartWidgetServiceImpl implements ChartWidgetService {
         }
     }
 
-    private String normalizeConfiguration(String configuration,
-                                          UUID userId,
-                                          UUID importFilterId) {
+    private String normalizeConfiguration(String configuration, UUID userId, UUID importFilterId) {
         JsonNode root = parseJson(configuration);
         if (!root.isObject()) {
             throw new ChartWidgetInvalidException("Widget configuration must be a JSON object");

@@ -48,7 +48,7 @@ export default function AccountsPage() {
     }
   }, []);
 
-  // Detectar retorno del callback de Enable Banking (?linked=true / ?link_error=true)
+  // Detect return from Enable Banking callback (?linked=true / ?link_error=true)
   useEffect(() => {
     if (searchParams.get("linked") === "true") {
       setLinkedBanner(true);
@@ -153,7 +153,7 @@ export default function AccountsPage() {
   return (
     <>
       <div className="space-y-6">
-        {/* ── Banner de cuenta bancaria vinculada ── */}
+        {/* ── Linked bank account banner ── */}
         {linkedBanner && (
           <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-emerald-700">
             <CheckCircle2 className="h-5 w-5 shrink-0" />
@@ -161,7 +161,7 @@ export default function AccountsPage() {
           </div>
         )}
 
-        {/* ── Banner de error al vincular ── */}
+        {/* ── Bank linking error banner ── */}
         {linkError && (
           <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-red-700">
             <AlertCircle className="h-5 w-5 shrink-0" />

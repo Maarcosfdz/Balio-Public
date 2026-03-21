@@ -1,4 +1,4 @@
-/* ── Botones Nuevo Gasto / Nuevo Ingreso ─ tonos pastel suaves ───── */
+/* ── Soft pastel buttons for New Expense / New Income ───────────── */
 .tx-squishy-tech {
   position: relative;
   display: inline-flex;
@@ -129,7 +129,7 @@
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 6px 18px rgba(3,105,161,0.06);
 }
 
-/* ── Botones Categorías / Filtros ─ borde animado con rect redondeado ── */
+/* ── Category / Filter buttons — animated rounded-rect border ── */
 .tx-outline-hover-btn {
   position: relative;
   display: inline-flex;
@@ -164,14 +164,14 @@
   overflow: visible;
 }
 
-/* rect base: borde gris suave (rx está en el atributo JSX del <rect>) */
+/* rect base: soft gray border (rx is set in the JSX <rect> attribute) */
 .tx-outline-hover-bg {
   fill: none;
   stroke: #cbd5e1;
   stroke-width: 1.5;
 }
 
-/* rect animado: trazo sky que recorre el perímetro */
+/* animated rect: sky stroke that travels the perimeter */
 .tx-outline-hover-hl {
   fill: none;
   stroke: #0ea5e9;
@@ -233,7 +233,7 @@
     color 200ms ease;
 }
 
-/* Sólo sombra de texto/icono — sin revelar la forma del botón */
+/* Text/icon-only shadow — doesn't reveal the button shape */
 .tx-clear-btn:hover {
   transform: translateY(-2px) scale(1.07);
   color: #ef4444;
@@ -270,7 +270,7 @@
   background: #fef2f2;
 }
 
-/* ── Botón cancelar (draw rojo) ─────────────────────────────────── */
+/* ── Cancel button (red draw) ─────────────────────────────────── */
 .tx-cancel-draw-btn {
   position: relative;
   box-shadow: inset 0 0 0 1px #fecaca;
@@ -295,13 +295,12 @@
   transform: translateY(-1px);
 }
 
-/*
- * Botón volver: sin borde. El ::before arranca como círculo sky-blue
- * del tamaño del icono (siempre visible) y se expande en hover con bounce.
- * El icono es blanco (sobre círculo azul); el texto es gris oscuro en reposo
- * y blanco al hacer hover.
- */
 .tx-back-btn {
+  /* ── Back button: no border. The ::before starts as a sky-blue circle
+   * the size of the icon (always visible) and expands on hover with a bounce.
+   * The icon is white (on the blue circle); the text is dark gray at rest
+   * and white on hover.
+   */
   display: inline-flex;
   align-items: center;
   padding: 0;
@@ -327,7 +326,7 @@
   transition: color 0.25s ease;
 }
 
-/* Círculo azul inicial que se expande al hacer hover */
+/* Initial blue circle that expands on hover */
 .tx-back-btn-inner::before {
   content: '';
   position: absolute;
@@ -342,14 +341,14 @@
               background 0.25s ease;
 }
 
-/* Icono y texto por encima del fill */
+/* Icon and text above the fill */
 .tx-back-btn-inner > * {
   position: relative;
   z-index: 1;
 }
 
-/* El icono (svg directo) es blanco sobre el círculo azul */
 .tx-back-btn-inner > svg {
+  /* The icon (inline svg) is white over the blue circle */
   color: white;
 }
 
@@ -371,7 +370,7 @@
   color: white;
 }
 
-/* ── Tab bar: ocultar scrollbar nativo ── */
+/* ── Tab bar: hide native scrollbar ── */
 .tx-tab-scroll {
   scrollbar-width: none;
   -ms-overflow-style: none;

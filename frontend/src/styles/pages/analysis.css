@@ -25,6 +25,9 @@
 .analysis-edit-btn.is-active {
   background: linear-gradient(120deg, #059669 0%, #10b981 35%, #0ea5e9 80%, #0284c7 100%);
   background-size: 170% 100%;
+/*
+ * pages/analysis.css — Styles specific to the Analysis page.
+ */
   background-position: 10% center;
   box-shadow: 0 2px 8px -2px rgba(16, 185, 129, 0.4);
 }
@@ -75,11 +78,13 @@
   background-size: auto !important;
 }
 
-/* ── Tarjeta en modo edición ──────────────────────────────────────── */
-.analysis-card-edit {
-  outline: 2px dashed #cbd5e1;
-  outline-offset: 2px;
-  transition: outline-color 200ms ease, background-color 200ms ease;
+.analysis-edit-icon-btn {
+  /* ── Card edit button — neutral gray hover, keeps pencil wiggle ── */
+  /*
+   * Removes the animated border effect (tx-save-draw-btn) and uses a subtle
+   * gray hover. The pencil-wiggle still runs via
+   * "button:hover .btn-edit-icon" defined in buttons.css.
+   */
 }
 
 .analysis-card-edit:hover {

@@ -17,7 +17,7 @@ import FiltersPage from "@/pages/filters/FiltersPage";
 import SettingsPage from "@/pages/settings/SettingsPage";
 
 export const router = createBrowserRouter([
-  // ── Rutas públicas (redirigen a /dashboard si ya hay sesión) ──
+  // ── Public routes (redirect to /dashboard if already authenticated) ──
   {
     element: <PublicRoute />,
     children: [
@@ -28,7 +28,7 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // ── Rutas protegidas (requieren autenticación) ──
+  // ── Protected routes (require authentication) ──
   {
     element: <ProtectedRoute />,
     children: [

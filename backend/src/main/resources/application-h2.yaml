@@ -43,14 +43,6 @@ charts:
     max-points: 100
     max-table-rows: 200
 
-# TrueLayer sandbox settings (local dev). These can be overridden via environment variables.
-truelayer:
-  client-id: ${TRUELAYER_CLIENT_ID:sandbox-balio-1acf3a}
-  client-secret: ${TRUELAYER_CLIENT_SECRET:3a3a401f-fea6-4925-8355-a9df6a38b11d}
-  redirect-uri: ${TRUELAYER_REDIRECT_URI:http://localhost:8080/bank/callback}
-  auth-base-url: ${TRUELAYER_AUTH_URL:https://auth.truelayer-sandbox.com}
-  api-base-url: ${TRUELAYER_API_URL:https://api.truelayer-sandbox.com}
-
 # Frontend redirect URL used by the OAuth callback to redirect back to the SPA.
 # Fixed circular reference by using a literal default instead of self-reference
 FRONTEND_URL: http://localhost:5173
@@ -60,7 +52,7 @@ FRONTEND_URL: http://localhost:5173
 enable-banking:
   application-id: ${ENABLE_BANKING_APP_ID:9b6d5e63-03cd-4732-8b7a-75f298dc43fc}
   # Path to the PKCS#8 RSA private key .pem downloaded when registering the app.
-  # By default points to backend/secrets/enablebanking.pem (NOT committed to git).
+  # By default points to backend/secrets/enablebanking.pem 
   private-key-path: ${ENABLE_BANKING_PRIVATE_KEY_PATH:secrets/enablebanking.pem}
   redirect-uri: ${ENABLE_BANKING_REDIRECT_URI:http://localhost:8080/bank/enablebanking/callback}
   api-base-url: https://api.enablebanking.com

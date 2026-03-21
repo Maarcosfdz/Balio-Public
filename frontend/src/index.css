@@ -1,19 +1,19 @@
 /*
- * index.css — VACÍO.
+ * index.css — EMPTY.
  *
- * Los estilos han sido migrados a src/styles/:
+ * Styles have been migrated to src/styles/:
  *
- *   src/styles/main.css              ← entry point (importa todo)
- *   src/styles/theme.css             ← variables shadcn + @theme inline
- *   src/styles/base.css              ← fuentes y base
+ *   src/styles/main.css              ← entry point (imports everything)
+ *   src/styles/theme.css             ← shadcn variables + @theme inline
+ *   src/styles/base.css              ← fonts and base
  *   src/styles/components/
  *     buttons.css                    ← .btn-register, .btn-login-hover
  *
- * El import se hace en main.tsx:
+ * The import is done in main.tsx:
  *   import "@/styles/main.css";
  */
 
-/* ── Botón Registrarse: borde degradado suave vía pseudo-elemento ── */
+/* ── Register button: soft gradient border via pseudo-element ── */
 .btn-register {
   position: relative;
   display: inline-flex;
@@ -70,7 +70,7 @@
 .btn-register-sm::before { border-radius: calc(0.5rem + 2px); }
 .btn-register-sm::after  { border-radius: calc(0.5rem - 1px); }
 
-/* ── Botón Iniciar sesión: gradiente se desliza en hover ── */
+/* ── Login button: gradient slides on hover ── */
 .btn-login-hover {
   background: linear-gradient(270deg, #2563eb, #34d399, #10b981, #0ea5e9, #2563eb);
   background-size: 300% 100%;
@@ -105,7 +105,7 @@
   border-radius: 0.5rem;
 }
 
-/* ── Guardar filtro: balanceo suave ── */
+/* ── Save filter: subtle wobble animation ── */
 @keyframes save-wobble {
   0%   { transform: translate(0, 0) rotate(0deg); }
   15%  { transform: translateX(-4px) rotate(-2.5deg); }

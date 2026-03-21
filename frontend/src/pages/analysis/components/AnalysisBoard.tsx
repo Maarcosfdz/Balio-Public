@@ -140,7 +140,7 @@ export default function AnalysisBoard({
       {editMode && (
         <div className="analysis-edit-banner">
           <span>
-            Modo edición: <strong>arrastra</strong> para reordenar, <strong>esquinas</strong> para redimensionar
+            Edit mode: <strong>drag</strong> to reorder, <strong>corners</strong> to resize
           </span>
         </div>
       )}
@@ -194,19 +194,19 @@ export default function AnalysisBoard({
                               type="button"
                               className="analysis-expand-btn"
                               onClick={() => setLightboxWidget(widget)}
-                              title="Expandir"
+                              title="Expand"
                             >
                               <Maximize2 className="h-3.5 w-3.5" />
                             </button>
 
                             {editMode && (
                               <>
-                                <Button
+                                  <Button
                                   variant="outline"
                                   size="icon"
                                   className="analysis-edit-icon-btn h-7 w-7"
                                   onClick={() => onEdit(widget.id)}
-                                  title="Editar"
+                                  title="Edit"
                                 >
                                   <Pencil className="btn-edit-icon h-3.5 w-3.5" />
                                 </Button>
@@ -215,8 +215,8 @@ export default function AnalysisBoard({
                                   type="button"
                                   className="btn-delete-icon"
                                   onClick={() => onDelete(widget.id)}
-                                  title="Borrar"
-                                  aria-label="Borrar"
+                                  title="Delete"
+                                  aria-label="Delete"
                                 >
                                   <Trash2 className="btn-delete-icon__icon h-4 w-4" />
                                 </button>
@@ -240,7 +240,7 @@ export default function AnalysisBoard({
       {/* Add chart — dashed empty style */}
       <button type="button" onClick={onCreate} className="analysis-add-btn">
         <Plus className="h-4 w-4" />
-        Añadir gráfico
+        Add widget
       </button>
 
       {/* Lightbox dialog */}
@@ -258,7 +258,7 @@ export default function AnalysisBoard({
                   {lightboxWidget.title}
                 </DialogTitle>
                 <DialogDescription className="sr-only">
-                  Vista ampliada del gráfico seleccionado.
+                  Expanded view of the selected widget.
                 </DialogDescription>
                 <p className="text-sm text-slate-500">
                   {lightboxWidget.description || getWidgetRenderer(lightboxWidget.type).label}

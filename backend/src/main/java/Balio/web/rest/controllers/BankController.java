@@ -4,7 +4,6 @@ import Balio.web.enablebanking.EnableBankingClient;
 import Balio.web.model.Exceptions.InstanceNotFoundException;
 import Balio.web.model.entities.AccountDao;
 import Balio.web.model.entities.BankConnection;
-import Balio.web.model.services.BankRuleService;
 import Balio.web.model.services.BankService;
 import Balio.web.rest.dtos.BankConnectionDto;
 import Balio.web.rest.dtos.BankConverter;
@@ -45,17 +44,15 @@ public class BankController {
     private static final Logger log = LoggerFactory.getLogger(BankController.class);
 
     private final BankService bankService;
-    private final BankRuleService bankRuleService;
     private final BankConverter bankConverter;
     private final EnableBankingClient enableBankingClient;
     private final ObjectMapper objectMapper;
     private final AccountDao accountDao;
 
-    public BankController(BankService bankService, BankRuleService bankRuleService,
+    public BankController(BankService bankService,
                           BankConverter bankConverter, EnableBankingClient enableBankingClient,
                           ObjectMapper objectMapper, AccountDao accountDao) {
         this.bankService = bankService;
-        this.bankRuleService = bankRuleService;
         this.bankConverter = bankConverter;
         this.enableBankingClient = enableBankingClient;
         this.objectMapper = objectMapper;
@@ -64,30 +61,6 @@ public class BankController {
 
     @Value("${FRONTEND_URL:http://localhost:5173}")
     private String frontendUrl;
-
-    // ── CONNECTION: initiate OAuth ───────────────────────────────────────
-
-    @GetMapping("/connect/{accountId}")
-    public Map<String, String> initConnect(@RequestAttribute UUID userId,
-                                           @PathVariable UUID accountId)
-            throws InstanceNotFoundException {
-        String authUrl = bankService.initConnection(userId, accountId);
-        return Map.of("authUrl", authUrl);
-    }
-
-    // ── CONNECTION: OAuth callback (public, no JWT required) ─────────────
-
-    @GetMapping("/callback")
-    public ResponseEntity<Void> handleCallback(@RequestParam String code,
-                                               @RequestParam String state)
-            throws InstanceNotFoundException {
-        BankConnection connection = bankService.completeConnection(state, code);
-        log.info("OAuth callback completed for accountId={}", connection.getAccount().getId());
-
-        // Redirect back to the frontend accounts page with success flag
-        URI redirect = URI.create(frontendUrl + "/accounts?linked=true");
-        return ResponseEntity.status(HttpStatus.FOUND).location(redirect).build();
-    }
 
     // ── ENABLE BANKING: list ASPSPs (banks) ────────────────────────────
 
@@ -196,7 +169,7 @@ public class BankController {
     public List<BankRuleResponseDto> listRules(@RequestAttribute UUID userId,
                                                @PathVariable UUID accountId)
             throws InstanceNotFoundException {
-        return bankRuleService.findAllByUserIdAndAccountId(userId, accountId).stream()
+        return bankService.findAllRulesByUserIdAndAccountId(userId, accountId).stream()
                 .map(bankConverter::toRuleResponseDto)
                 .toList();
     }
@@ -209,7 +182,7 @@ public class BankController {
         UUID categoryId = dto.getMappedCategoryId() != null
                 ? UUID.fromString(dto.getMappedCategoryId()) : null;
 
-        BankRuleService.RuleCreationResult result = bankRuleService.createRule(
+        BankService.RuleCreationResult result = bankService.createRule(
                 userId,
                 accountId,
                 dto.getNamePattern(),
@@ -235,7 +208,7 @@ public class BankController {
         UUID categoryId = dto.getMappedCategoryId() != null
                 ? UUID.fromString(dto.getMappedCategoryId()) : null;
 
-        BankRuleService.RuleUpdateResult result = bankRuleService.updateRule(
+        BankService.RuleUpdateResult result = bankService.updateRule(
                 userId, accountId, ruleId,
                 dto.getNamePattern(),
                 dto.getBankCategory(),
@@ -256,6 +229,6 @@ public class BankController {
                            @PathVariable UUID accountId,
                            @PathVariable UUID ruleId)
             throws InstanceNotFoundException {
-        bankRuleService.deleteRule(userId, accountId, ruleId);
+        bankService.deleteRule(userId, accountId, ruleId);
     }
 }

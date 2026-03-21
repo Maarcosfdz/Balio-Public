@@ -52,8 +52,8 @@ function isCompleted(g: GoalSummaryDto) {
 }
 
 /**
- * 0-50 %: rojo vivo → naranja (evita el amarillo-verde feo de HSL)
- * 50-100%: azul cielo → esmeralda (del tema de la app)
+ * 0-50 %: vivid red → orange (avoids ugly yellow-green HSL transitions)
+ * 50-100%: sky blue → emerald (matches the app theme)
  */
 function progressColor(p: number): string {
   const clamped = Math.min(100, Math.max(0, p));
@@ -376,17 +376,17 @@ function GoalCard({ goal, onEdit, onDelete, onUpdated }: GoalCardProps) {
 
   return (
     <div className="relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
-      {/* Franja de color según progreso */}
+      {/* Color stripe according to progress */}
       <div
         className="h-1 w-full"
         style={{ backgroundColor: color, transition: "background-color 1.2s ease" }}
       />
 
       <div className="flex flex-1 flex-col px-5 pb-5 pt-4">
-        {/* Header: icono + nombre + botones */}
+        {/* Header: icon + name + buttons */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            {/* Icono aleatorio con color del progreso */}
+            {/* Random icon colored by progress */}
             <div
               className="flex h-10 w-10 items-center justify-center rounded-xl"
               style={{
@@ -407,7 +407,7 @@ function GoalCard({ goal, onEdit, onDelete, onUpdated }: GoalCardProps) {
             </div>
           </div>
 
-          {/* Botones editar / eliminar */}
+          {/* Edit / delete buttons */}
           <div className="flex items-center gap-0.5">
             <button
               onClick={() => onEdit(goal)}
@@ -424,12 +424,12 @@ function GoalCard({ goal, onEdit, onDelete, onUpdated }: GoalCardProps) {
           </div>
         </div>
 
-        {/* Anillo de progreso */}
+        {/* Progress ring */}
         <div className="my-5 flex justify-center">
           <CircleProgress value={progress} label={ringLabel} color={color} />
         </div>
 
-        {/* Importes */}
+        {/* Amounts */}
         <div className="mb-5 text-center">
           <p className="text-2xl font-extrabold tabular-nums text-slate-800">
             {fmtAmt(goal.currentAmount)}
@@ -439,7 +439,7 @@ function GoalCard({ goal, onEdit, onDelete, onUpdated }: GoalCardProps) {
           </p>
         </div>
 
-        {/* Botones ajuste o banner completada */}
+        {/* Adjust buttons or completed banner */}
         {completed ? (
           <div className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-50 py-2.5 text-sm font-semibold text-emerald-600">
             <CheckCircle2 className="h-4 w-4" />
@@ -495,7 +495,7 @@ export default function GoalsPage() {
   const [editTarget, setEditTarget] = useState<GoalSummaryDto | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  // ── Auto-refresh (30 s + visibilità) ──────────────────────────────────
+  // ── Auto-refresh (30 s + visibility) ──────────────────────────────────
   const fetchGoals = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
     try {
@@ -542,7 +542,7 @@ export default function GoalsPage() {
     setGoals((prev) => prev.map((g) => (g.id === updated.id ? updated : g)));
   };
 
-  // Activas primero, completadas al final
+  // Active first, completed last
   const sortedGoals = useMemo(
     () => [...goals].sort((a, b) => (isCompleted(a) ? 1 : 0) - (isCompleted(b) ? 1 : 0)),
     [goals],
@@ -557,7 +557,7 @@ export default function GoalsPage() {
 
   return (
     <>
-      {/* SVG filter para el efecto gooey de las pills */}
+      {/* SVG filter for the gooey pills effect */}
       <svg
         style={{ visibility: "hidden", position: "absolute", width: 0, height: 0 }}
         aria-hidden="true"
@@ -666,7 +666,7 @@ export default function GoalsPage() {
               </div>
             ))}
 
-            {/* Tarjeta vacía para añadir */}
+            {/* Empty card to add */}
             {canAdd && (
               <EmptyGoalCard onAdd={() => { setEditTarget(null); setFormOpen(true); }} />
             )}

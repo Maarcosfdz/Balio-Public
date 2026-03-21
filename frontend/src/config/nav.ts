@@ -10,16 +10,16 @@ import {
 import { ROUTES } from "./routes";
 
 export interface NavItem {
-  /** Clave usada en i18n → `nav.<key>` */
+  /** Key used in i18n → `nav.<key>` */
   key: string;
   path: string;
   icon: LucideIcon;
 }
 
 /**
- * Items del sidebar/navegación principal.
- * Un solo sitio donde añadir, quitar o reordenar secciones.
- * Categorías y filtros se acceden desde la página de transacciones.
+ * Sidebar / main navigation items.
+ * Single place to add, remove or reorder sections.
+ * Categories and filters are accessed from the transactions page.
  */
 export const NAV_ITEMS: NavItem[] = [
   { key: "dashboard",    path: ROUTES.DASHBOARD,    icon: LayoutDashboard },

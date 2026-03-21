@@ -24,7 +24,7 @@ import { transactionService } from "@/backend/transactionService";
 import { bankService } from "@/backend/bankService";
 import { filterService } from "@/backend/filterService";
 import AddTransactionModal from "@/components/transactions/AddTransactionModal";
-import Pagination from "@/components/transactions/Pagination";
+import Pagination from "@/components/ui/Pagination";
 import FilterPanel, {
   type ActiveFilters,
 } from "./components/FilterPanel";
@@ -396,7 +396,7 @@ export default function TransactionsPage() {
         </div>
       )}
 
-      {/* ── Cabecera ── */}
+      {/* ── Header ── */}
       <div className="rounded-xl bg-white px-5 py-4">
         <PageHeader
           left={<ArrowLeftRight className="h-8 w-8 text-sky-500" />}

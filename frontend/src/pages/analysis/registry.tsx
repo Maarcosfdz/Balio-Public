@@ -64,7 +64,7 @@ function formatTooltipValue(value: number | string | undefined): string {
 
 function formatTooltipByMode(value: number | string | undefined, mode: "amount" | "count"): string {
   if (typeof value !== "number") return formatTooltipValue(value);
-  return mode === "count" ? `${Math.round(value)} transacciones` : toMoney(value);
+  return mode === "count" ? `${Math.round(value)} transactions` : toMoney(value);
 }
 
 interface ChartDataset {
@@ -95,7 +95,7 @@ function toChartPreview(data: unknown): ChartPreview | null {
       const row = toRecord(item);
       if (!row || !Array.isArray(row.data)) return null;
       return {
-        label: typeof row.label === "string" ? row.label : "Serie",
+        label: typeof row.label === "string" ? row.label : "Series",
         data: row.data.map((n) => Number(n ?? 0)),
       };
     })

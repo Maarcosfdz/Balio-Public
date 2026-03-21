@@ -58,3 +58,5 @@ Reporte JaCoCo → genera target/site/jacoco/index.html
 Si quieres saltarte Checkstyle para ir más rápido:
 
 ./mvnw verify -Dcheckstyle.skip=true
+
+& '.\mvnw' '-Ph2' 'spring-boot:run' '-Dspring-boot.run.profiles=h2'

@@ -491,7 +491,7 @@ export default function AnalysisPage() {
   const toggleEditMode = () => {
     if (editMode) {
       void saveEditChanges().then(() => {
-        setToastMessage("Cambios del dashboard guardados.");
+        setToastMessage("Dashboard changes saved.");
       });
       setEditMode(false);
     } else {
@@ -577,9 +577,9 @@ export default function AnalysisPage() {
       await chartService.synchronizeCache();
       await loadAnalysisData();
       setDraftPreviewData(undefined);
-      setToastMessage("Panel sincronizado. Los widgets se han recalculado.");
+      setToastMessage("Dashboard synchronized. Widgets have been recalculated.");
     } catch {
-      setToastMessage("No se pudo sincronizar ahora. Vuelve a intentarlo.");
+      setToastMessage("Could not synchronize now. Please try again.");
     } finally {
       setSyncing(false);
     }
@@ -606,7 +606,7 @@ export default function AnalysisPage() {
       setDraftPreviewData(response.data);
     } catch {
       setDraftPreviewData(undefined);
-      setToastMessage("No se pudo recalcular la previsualizacion.");
+      setToastMessage("Could not refresh the preview.");
     } finally {
       setRefreshingDraftPreview(false);
     }
@@ -688,13 +688,13 @@ export default function AnalysisPage() {
     try {
       filterDetails = await filterService.getById(filterId);
     } catch {
-      setToastMessage("No se pudo cargar el filtro seleccionado.");
+      setToastMessage("Could not load the selected filter.");
       return;
     }
 
     const definition = parseFilterDefinition(filterDetails.definition);
     if (!definition) {
-      setToastMessage("El filtro guardado no tiene un formato compatible.");
+      setToastMessage("Saved filter has an incompatible format.");
       return;
     }
 
@@ -706,7 +706,7 @@ export default function AnalysisPage() {
         config: mergeFilterIntoConfig(prev.config, definition),
       };
     });
-    setToastMessage(`Filtro "${filterDetails.name}" importado al grafico.`);
+    setToastMessage(`Filter "${filterDetails.name}" imported to the widget.`);
   };
 
   const saveDraft = async () => {
@@ -742,7 +742,7 @@ export default function AnalysisPage() {
           // No bloqueamos guardado si falla preview.
         }
       } catch {
-        setToastMessage("No se pudo guardar el grafico.");
+        setToastMessage("Could not save the widget.");
         return;
       }
     } else {
@@ -762,7 +762,7 @@ export default function AnalysisPage() {
           // No bloqueamos guardado si falla preview.
         }
       } catch {
-        setToastMessage("No se pudo actualizar el grafico.");
+        setToastMessage("Could not update the widget.");
         return;
       }
     }
@@ -780,7 +780,7 @@ export default function AnalysisPage() {
     }
 
     if (!removedRemotely && !isLocalWidgetId(widgetId)) {
-      setToastMessage("No se pudo borrar el grafico.");
+      setToastMessage("Could not delete the widget.");
       return;
     }
 
@@ -797,7 +797,7 @@ export default function AnalysisPage() {
   };
 
   if (loading) {
-    return <div className="py-8 text-sm text-slate-500">Cargando analisis...</div>;
+    return <div className="py-8 text-sm text-slate-500">Loading analysis...</div>;
   }
 
   return (
@@ -805,11 +805,11 @@ export default function AnalysisPage() {
       <div className="space-y-5">
         <PageHeader
           left={<ChartNoAxesCombined className="h-6 w-6 text-sky-600" />}
-          title="Análisis"
-          subtitle="Crea, previsualiza y ordena tus gráficos con los mismos filtros que usas en transacciones."
+          title="Analysis"
+          subtitle="Create, preview and arrange your widgets using the same filters you use in transactions."
           actions={(
             <div className="flex gap-2">
-              <Button
+                <Button
                 variant="outline"
                 className="analysis-sync-btn"
                 onClick={() => {
@@ -818,7 +818,7 @@ export default function AnalysisPage() {
                 disabled={syncing || loading}
               >
                 <RefreshCw className={`mr-2 h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
-                {syncing ? "Sincronizando..." : "Sincronizar"}
+                {syncing ? "Syncing..." : "Sync"}
               </Button>
 
               <Button
@@ -826,7 +826,7 @@ export default function AnalysisPage() {
                 onClick={toggleEditMode}
               >
                 <LayoutDashboard className="mr-2 h-4 w-4" />
-                {editMode ? "Salir edición" : "Editar dashboard"}
+                {editMode ? "Exit edit" : "Edit dashboard"}
               </Button>
             </div>
           )}

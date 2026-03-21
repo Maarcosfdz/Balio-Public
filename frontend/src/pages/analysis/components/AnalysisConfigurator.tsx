@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import Pagination from "@/components/ui/Pagination";
 import {
   BarChart3,
   Check,
@@ -63,10 +64,10 @@ interface SelectOption {
 }
 
 const dateRangeOptions: Array<{ value: DateRangePreset; label: string }> = [
-  { value: "30d", label: "Ultimos 30 dias" },
-  { value: "90d", label: "Ultimos 90 dias" },
-  { value: "365d", label: "Ultimos 12 meses" },
-  { value: "ytd", label: "Anio actual (YTD)" },
+  { value: "30d", label: "Last 30 days" },
+  { value: "90d", label: "Last 90 days" },
+  { value: "365d", label: "Last 12 months" },
+  { value: "ytd", label: "Year to date (YTD)" },
 ];
 
 const typeOptions: WidgetType[] = [
@@ -83,27 +84,27 @@ const typeOptions: WidgetType[] = [
 function getTypeLabel(type: WidgetType): string {
   const labels: Record<WidgetType, string> = {
     kpi: "KPI",
-    table: "Tabla",
-    bar: "Barras",
-    line: "Linea/Area",
+    table: "Table",
+    bar: "Bars",
+    line: "Line/Area",
     donut: "Donut",
-    stackedBar: "Barras apiladas",
+    stackedBar: "Stacked Bars",
     heatmap: "Heatmap",
-    comparison: "Comparativa",
+    comparison: "Comparison",
   };
   return labels[type];
 }
 
 function getTypeDescription(type: WidgetType): string {
   const descriptions: Record<WidgetType, string> = {
-    kpi: "Resumen rapido de una metrica.",
-    table: "Listado agregado por categoria o cuenta.",
-    bar: "Compara importes por categoria.",
-    line: "Evolucion temporal de ingresos y gastos.",
-    donut: "Peso relativo de cada categoria.",
-    stackedBar: "Compara segmentos por periodos.",
-    heatmap: "Detecta concentracion por dias.",
-    comparison: "Periodo actual frente al anterior.",
+    kpi: "Quick summary of a metric.",
+    table: "Aggregated list by category or account.",
+    bar: "Compare amounts by category.",
+    line: "Time evolution of incomes and expenses.",
+    donut: "Relative weight of each category.",
+    stackedBar: "Compare segments across periods.",
+    heatmap: "Detect concentration by days.",
+    comparison: "Current period vs previous.",
   };
   return descriptions[type];
 }
@@ -374,9 +375,9 @@ export default function AnalysisConfigurator({
   );
 
   const widgetSizeOptions: SelectOption[] = [
-    { value: "sm", label: "Pequeño" },
-    { value: "md", label: "Mediano" },
-    { value: "lg", label: "Grande" },
+    { value: "sm", label: "Small" },
+    { value: "md", label: "Medium" },
+    { value: "lg", label: "Large" },
   ];
 
   const dateRangeSelectOptions = dateRangeOptions.map((option) => ({
@@ -385,8 +386,8 @@ export default function AnalysisConfigurator({
   }));
 
   const movementTypeOptions: SelectOption[] = [
-    { value: "INCOME", label: "Ingresos" },
-    { value: "EXPENSE", label: "Gastos" },
+    { value: "INCOME", label: "Income" },
+    { value: "EXPENSE", label: "Expenses" },
   ];
 
   const accountSelectOptions = accountOptions.map((account) => ({ value: account.id, label: account.name }));
@@ -487,9 +488,20 @@ export default function AnalysisConfigurator({
     onStartCreate(type);
   };
 
-  const cardTitle = editMode && !draft ? "Editar dashboard" : "Configurador de gráfico";
+  const WIDGET_PAGE_SIZE = 15;
+  const [visiblePage, setVisiblePage] = useState(1);
+  const [hiddenPage, setHiddenPage] = useState(1);
+
+  useEffect(() => { setVisiblePage(1); setHiddenPage(1); }, [editMode]);
+
+  const cardTitle = editMode && !draft ? "Edit dashboard" : "Widget configurator";
   const visibleWidgets = widgets.filter((widget) => widget.visible);
   const hiddenWidgets = widgets.filter((widget) => !widget.visible);
+
+  const visibleTotalPages = Math.max(1, Math.ceil(visibleWidgets.length / WIDGET_PAGE_SIZE));
+  const hiddenTotalPages = Math.max(1, Math.ceil(hiddenWidgets.length / WIDGET_PAGE_SIZE));
+  const pagedVisibleWidgets = visibleWidgets.slice((visiblePage - 1) * WIDGET_PAGE_SIZE, visiblePage * WIDGET_PAGE_SIZE);
+  const pagedHiddenWidgets = hiddenWidgets.slice((hiddenPage - 1) * WIDGET_PAGE_SIZE, hiddenPage * WIDGET_PAGE_SIZE);
 
   return (
     <div className="sticky top-4 space-y-4">
@@ -506,7 +518,7 @@ export default function AnalysisConfigurator({
           {editMode && !draft && (
             <div className="space-y-3">
               <p className="text-sm text-slate-500">
-                Haz clic en un gráfico para editarlo. Usa <strong>S / M / L</strong> para el tamaño.
+                Click a chart to edit it. Use <strong>S / M / L</strong> for size.
               </p>
 
               {widgets.length === 0 ? (
@@ -519,7 +531,7 @@ export default function AnalysisConfigurator({
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                       En dashboard
                     </p>
-                    {visibleWidgets.map((widget) => (
+                    {pagedVisibleWidgets.map((widget) => (
                     <div
                       key={widget.id}
                       role="button"
@@ -599,13 +611,18 @@ export default function AnalysisConfigurator({
                         No hay gráficos activos en el dashboard.
                       </p>
                     )}
+                    <Pagination
+                      currentPage={visiblePage}
+                      totalPages={visibleTotalPages}
+                      onPageChange={setVisiblePage}
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                       Fuera del dashboard (abajo)
                     </p>
-                    {hiddenWidgets.map((widget) => (
+                    {pagedHiddenWidgets.map((widget) => (
                       <div
                         key={widget.id}
                         role="button"
@@ -667,6 +684,11 @@ export default function AnalysisConfigurator({
                         Todos los gráficos están activos.
                       </p>
                     )}
+                    <Pagination
+                      currentPage={hiddenPage}
+                      totalPages={hiddenTotalPages}
+                      onPageChange={setHiddenPage}
+                    />
                   </div>
                 </div>
               )}
@@ -677,7 +699,7 @@ export default function AnalysisConfigurator({
                 className="analysis-add-btn"
               >
                 <Plus className="h-4 w-4" />
-                Añadir gráfico
+                Add widget
               </button>
             </div>
           )}
@@ -719,14 +741,14 @@ export default function AnalysisConfigurator({
             <>
               <div className="rounded-lg border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-3">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-                  Importar filtro guardado
+                  Import saved filter
                 </p>
                 <div className="mt-2 flex gap-2">
                   <SingleSelectDropdown
                     label=""
                     value={draft.importedFilterId ?? ""}
                     options={savedFilterOptions}
-                    placeholder="Selecciona un filtro"
+                    placeholder="Select a filter"
                     onChange={(nextFilterId) => {
                       if (!nextFilterId) {
                         onDraftChange({ ...draft, importedFilterId: undefined });
@@ -740,7 +762,7 @@ export default function AnalysisConfigurator({
 
               <div className="grid grid-cols-1 gap-3">
                 <label className="text-sm font-medium text-slate-700">
-                  Titulo
+                  Title
                   <input
                     className={controlClassName}
                     value={draft.title}
@@ -749,7 +771,7 @@ export default function AnalysisConfigurator({
                   />
                 </label>
                 <label className="text-sm font-medium text-slate-700">
-                  Descripcion
+                  Description
                   <input
                     className={controlClassName}
                     value={draft.description}

@@ -8,14 +8,13 @@ import {
   ArrowUpCircle,
   Bookmark,
   Check,
-  ChevronLeft,
-  ChevronRight,
   Loader2,
   Pencil,
   SlidersHorizontal,
   Trash2,
   X,
 } from "lucide-react";
+import Pagination from "@/components/ui/Pagination";
 import type { FilterSummaryDto, TransactionSummaryDto } from "@/types";
 import { filterService } from "@/backend/filterService";
 import { ROUTES } from "@/config/routes";
@@ -365,27 +364,11 @@ export default function FiltersPage() {
             ))}
           </div>
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-3 pt-2">
-              <button
-                disabled={page === 0}
-                onClick={() => handlePageChange(page - 1)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-sky-300 hover:text-sky-600 disabled:opacity-30"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <span className="text-sm text-slate-500">
-                {page + 1} / {totalPages}
-              </span>
-              <button
-                disabled={page >= totalPages - 1}
-                onClick={() => handlePageChange(page + 1)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-sky-300 hover:text-sky-600 disabled:opacity-30"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          )}
+          <Pagination
+            currentPage={page + 1}
+            totalPages={totalPages}
+            onPageChange={(p) => handlePageChange(p - 1)}
+          />
         </>
       )}
     </div>

@@ -10,7 +10,7 @@
   border: none !important;
 }
 
-/* ── Botón squishy-tech global (guardar preferencias, etc.) ── */
+/* ── Global squishy-save button (save preferences, etc.) ── */
 .squishy-save-btn {
   position: relative;
   display: inline-flex;
@@ -75,17 +75,17 @@
   50%       { transform: translateY(-3px); }
 }
 
-/* Variante compacta para botones de guardar dentro de diálogos */
+/* Compact variant for save buttons inside dialogs */
 .squishy-save-btn--compact {
   padding: 0.5rem 1.25rem;
   font-size: 0.875rem;
 }
 
-/* ── Error de campo: slide-down + fade-in ───────────────────────── */
+/* ── Field error: slide-down + fade-in ───────────────────────── */
 /*
- * Usa el componente <FieldError message={...} /> o la clase directamente.
- * El elemento se monta/desmonta según haya error → la animación se dispara
- * automáticamente al aparecer.
+ * Use the <FieldError message={...} /> component or the class directly.
+ * The element is mounted/unmounted depending on the presence of an error →
+ * the animation runs automatically when it appears.
  */
 .field-error {
   font-size: 0.75rem;
@@ -100,7 +100,7 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Variante simple y consistente para botones Guardar en formularios ── */
+/* ── Simple consistent variant for Save buttons in forms ── */
 .squishy-save-simple {
   display: inline-flex;
   align-items: center;
