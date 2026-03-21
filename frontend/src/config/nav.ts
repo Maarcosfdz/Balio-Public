@@ -3,6 +3,7 @@ import {
   ChartNoAxesCombined,
   ArrowLeftRight,
   Wallet,
+  PiggyBank,
   Target,
   Settings,
   type LucideIcon,
@@ -26,6 +27,7 @@ export const NAV_ITEMS: NavItem[] = [
   { key: "analysis",     path: ROUTES.ANALYSIS,     icon: ChartNoAxesCombined },
   { key: "transactions", path: ROUTES.TRANSACTIONS, icon: ArrowLeftRight },
   { key: "accounts",     path: ROUTES.ACCOUNTS,     icon: Wallet },
+  { key: "budgets",      path: ROUTES.BUDGETS,      icon: PiggyBank },
   { key: "goals",        path: ROUTES.GOALS,        icon: Target },
   { key: "settings",     path: ROUTES.SETTINGS,     icon: Settings },
 ];

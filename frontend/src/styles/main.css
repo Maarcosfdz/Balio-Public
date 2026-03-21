@@ -23,4 +23,5 @@
 @import "./components/navigation.css";
 @import "./pages/transactions.css";
 @import "./pages/goals.css";
+@import "./pages/budgets.css";
 @import "./pages/analysis.css";

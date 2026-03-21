@@ -21,7 +21,8 @@
       "Bash(docker compose:*)",
       "Bash(ls -la \"c:\\\\Users\\\\mroma\\\\Desktop\\\\FIC\\\\4.Cuarto\\\\TFG\\\\Balio\\\\backend\\\\src\\\\main\\\\resources\"\" 2>/dev/null || ls -la \"/c/Users/mroma/Desktop/FIC/4.Cuarto/TFG/Balio/backend/src/main/resources/ \")",
       "Bash(mvn clean:*)",
-      "WebFetch(domain:enablebanking.com)"
+      "WebFetch(domain:enablebanking.com)",
+      "Bash(xargs wc:*)"
     ]
   }
 }
