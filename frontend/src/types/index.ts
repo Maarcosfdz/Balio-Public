@@ -75,6 +75,53 @@ export interface AccountResponseDto {
   balance: number;
 }
 
+export interface AccountDeleteOptions {
+  deleteTransactions?: boolean;
+}
+
+// ============================================
+// Bank DTOs
+// ============================================
+
+export interface BankConnectionDto {
+  id: string;
+  accountId: string;
+  provider: string | null;
+  lastSync: string | null;
+  consentExpires: string | null;
+  linked: boolean;
+}
+
+export interface BankSyncResultDto {
+  imported: number;
+  syncedAccounts: number;
+}
+
+export interface BankRuleDto {
+  namePattern?: string;
+  bankCategory?: string;
+  transactionType?: TransactionType;
+  mappedName?: string;
+  mappedCategoryId?: string;
+  priority?: number;
+  applyToExisting?: boolean;
+  applyWindowDays?: number;
+}
+
+export interface BankRuleResponseDto {
+  id: string;
+  accountId: string;
+  accountName: string;
+  namePattern: string | null;
+  bankCategory: string | null;
+  transactionType: TransactionType | null;
+  mappedName: string | null;
+  mappedCategoryId: string | null;
+  mappedCategoryName: string | null;
+  priority: number;
+  appliedTransactions: number;
+}
+
 // ============================================
 // Transaction DTOs
 // ============================================

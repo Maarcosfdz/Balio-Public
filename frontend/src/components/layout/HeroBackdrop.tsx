@@ -1,10 +1,10 @@
 import { cn } from "@/lib/utils";
-
 interface HeroBackdropProps {
   className?: string;
   blurred?: boolean;
 }
 
+// Simple decorative backdrop with blurred colorful blobs.
 export default function HeroBackdrop({ className, blurred = false }: HeroBackdropProps) {
   return (
     <div

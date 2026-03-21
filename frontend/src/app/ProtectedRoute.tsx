@@ -3,8 +3,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ROUTES } from "@/config/routes";
 
 /**
- * Wrapper que protege rutas autenticadas.
- * Si no hay sesión, redirige a la página principal.
+ * Wrapper that protects authenticated routes.
+ * If there is no session, it redirects to the main page.
  */
 export default function ProtectedRoute() {
   const { isAuthenticated, isLoading } = useAuth();

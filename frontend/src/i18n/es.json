@@ -175,6 +175,7 @@
   },
   "nav": {
     "dashboard": "Panel",
+    "analysis": "Analisis",
     "transactions": "Transacciones",
     "accounts": "Cuentas",
     "categories": "Categorías",

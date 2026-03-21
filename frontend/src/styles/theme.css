@@ -1,11 +1,11 @@
 /*
- * theme.css — Tokens de diseño globales.
+ * theme.css — Global design tokens.
  *
- * Contiene:
- *   - @theme inline: mapea variables CSS a utilidades Tailwind v4
- *   - :root con las variables shadcn (modo claro)
- *   - .dark con las variables shadcn (modo oscuro)
- *   - Reset de border-color para que use el token --border
+ * Contains:
+ *   - @theme inline: maps CSS variables to Tailwind v4 utilities
+ *   - :root with shadcn variables (light mode)
+ *   - .dark with shadcn variables (dark mode)
+ *   - Border-color reset to use the --border token
  */
 
 @theme inline {
@@ -41,7 +41,7 @@
 
 @layer base {
   :root {
-    /* ── Colores (modo claro) ── */
+    /* ── Colors (light mode) ── */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -62,7 +62,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
 
-    /* ── Gráficas ── */
+    /* ── Charts ── */
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
@@ -74,7 +74,7 @@
   }
 
   .dark {
-    /* ── Colores (modo oscuro) ── */
+    /* ── Colors (dark mode) ── */
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 4.9%;
@@ -101,7 +101,7 @@
     --chart-5: 340 75% 55%;
   }
 
-  /* Aplica el token de borde a todos los elementos */
+  /* Apply the border token to all elements */
   * {
     border-color: hsl(var(--border));
   }

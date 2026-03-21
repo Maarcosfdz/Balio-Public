@@ -38,7 +38,7 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Botón hamburguesa solo en móvil */}
+      {/* Button hamburgue only on mobile */}
       <Button
         variant="ghost"
         size="icon"
@@ -48,7 +48,7 @@ export default function Sidebar() {
         {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </Button>
 
-      {/* Overlay en móvil */}
+      {/* Overlay in móvil */}
       {open && (
         <div
           className="fixed inset-0 z-30 bg-black/50 md:hidden"

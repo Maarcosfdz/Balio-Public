@@ -1,22 +1,21 @@
 /*
- * components/buttons.css — Botones personalizados.
+ * components/buttons.css — Custom buttons.
  *
- * Clases definidas aquí:
- *   .btn-register       — botón "Registrarse" con borde degradado suave en hover
- *   .btn-register-sm    — variante pequeña (header)
- *   .btn-register-text  — span interior (compatibilidad)
- *   .btn-login-hover    — botón "Iniciar sesión" con gradiente que se desliza en hover
- *   .btn-login-sm       — variante pequeña (header)
+ * Classes defined here:
+ *   .btn-register       — "Register" button with soft gradient border on hover
+ *   .btn-register-sm    — small variant (header)
+ *   .btn-register-text  — internal span (compatibility)
+ *   .btn-login-hover    — "Login" button with sliding gradient on hover
+ *   .btn-login-sm       — small variant (header)
  *
- * Técnica usada en .btn-register:
- *   Un ::before con el gradiente + opacity:0→1 para una transición suave,
- *   ya que CSS no puede interpolar gradientes directamente.
+ * Technique used in .btn-register:
+ *   A ::before gradient + opacity 0→1 for a smooth transition since CSS
+ *   cannot interpolate gradients directly.
  *
- * Técnica usada en .btn-login-hover:
- *   background-position se desliza de right→left en hover (sí es interpolable).
+ * Technique used in .btn-login-hover:
+ *   background-position slides from right→left on hover (interpolable).
  */
 
-/* ── Botón Registrarse ──────────────────────────────────────────── */
 .btn-register {
   position: relative;
   display: inline-flex;
@@ -37,7 +36,6 @@
   overflow: hidden;
 }
 
-/* Capa de gradiente detrás: se revela con opacity */
 .btn-register::before {
   content: '';
   position: absolute;
@@ -49,7 +47,6 @@
   transition: opacity 1200ms ease;
 }
 
-/* Fondo blanco que tapa el degradado dejando sólo el borde visible */
 .btn-register::after {
   content: '';
   position: absolute;
@@ -68,10 +65,9 @@
   opacity: 1;
 }
 
-/* span interior — el color lo gestiona la regla de :hover del padre */
 .btn-register-text { pointer-events: none; }
 
-/* Variante pequeña (header) */
+/* Small variant (header) */
 .btn-register-sm {
   padding: 0.4rem 0.9rem;
   font-size: 0.875rem;
@@ -80,7 +76,6 @@
 .btn-register-sm::before { border-radius: calc(0.5rem + 2px); }
 .btn-register-sm::after  { border-radius: calc(0.5rem - 1px); }
 
-/* ── Botón Iniciar sesión ───────────────────────────────────────── */
 .btn-login-hover {
   background: linear-gradient(270deg, #2563eb, #34d399, #10b981, #0ea5e9, #2563eb);
   background-size: 300% 100%;
@@ -105,7 +100,6 @@
   background-position: left center;
 }
 
-/* Flecha: slide hacia la derecha en hover */
 .btn-login-hover .arrow-icon {
   transition: transform 500ms ease;
 }
@@ -113,7 +107,6 @@
   transform: translateX(6px);
 }
 
-/* ── Botón cancelar (mismo efecto que login pero en rojo) ────────── */
 .btn-cancel-hover {
   background: linear-gradient(270deg, #dc2626, #f97316, #ef4444, #f43f5e, #dc2626);
   background-size: 300% 100%;
@@ -137,12 +130,12 @@
   background-position: left center;
 }
 
-/* ── Botón Cancelar — draw-border (borde que se dibuja en rojo al hover) ── */
+/* ── Cancel button — draw-border (border draws red on hover) ── */
 /*
- * Técnica: dos pseudo-elementos posicionados bottom-right crecen a 100%×100%
- * dibujando el borde desde la esquina, sin overflow:hidden, puro CSS.
- * En reposo: inset box-shadow suave + texto gris.
- * En hover:  borde rojo dibujándose + texto rojo.
+ * Technique: two pseudo-elements positioned at corners grow to 100%×100%
+ * drawing the border from the corner, no overflow:hidden, pure CSS.
+ * Rest state: subtle inset box-shadow + gray text.
+ * Hover: red border drawing + red text.
  */
 .btn-cancel-draw {
   position: relative;
@@ -187,16 +180,15 @@
   transform: none;
 }
 
-/* Variante pequeña (header) */
 .btn-login-sm {
   padding: 0.4rem 0.9rem;
   font-size: 0.875rem;
   border-radius: 0.5rem;
 }
-/* ── Botón Editar: animación wiggle del lápiz ────────────────────── */
+/* ── Edit button: pencil wiggle animation ────────────────────── */
 /*
- * Añade la clase `btn-edit-icon` a cualquier icono <Pencil> dentro de
- * un <button>. En hover del botón el lápiz hace un movimiento de escritura.
+ * Add the `btn-edit-icon` class to any <Pencil> icon inside a <button>.
+ * On button hover the pencil performs a writing wiggle animation.
  */
 button:hover .btn-edit-icon,
 a:hover .btn-edit-icon {
@@ -210,11 +202,12 @@ a:hover .btn-edit-icon {
   60%      { transform: rotate(-8deg) translate(-0.5px, 0); }
   80%      { transform: rotate(4deg) translate(0, 0); }
 }
-/* ── Anillo animado para badge de cuenta por defecto ───────────────── */
-/*
- * Técnica: padding en el padre crea el grosor uniforme del anillo.
- * El hijo ocupa el área interior (padre menos 2×padding) y tapa el centro.
- */
+.ring-anim {
+  /* ── Animated ring for default account badge ───────────────── */
+}
+.ring-inner {
+  /* fixed size = 28px - 2*3px = 22px, so the border is exactly 3px on all sides */
+}
 .ring-anim {
   flex-shrink: 0;
   width: 1.75rem;     /* 28 px */

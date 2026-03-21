@@ -24,6 +24,7 @@ public class TransactionConverter {
             dto.setCategoryId(transaction.getCategory().getId().toString());
             dto.setCategoryName(transaction.getCategory().getName());
         }
+        dto.setBankCategory(transaction.getBankCategory());
 
         return dto;
     }

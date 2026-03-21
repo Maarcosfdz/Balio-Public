@@ -17,7 +17,7 @@ const api = axios.create({
 // ── Request interceptor: inyecta accessToken ──
 api.interceptors.request.use((config) => {
   const token = getAccessToken();
-  if (token) {
+  if (token) { 
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;

@@ -6,6 +6,11 @@ import Balio.web.model.Exceptions.InstanceNotFoundException;
 import Balio.web.model.Exceptions.UserNotFoundException;
 import Balio.web.model.entities.Account;
 import Balio.web.model.entities.AccountDao;
+import Balio.web.model.entities.BankConnectionDao;
+import Balio.web.model.entities.BankTransactionRule;
+import Balio.web.model.entities.BankTransactionRuleDao;
+import Balio.web.model.entities.Transaction;
+import Balio.web.model.entities.TransactionDao;
 import Balio.web.model.entities.User;
 import Balio.web.model.entities.UserDao;
 import org.springframework.stereotype.Service;
@@ -23,10 +28,17 @@ public class AccountServiceImpl implements AccountService {
 
     private final UserDao userDao;
     private final AccountDao accountDao;
+    private final TransactionDao transactionDao;
+    private final BankConnectionDao bankConnectionDao;
+    private final BankTransactionRuleDao bankTransactionRuleDao;
 
-    public AccountServiceImpl(UserDao userDao, AccountDao accountDao) {
+    public AccountServiceImpl(UserDao userDao, AccountDao accountDao, TransactionDao transactionDao,
+                              BankConnectionDao bankConnectionDao, BankTransactionRuleDao bankTransactionRuleDao) {
         this.userDao = userDao;
         this.accountDao = accountDao;
+        this.transactionDao = transactionDao;
+        this.bankConnectionDao = bankConnectionDao;
+        this.bankTransactionRuleDao = bankTransactionRuleDao;
     }
 
     @Override
@@ -65,6 +77,12 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public void deleteAccount(UUID userId, UUID accountId) throws InstanceNotFoundException {
+        deleteAccount(userId, accountId, false);
+    }
+
+    @Override
+        public void deleteAccount(UUID userId, UUID accountId, boolean deleteTransactions)
+            throws InstanceNotFoundException {
 
         Account account = accountDao.findByIdAndUserId(accountId, userId)
                 .orElseThrow(() -> new InstanceNotFoundException("Account", accountId));
@@ -75,6 +93,26 @@ public class AccountServiceImpl implements AccountService {
                 && user.getDefaultAccount().getId().equals(accountId)) {
             user.setDefaultAccount(null);
             userDao.save(user);
+        }
+
+        List<BankTransactionRule> rules = bankTransactionRuleDao
+                .findAllByUserIdAndAccountIdOrderByPriorityDesc(userId, accountId);
+        if (!rules.isEmpty()) {
+            bankTransactionRuleDao.deleteAll(rules);
+        }
+
+        bankConnectionDao.findByAccountIdAndUserId(accountId, userId)
+                .ifPresent(bankConnectionDao::delete);
+
+        List<Transaction> transactions = transactionDao
+            .findAllByUserIdAndAccountIdOrderByDateDesc(userId, accountId);
+        if (!transactions.isEmpty()) {
+            if (deleteTransactions) {
+                transactionDao.deleteAll(transactions);
+            } else {
+                transactions.forEach(transaction -> transaction.setAccount(null));
+                transactionDao.saveAll(transactions);
+            }
         }
 
         accountDao.delete(account);

@@ -34,7 +34,6 @@ interface FilterPanelProps {
   open: boolean;
   onToggle: () => void;
   onApply: (filters: ActiveFilters) => void;
-  onApplySavedFilter: (filterId: string) => void;
   defaultAccountId?: string;
   maxTransactionAmount?: number;
   /** Pre-populated from a saved filter when entering edit mode */
@@ -342,7 +341,6 @@ export default function FilterPanel({
   open,
   onToggle,
   onApply,
-  onApplySavedFilter,
   defaultAccountId,
   maxTransactionAmount,
   initialFilters,

@@ -48,6 +48,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/user/signUp", "/user/login", "/user/refreshToken")
                         .permitAll()
+                .requestMatchers(HttpMethod.GET, "/bank/callback", "/bank/enablebanking/callback")
+                        .permitAll()
                 .requestMatchers(
                     "/v3/api-docs/**",
                     "/swagger-ui/**",

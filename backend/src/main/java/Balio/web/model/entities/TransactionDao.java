@@ -18,6 +18,8 @@ public interface TransactionDao extends JpaRepository<Transaction, UUID> {
 
     List<Transaction> findAllByUserIdOrderByDateDesc(UUID userId);
 
+    List<Transaction> findAllByUserIdAndAccountIdOrderByDateDesc(UUID userId, UUID accountId);
+
     @Query("SELECT t FROM Transaction t WHERE t.user.id = :userId " +
            "AND (:type IS NULL OR t.type = :type) " +
            "AND (:accountId IS NULL OR t.account.id = :accountId) " +
@@ -51,5 +53,9 @@ public interface TransactionDao extends JpaRepository<Transaction, UUID> {
                                         @Param("startDate") LocalDate startDate,
                                         @Param("endDate") LocalDate endDate,
                                         Pageable pageable);
+
+    // ── BANK SYNC ────────────────────────────────────────────────────────
+
+    boolean existsByAccountIdAndExternalId(UUID accountId, String externalId);
 
 }

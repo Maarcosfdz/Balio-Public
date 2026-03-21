@@ -1,10 +1,10 @@
 /* ── Goals page ─────────────────────────────────────────────────────── */
 
-/* ── Botón "Nueva meta" ─ estilo squishy-tech con gradiente de metas ── */
+/* ── "New Goal" button — squishy-tech style with goal gradient ── */
 /*
- * Técnica squishy: capas de box-shadow crean el efecto 3D "bloque apilado".
- * En hover translateY(4px) baja el botón para simular que lo presionas.
- * Shimmer: pseudo-elemento que recorre el botón de izq→der en loop.
+ * Squishy technique: layered box-shadows create a 3D "stacked block" effect.
+ * On hover translateY(4px) moves the button down to simulate pressing.
+ * Shimmer: pseudo-element that travels left→right in a loop.
  */
 .goal-new-btn {
   position: relative;
@@ -60,10 +60,10 @@
   50%       { transform: translateY(-3px); }
 }
 
-/* ── Status pills con efecto gooey ─────────────────────────────────── */
+/* ── Status pills with gooey effect ───────────────────────────────── */
 /*
- * Colores neutros (slate) para no competir con el progreso de las metas.
- * El efecto gooey viene del SVG <filter id="goal-goo"> en el DOM.
+ * Neutral (slate) colors so they don't compete with goal progress.
+ * The gooey effect is provided by the SVG <filter id="goal-goo"> in the DOM.
  */
 .goal-pill {
   position: relative;
@@ -127,11 +127,11 @@
 .goal-pill-active   .goal-pill-badge { background: #94a3b8; }
 .goal-pill-completed .goal-pill-badge { background: #94a3b8; }
 
-/* ── Botones ajuste anchos (/- en la tarjeta) ──────────────────────── */
+/* ── Wide adjust buttons (used on the card) ───────────────────────── */
 /*
- * `flex-1` lo aplica el componente vía clase utilitaria `w-full`.
- * El color (border, bg, text) se pasa dinámicamente como inline style
- * desde el componente para que coincida con el color de progreso.
+ * `flex-1` is applied by the component via the `w-full` utility class.
+ * Color (border, bg, text) is passed dynamically as an inline style
+ * from the component to match the progress color.
  */
 .goal-adjust-wide {
   height: 2.375rem;
@@ -159,7 +159,7 @@
   transform: translateY(1px);
 }
 
-/* ── Botones redondos (fallback, por si se usan sin wide) ──────────── */
+/* ── Round buttons (fallback, for use without wide) ──────────────── */
 .goal-adjust-btn-add {
   display: flex; align-items: center; justify-content: center;
   width: 2.5rem; height: 2.5rem;

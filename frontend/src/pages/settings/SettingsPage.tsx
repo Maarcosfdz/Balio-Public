@@ -326,8 +326,8 @@ type Lang = "es" | "en" | "gl";
 
 const LANG_OPTIONS: { code: Lang; label: string; src: string }[] = [
   { code: "en", label: "English",    src: "/banderaGB.png" },
-  { code: "es", label: "Castellano", src: "/banderasES.png" },
-  { code: "gl", label: "Galego",     src: "/banderasGL.png" },
+  { code: "es", label: "Spanish",    src: "/banderasES.png" },
+  { code: "gl", label: "Galician",   src: "/banderasGL.png" },
 ];
 
 function PreferencesSection({ onToast }: { onToast: (t: Toast) => void }) {

@@ -39,6 +39,14 @@ export default function DateRangePicker({
   const [portalStyle, setPortalStyle] = useState<React.CSSProperties>({});
   const today = new Date();
 
+  const dayPickerClassNames = {
+    selected: "!bg-sky-500 !text-white rounded-md",
+    range_start: "!bg-sky-600 !text-white rounded-md",
+    range_end: "!bg-sky-600 !text-white rounded-md",
+    range_middle: "!bg-sky-100 !text-sky-800 rounded-md",
+    today: "!text-sky-700 font-semibold",
+  };
+
   // ── Portal position ───────────────────────────────────────────────────
   useEffect(() => {
     if (!open) return;
@@ -116,9 +124,9 @@ export default function DateRangePicker({
   const hasDates = !!startDate || specificDates.length > 0;
 
   const displayText = !hasDates
-    ? t("txPage.selectDates", "Seleccionar fecha/s")
+    ? t("txPage.selectDates", "Select date(s)")
     : specificDates.length > 0 && !startDate
-      ? `${specificDates.length} ${t("txPage.looseDates", "fechas sueltas")}`
+      ? `${specificDates.length} ${t("txPage.looseDates", "loose dates")}`
       : mode === "single"
         ? formatDisplay(startDate)
         : endDate && endDate !== startDate
@@ -140,7 +148,7 @@ export default function DateRangePicker({
   return (
     <div className="space-y-1">
       <label className="text-xs font-semibold text-slate-500">
-        {t("txPage.selectDates", "Seleccionar fecha/s")}
+        {t("txPage.selectDates", "Select date(s)")}
       </label>
 
       {/* Trigger button */}
@@ -185,7 +193,7 @@ export default function DateRangePicker({
                 mode === "single" ? "bg-white text-sky-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              {t("txPage.singleDate", "Día")}
+              {t("txPage.singleDate", "Day")}
             </button>
             <button
               type="button"
@@ -194,7 +202,7 @@ export default function DateRangePicker({
                 mode === "range" ? "bg-white text-sky-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              {t("txPage.dateRange", "Rango")}
+              {t("txPage.dateRange", "Range")}
             </button>
           </div>
 
@@ -204,6 +212,7 @@ export default function DateRangePicker({
               <DayPicker
                 mode="single"
                 selected={parseIso(startDate)}
+                classNames={dayPickerClassNames}
                 onSelect={(date) => {
                   const iso = date ? toInputDate(date) : "";
                   onChangeStart(iso);
@@ -214,6 +223,7 @@ export default function DateRangePicker({
               <DayPicker
                 mode="range"
                 selected={rangeValue}
+                classNames={dayPickerClassNames}
                 onSelect={handleRangeSelect}
               />
             )}
@@ -227,7 +237,7 @@ export default function DateRangePicker({
                 onClick={() => { const iso = toInputDate(today); onChangeStart(iso); onChangeEnd(iso); }}
                 className="tx-date-action-btn"
               >
-                {t("txPage.today", "Hoy")}
+                {t("txPage.today", "Today")}
               </button>
             ) : (
               <div className="flex gap-1.5">
@@ -236,7 +246,7 @@ export default function DateRangePicker({
                   onClick={() => { const iso = toInputDate(today); onChangeStart(iso); onChangeEnd(iso); }}
                   className="tx-date-action-btn"
                 >
-                  {t("txPage.today", "Hoy")}
+                  {t("txPage.today", "Today")}
                 </button>
                 <button
                   type="button"
@@ -246,7 +256,7 @@ export default function DateRangePicker({
                   }}
                   className="tx-date-action-btn"
                 >
-                  {t("txPage.thisMonth", "Este mes")}
+                  {t("txPage.thisMonth", "This month")}
                 </button>
               </div>
             )}
@@ -255,7 +265,7 @@ export default function DateRangePicker({
               onClick={() => { clearDates(); setOpen(false); }}
               className="tx-date-action-btn tx-date-action-btn--ghost"
             >
-              {t("txPage.clearDates", "Limpiar")}
+              {t("txPage.clearDates", "Clear")}
             </button>
           </div>
 
@@ -268,7 +278,7 @@ export default function DateRangePicker({
             >
               <span className="flex items-center gap-1.5">
                 <CalendarDays className="h-3.5 w-3.5" />
-                {t("txPage.looseDatesLabel", "Fechas sueltas")}
+                {t("txPage.looseDatesLabel", "Loose dates")}
                 {specificDates.length > 0 && (
                   <span className="rounded-full bg-sky-100 px-1.5 text-sky-700">
                     {specificDates.length}
@@ -288,6 +298,7 @@ export default function DateRangePicker({
                 <DayPicker
                   mode="multiple"
                   selected={multipleDates}
+                  classNames={dayPickerClassNames}
                   onSelect={handleMultipleSelect}
                 />
                 {specificDates.length > 0 && (
@@ -296,7 +307,7 @@ export default function DateRangePicker({
                     onClick={() => onChangeSpecificDates([])}
                     className="mt-1 text-xs text-red-400 hover:text-red-600"
                   >
-                    {t("txPage.clearLooseDates", "Limpiar fechas sueltas")}
+                    {t("txPage.clearLooseDates", "Clear loose dates")}
                   </button>
                 )}
               </div>

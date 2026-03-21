@@ -11,6 +11,7 @@ import {
 import { useTranslation } from "react-i18next";
 import type { AuthenticatedUserDto, LoginParamsDto, UserDto } from "@/types";
 import { authService } from "@/backend/authService";
+import { bankService } from "@/backend/bankService";
 import { ROUTES } from "@/config/routes";
 import { ToastBanner } from "@/components/ui/toast-banner";
 import {
@@ -35,7 +36,7 @@ import {
   updateStoredUser,
 } from "@/lib/session";
 
-// ── Tipos del contexto ──
+// ── Context types ──
 interface User {
   id: string;
   nickname: string;
@@ -224,6 +225,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setWarningDismissed(false);
     setWarningVisible(false);
     setUser(toUser(data));
+    void bankService.syncStale(15).catch(() => {});
   }, []);
 
   const signUp = useCallback(async (params: UserDto) => {
@@ -239,7 +241,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authService.logout();
     } catch {
-      // Ignorar errores en logout (token expirado, etc.)
+      // Ignore logout errors (token expired, etc.)
     } finally {
       clearSessionData();
       setSessionNoticeReason(null);

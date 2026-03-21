@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { ArrowDownCircle, ArrowUpCircle, Check, Pencil, Trash2, X, Loader2 } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Check, Pencil, SlidersHorizontal, Trash2, Loader2 } from "lucide-react";
 import type { AccountSummaryDto, TransactionSummaryDto } from "@/types";
 import { transactionService } from "@/backend/transactionService";
 import { ROUTES } from "@/config/routes";
 import { typeIcon, typeHeaderBg, fmtAmount } from "../utils";
+import BankConnectionPanel from "./BankConnectionPanel";
+import BankRulesPanel from "./BankRulesPanel";
 
 interface AccountCardProps {
   account: AccountSummaryDto;
@@ -13,6 +15,7 @@ interface AccountCardProps {
   onDelete: (a: AccountSummaryDto) => void;
   onSetDefault: (a: AccountSummaryDto) => void;
   onClearDefault: () => void;
+  onSynced?: () => void;
 }
 
 export default function AccountCard({
@@ -21,14 +24,16 @@ export default function AccountCard({
   onDelete,
   onSetDefault,
   onClearDefault,
+  onSynced,
 }: AccountCardProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [txs, setTxs] = useState<TransactionSummaryDto[]>([]);
   const [txLoading, setTxLoading] = useState(true);
+  const [txRefresh, setTxRefresh] = useState(0);
+  const [rulesOpen, setRulesOpen] = useState(false);
 
   useEffect(() => {
-    setTxLoading(true);
     transactionService
       .getAll({ accountId: account.id }, 0, 5)
       .then((data) => {
@@ -40,7 +45,7 @@ export default function AccountCard({
       })
       .catch(() => setTxs([]))
       .finally(() => setTxLoading(false));
-  }, [account.id]);
+  }, [account.id, txRefresh]);
 
   const balanceColor = account.balance < 0 ? "text-red-500" : "text-slate-800";
 
@@ -89,6 +94,18 @@ export default function AccountCard({
                 <div className="ring-inner">
                   <Check className="h-2.5 w-2.5 text-sky-600" />
                 </div>
+              </button>
+            )}
+            {account.type === "BANK" && (
+              <button
+                onClick={() => setRulesOpen(true)}
+                className="rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-500 transition hover:bg-sky-50 hover:text-sky-600"
+                title="Reglas bancarias"
+              >
+                <span className="flex items-center gap-1.5">
+                  <SlidersHorizontal className="h-4 w-4" />
+                  Reglas
+                </span>
               </button>
             )}
             <button
@@ -174,6 +191,30 @@ export default function AccountCard({
           )}
         </div>
       </div>
+
+      {/* Panel de conexión bancaria (solo para cuentas BANK) */}
+      {account.type === "BANK" && (
+        <>
+          <div className="mx-5 border-t border-slate-100" />
+          <BankConnectionPanel
+            accountId={account.id}
+            onSynced={() => {
+              setTxLoading(true);
+              setTxRefresh((v) => v + 1);
+              onSynced?.();
+            }}
+          />
+          <BankRulesPanel
+            account={account}
+            open={rulesOpen}
+            onClose={() => setRulesOpen(false)}
+            onRulesChanged={() => {
+              setTxLoading(true);
+              setTxRefresh((v) => v + 1);
+            }}
+          />
+        </>
+      )}
     </div>
   );
 }

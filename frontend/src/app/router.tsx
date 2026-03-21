@@ -8,6 +8,7 @@ import AboutPage from "@/pages/mainPage/AboutPage";
 import LoginPage from "@/pages/auth/LoginPage";
 import SignUpPage from "@/pages/auth/SignUpPage";
 import DashboardPage from "@/pages/dashboard/DashboardPage";
+import AnalysisPage from "@/pages/analysis/AnalysisPage";
 import AccountsPage from "@/pages/accounts/AccountsPage";
 import TransactionsPage from "@/pages/transactions/TransactionsPage";
 import CategoriesPage from "@/pages/categories/CategoriesPage";
@@ -16,7 +17,7 @@ import FiltersPage from "@/pages/filters/FiltersPage";
 import SettingsPage from "@/pages/settings/SettingsPage";
 
 export const router = createBrowserRouter([
-  // ── Rutas públicas (redirigen a /dashboard si ya hay sesión) ──
+  // ── Public routes (redirect to /dashboard if already authenticated) ──
   {
     element: <PublicRoute />,
     children: [
@@ -27,7 +28,7 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // ── Rutas protegidas (requieren autenticación) ──
+  // ── Protected routes (require authentication) ──
   {
     element: <ProtectedRoute />,
     children: [
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { path: ROUTES.DASHBOARD,    element: <DashboardPage /> },
+          { path: ROUTES.ANALYSIS,     element: <AnalysisPage /> },
           { path: ROUTES.ACCOUNTS,     element: <AccountsPage /> },
           { path: ROUTES.TRANSACTIONS, element: <TransactionsPage /> },
           { path: ROUTES.CATEGORIES,   element: <CategoriesPage /> },
