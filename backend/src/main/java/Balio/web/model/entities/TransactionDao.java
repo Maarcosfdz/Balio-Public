@@ -58,4 +58,17 @@ public interface TransactionDao extends JpaRepository<Transaction, UUID> {
 
     boolean existsByAccountIdAndExternalId(UUID accountId, String externalId);
 
+    // ── BUDGET ──────────────────────────────────────────────────────────
+
+    @Query("SELECT t FROM Transaction t WHERE t.user.id = :userId " +
+           "AND t.type = Balio.web.enums.TransactionType.EXPENSE " +
+           "AND t.category.id IN :categoryIds " +
+           "AND t.date >= :startDate AND t.date <= :endDate " +
+           "ORDER BY t.date DESC")
+    List<Transaction> findExpensesByCategoryIdsAndDateRange(
+            @Param("userId") UUID userId,
+            @Param("categoryIds") List<UUID> categoryIds,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
 }

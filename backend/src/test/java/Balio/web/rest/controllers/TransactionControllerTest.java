@@ -224,13 +224,23 @@ class TransactionControllerTest {
         }
 
         @Test
-        @DisplayName("400 – null accountId")
-        void shouldReturn400_whenNullAccountId() throws Exception {
+        @DisplayName("201 – null accountId")
+        void shouldReturn201_whenNullAccountId() throws Exception {
+            Transaction noAccountTx = new Transaction(VALID_NAME, VALID_AMOUNT, VALID_DATE, TransactionType.EXPENSE, testUser);
+            setFieldViaReflection(noAccountTx, "id", TRANSACTION_ID);
+            noAccountTx.setAffectsBalance(false);
+
+            when(transactionService.addExpense(
+                    eq(USER_ID), isNull(), isNull(),
+                    eq(VALID_NAME), eq(VALID_AMOUNT), isNull(), isNull()))
+                    .thenReturn(noAccountTx);
+
             mockMvc.perform(post("/transaction/expense")
                             .requestAttr("userId", USER_ID)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(transactionJson(VALID_NAME, VALID_AMOUNT, null, null, null, null, null)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.name", is(VALID_NAME)));
         }
 
         @Test
@@ -328,13 +338,23 @@ class TransactionControllerTest {
         }
 
         @Test
-        @DisplayName("400 – null accountId")
-        void shouldReturn400_whenNullAccountId() throws Exception {
+        @DisplayName("201 – null accountId")
+        void shouldReturn201_whenNullAccountId() throws Exception {
+            Transaction noAccountTx = new Transaction(VALID_NAME, VALID_AMOUNT, VALID_DATE, TransactionType.INCOME, testUser);
+            setFieldViaReflection(noAccountTx, "id", TRANSACTION_ID);
+            noAccountTx.setAffectsBalance(false);
+
+            when(transactionService.addIncome(
+                    eq(USER_ID), isNull(), isNull(),
+                    eq(VALID_NAME), eq(VALID_AMOUNT), isNull(), isNull()))
+                    .thenReturn(noAccountTx);
+
             mockMvc.perform(post("/transaction/income")
                             .requestAttr("userId", USER_ID)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(transactionJson(VALID_NAME, VALID_AMOUNT, null, null, null, null, null)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.name", is(VALID_NAME)));
         }
 
         @Test
@@ -465,13 +485,26 @@ class TransactionControllerTest {
         }
 
         @Test
-        @DisplayName("400 – null accountId on update")
-        void shouldReturn400_whenNullAccountIdOnUpdate() throws Exception {
+        @DisplayName("200 – null accountId on update")
+        void shouldReturn200_whenNullAccountIdOnUpdate() throws Exception {
+            Transaction updated = new Transaction(VALID_NAME, VALID_AMOUNT, VALID_DATE, TransactionType.EXPENSE, testUser);
+            setFieldViaReflection(updated, "id", TRANSACTION_ID);
+            updated.setAffectsBalance(true);
+            updated.setAccount(null);
+            updated.setCategory(testCategory);
+
+            when(transactionService.updateTransaction(
+                    eq(USER_ID), eq(TRANSACTION_ID), isNull(), isNull(),
+                    eq(TransactionType.EXPENSE), eq(VALID_NAME), eq(VALID_AMOUNT), eq(VALID_DATE), eq(true)))
+                    .thenReturn(updated);
+
             mockMvc.perform(put("/transaction/{id}", TRANSACTION_ID)
                             .requestAttr("userId", USER_ID)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(transactionJson(VALID_NAME, VALID_AMOUNT, null, null, VALID_DATE, true, TransactionType.EXPENSE)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id", is(TRANSACTION_ID.toString())))
+                    .andExpect(jsonPath("$.name", is(VALID_NAME)));
         }
 
         @Test
