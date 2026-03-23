@@ -79,7 +79,9 @@ public class BudgetCategoryResponseDto {
     public void setUsagePercent(double usagePercent) { this.usagePercent = usagePercent; }
 
     public List<LinkedCategoryDto> getLinkedCategories() { return linkedCategories; }
-    public void setLinkedCategories(List<LinkedCategoryDto> linkedCategories) { this.linkedCategories = linkedCategories; }
+    public void setLinkedCategories(List<LinkedCategoryDto> linkedCategories) {
+        this.linkedCategories = linkedCategories;
+    }
 
     public List<TransactionSummaryDto> getTransactions() { return transactions; }
     public void setTransactions(List<TransactionSummaryDto> transactions) { this.transactions = transactions; }

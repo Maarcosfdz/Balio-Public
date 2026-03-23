@@ -75,7 +75,8 @@ public class ScheduledTransactionServiceImpl implements ScheduledTransactionServ
         }
 
         if (scheduledTxDao.countByUserId(userId) >= MAX_SCHEDULED) {
-            throw new ScheduledTransactionInvalidException("Maximum of " + MAX_SCHEDULED + " scheduled transactions reached");
+            throw new ScheduledTransactionInvalidException(
+                    "Maximum of " + MAX_SCHEDULED + " scheduled transactions reached");
         }
 
         User user = userDao.findById(userId)
@@ -125,20 +126,20 @@ public class ScheduledTransactionServiceImpl implements ScheduledTransactionServ
             }
             st.setAmount(amount);
         }
-        if (type != null) st.setType(type);
-        if (freqYears != null) st.setFreqYears(freqYears);
-        if (freqMonths != null) st.setFreqMonths(freqMonths);
-        if (freqWeeks != null) st.setFreqWeeks(freqWeeks);
-        if (freqDays != null) st.setFreqDays(freqDays);
+        if (type != null) { st.setType(type); }
+        if (freqYears != null) { st.setFreqYears(freqYears); }
+        if (freqMonths != null) { st.setFreqMonths(freqMonths); }
+        if (freqWeeks != null) { st.setFreqWeeks(freqWeeks); }
+        if (freqDays != null) { st.setFreqDays(freqDays); }
 
         // Validate total frequency > 0 after partial updates
         if (st.getFreqYears() + st.getFreqMonths() + st.getFreqWeeks() + st.getFreqDays() == 0) {
             throw new ScheduledTransactionInvalidException("At least one frequency component must be > 0");
         }
 
-        if (startDate != null) st.setStartDate(startDate);
-        if (affectsBalance != null) st.setAffectsBalance(affectsBalance);
-        if (active != null) st.setActive(active);
+        if (startDate != null) { st.setStartDate(startDate); }
+        if (affectsBalance != null) { st.setAffectsBalance(affectsBalance); }
+        if (active != null) { st.setActive(active); }
 
         if (accountId != null) {
             st.setAccount(accountDao.findByIdAndUserId(accountId, userId).orElse(null));

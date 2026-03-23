@@ -258,7 +258,7 @@ public class TransactionController {
             int lineNum = 1;
             while ((line = reader.readLine()) != null) {
                 lineNum++;
-                if (line.isBlank()) continue;
+                if (line.isBlank()) { continue; }
 
                 try {
                     ParsedRow row = parseLine(line, format);
@@ -288,7 +288,7 @@ public class TransactionController {
                             if (rule.getTransactionType() != null && !rule.getTransactionType().isBlank()) {
                                 try {
                                     TransactionType ruleType = TransactionType.valueOf(rule.getTransactionType());
-                                    if (ruleType != type) continue;
+                                    if (ruleType != type) { continue; }
                                 } catch (IllegalArgumentException ignored) {}
                             }
                             if (rule.getCategoryId() != null && !rule.getCategoryId().isBlank()) {
@@ -314,7 +314,7 @@ public class TransactionController {
                 } catch (Exception e) {
                     skipped++;
                     errors.add("Line " + lineNum + ": " + e.getMessage());
-                    if (errors.size() > 50) break;
+                    if (errors.size() > 50) { break; }
                 }
             }
         } catch (Exception e) {
@@ -361,7 +361,7 @@ public class TransactionController {
         if (format.isBank) {
             // Bank format: Fecha ctble;Fecha valor;Concepto;Importe;Moneda;Saldo;Moneda;Concepto ampliado
             String[] parts = line.split(String.valueOf(format.separator), -1);
-            if (parts.length < 4) throw new IllegalArgumentException("Not enough columns");
+            if (parts.length < 4) { throw new IllegalArgumentException("Not enough columns"); }
 
             row.date = parseDateFlexible(parts[0].trim());
             row.name = parts[2].trim();
@@ -372,7 +372,7 @@ public class TransactionController {
         } else {
             // App format: Date,Name,Amount,Category
             String[] parts = splitCsvLine(line);
-            if (parts.length < 3) throw new IllegalArgumentException("Not enough columns");
+            if (parts.length < 3) { throw new IllegalArgumentException("Not enough columns"); }
 
             row.date = parseDateFlexible(parts[0].trim());
             row.name = parts[1].trim();
@@ -384,7 +384,7 @@ public class TransactionController {
     }
 
     private LocalDate parseDateFlexible(String dateStr) {
-        if (dateStr == null || dateStr.isBlank()) return LocalDate.now();
+        if (dateStr == null || dateStr.isBlank()) { return LocalDate.now(); }
 
         // Try ISO format first (yyyy-MM-dd)
         try { return LocalDate.parse(dateStr); } catch (DateTimeParseException ignored) {}
@@ -424,7 +424,7 @@ public class TransactionController {
     }
 
     private String escapeCsv(String value) {
-        if (value == null) return "";
+        if (value == null) { return ""; }
         if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
             return "\"" + value.replace("\"", "\"\"") + "\"";
         }

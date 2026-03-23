@@ -166,7 +166,7 @@ public class BudgetConverter {
     }
 
     private double calcPercent(BigDecimal spent, BigDecimal total) {
-        if (total.compareTo(BigDecimal.ZERO) <= 0) return 0;
+        if (total.compareTo(BigDecimal.ZERO) <= 0) { return 0; }
         return spent.multiply(BigDecimal.valueOf(100))
                 .divide(total, 2, RoundingMode.HALF_UP)
                 .doubleValue();

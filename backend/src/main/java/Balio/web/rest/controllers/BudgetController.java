@@ -2,7 +2,6 @@ package Balio.web.rest.controllers;
 
 import Balio.web.model.Exceptions.InstanceNotFoundException;
 import Balio.web.model.entities.Budget;
-import Balio.web.model.entities.BudgetCategory;
 import Balio.web.model.services.BudgetService;
 import Balio.web.rest.dtos.BudgetCategoryDto;
 import Balio.web.rest.dtos.BudgetCategoryUpdateDto;

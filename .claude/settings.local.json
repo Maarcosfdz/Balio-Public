@@ -27,7 +27,8 @@
       "Bash(xargs grep:*)",
       "Bash(grep -r \"WidgetType\\\\|WidgetChartType\\\\|ChartWidget\" c:UsersmromaDesktopFIC4.CuartoTFGBaliobackendsrcmainjavaBaliowebrest --include=*.java)",
       "Bash(./mvnw compile:*)",
-      "Bash(./mvnw test:*)"
+      "Bash(./mvnw test:*)",
+      "Bash(mvn test:*)"
     ]
   }
 }

@@ -73,11 +73,16 @@ function BudgetFormDialog({ open, initial, onClose, onSaved }: BudgetFormDialogP
   const [nameError, setNameError] = useState("");
   const [formError, setFormError] = useState("");
 
+  const defaultStartDate = useMemo(() => {
+    const today = new Date();
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-01`;
+  }, []);
+
   useEffect(() => {
     if (open) {
       setName(initial?.name ?? "");
       setPeriodicity(initial?.periodicity ?? "MONTHLY");
-      setStartDate(initial?.startDate ?? "");
+      setStartDate(initial?.startDate ?? defaultStartDate);
       setNameError("");
       setFormError("");
     }

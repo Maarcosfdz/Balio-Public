@@ -154,8 +154,10 @@ public class CommonControllerAdvice {
     @ExceptionHandler(ScheduledTransactionInvalidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public Map<String, String> handleScheduledTransactionInvalidException(ScheduledTransactionInvalidException exception) {
-        return Map.of("code", "project.exceptions.ScheduledTransactionInvalidException", "message", exception.getMessage());
+    public Map<String, String> handleScheduledTransactionInvalidException(
+            ScheduledTransactionInvalidException exception) {
+        return Map.of("code", "project.exceptions.ScheduledTransactionInvalidException",
+                "message", exception.getMessage());
     }
 
     // --- FilterInvalidException (runtime) ---
