@@ -56,7 +56,7 @@ class CoreDtosValidationTest {
 
         Set<ConstraintViolation<TransactionDto>> violations = validator.validate(dto);
 
-        assertEquals(3, violations.size());
+        assertEquals(2, violations.size());
     }
 
     @Test

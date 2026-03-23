@@ -158,8 +158,8 @@ export interface TransactionResponseDto {
   date: string;
   type: TransactionType;
   affectsBalance: boolean;
-  accountId: string;
-  accountName: string;
+  accountId?: string | null;
+  accountName?: string | null;
   categoryId: string | null;
   categoryName: string | null;
 }
@@ -273,6 +273,180 @@ export interface GoalResponseDto {
 
 export interface GoalAmountDto {
   amount: number;
+}
+
+// ============================================
+// Budget DTOs
+// ============================================
+
+export const BudgetPeriodicity = {
+  WEEKLY: "WEEKLY",
+  MONTHLY: "MONTHLY",
+  QUARTERLY: "QUARTERLY",
+  FOUR_MONTHLY: "FOUR_MONTHLY",
+  BIANNUAL: "BIANNUAL",
+  ANNUAL: "ANNUAL",
+} as const;
+export type BudgetPeriodicity = (typeof BudgetPeriodicity)[keyof typeof BudgetPeriodicity];
+
+export interface BudgetDto {
+  name: string;
+  periodicity: BudgetPeriodicity;
+  startDate: string;
+}
+
+export interface BudgetUpdateDto {
+  name?: string;
+  periodicity?: BudgetPeriodicity;
+  startDate?: string;
+}
+
+export interface BudgetSummaryDto {
+  id: string;
+  name: string;
+  periodicity: BudgetPeriodicity;
+  startDate: string;
+  periodStart: string;
+  periodEnd: string;
+  totalBudget: number;
+  totalSpent: number;
+  totalRemaining: number;
+  usagePercent: number;
+  prevTotalBudget: number;
+  prevTotalSpent: number;
+  categoryCount: number;
+}
+
+export interface BudgetCategoryLinkedDto {
+  id: string;
+  name: string;
+}
+
+export interface BudgetCategoryTransactionDto {
+  id: string;
+  name: string;
+  amount: number;
+  date: string;
+  categoryName: string | null;
+  manual: boolean;
+}
+
+export interface BudgetCategoryResponseDto {
+  id: string;
+  name: string;
+  maxAmount: number;
+  displayOrder: number;
+  spent: number;
+  remaining: number;
+  usagePercent: number;
+  linkedCategories: BudgetCategoryLinkedDto[];
+  transactions: BudgetCategoryTransactionDto[];
+}
+
+export interface BudgetResponseDto {
+  id: string;
+  name: string;
+  periodicity: BudgetPeriodicity;
+  startDate: string;
+  periodStart: string;
+  periodEnd: string;
+  totalBudget: number;
+  totalSpent: number;
+  totalRemaining: number;
+  usagePercent: number;
+  prevTotalBudget: number;
+  prevTotalSpent: number;
+  categories: BudgetCategoryResponseDto[];
+}
+
+export interface BudgetCategoryDto {
+  name: string;
+  maxAmount: number;
+  linkedCategoryIds?: string[];
+}
+
+export interface BudgetCategoryUpdateDto {
+  name?: string;
+  maxAmount?: number;
+  linkedCategoryIds?: string[];
+}
+
+// ============================================
+// Scheduled Transaction DTOs
+// ============================================
+
+export interface ScheduledTransactionDto {
+  name: string;
+  amount: number;
+  type: TransactionType;
+  accountId?: string;
+  categoryId?: string;
+  affectsBalance?: boolean;
+  freqYears: number;
+  freqMonths: number;
+  freqWeeks: number;
+  freqDays: number;
+  startDate: string;
+}
+
+export interface ScheduledTransactionUpdateDto {
+  name?: string;
+  amount?: number;
+  type?: TransactionType;
+  accountId?: string;
+  categoryId?: string;
+  affectsBalance?: boolean;
+  freqYears?: number;
+  freqMonths?: number;
+  freqWeeks?: number;
+  freqDays?: number;
+  startDate?: string;
+  active?: boolean;
+}
+
+export interface ScheduledTransactionResponseDto {
+  id: string;
+  name: string;
+  amount: number;
+  type: TransactionType;
+  affectsBalance: boolean;
+  freqYears: number;
+  freqMonths: number;
+  freqWeeks: number;
+  freqDays: number;
+  startDate: string;
+  lastExecution: string | null;
+  nextExecution: string | null;
+  active: boolean;
+  accountId: string | null;
+  accountName: string | null;
+  categoryId: string | null;
+  categoryName: string | null;
+}
+
+export interface ScheduledTransactionPage {
+  content: ScheduledTransactionResponseDto[];
+  totalPages: number;
+  totalElements: number;
+  number: number;
+  size: number;
+}
+
+// ============================================
+// CSV Import/Export DTOs
+// ============================================
+
+export interface CsvImportRuleDto {
+  pattern: string;
+  categoryId: string;
+  transactionType?: string; // "EXPENSE" | "INCOME" | undefined (both)
+  mappedName?: string;
+}
+
+export interface CsvImportResultDto {
+  imported: number;
+  skipped: number;
+  errors: string[];
 }
 
 // ============================================

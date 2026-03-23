@@ -14,8 +14,11 @@ export const ROUTES = {
   TRANSACTIONS: "/transactions",
   ANALYSIS: "/analysis",
   ACCOUNTS: "/accounts",
+  BUDGETS: "/budgets",
+  BUDGET_DETAIL: "/budgets/:budgetId",
   CATEGORIES: "/categories",
   GOALS: "/goals",
+  SCHEDULED_TRANSACTIONS: "/scheduled-transactions",
   FILTERS: "/filters",
   SETTINGS: "/settings",
 } as const;

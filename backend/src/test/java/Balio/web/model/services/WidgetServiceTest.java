@@ -34,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -55,7 +56,7 @@ class WidgetServiceTest {
     @Mock private UserDao userDao;
     @Mock private FilterDao filterDao;
     @Mock private ChartWidgetDao chartWidgetDao;
-    @Mock private WidgetResolverRegistry resolverRegistry;
+    @Mock private WidgetDataResolverService dataResolverService;
 
     private WidgetServiceImpl widgetService;
     private User user;
@@ -63,7 +64,7 @@ class WidgetServiceTest {
     @BeforeEach
     void setUp() {
         widgetService = new WidgetServiceImpl(
-                userDao, filterDao, chartWidgetDao, resolverRegistry, new ObjectMapper());
+                userDao, filterDao, chartWidgetDao, dataResolverService, new ObjectMapper());
         user = new User("Ana", "ana@test.com", "pwd");
         setFieldViaReflection(user, "id", USER_ID);
     }
@@ -494,14 +495,13 @@ class WidgetServiceTest {
             ChartWidget widget = new ChartWidget(
                     "W", WidgetType.KPI, WidgetChartType.KPI_CARD, VALID_CONFIG, false, true, 0, null, user);
             when(chartWidgetDao.findByIdAndUserId(WIDGET_ID, USER_ID)).thenReturn(Optional.of(widget));
-            WidgetDataResolver resolver = mock(WidgetDataResolver.class);
-            when(resolverRegistry.get(WidgetType.KPI)).thenReturn(resolver);
-            when(resolver.resolve(any(), any(), any())).thenReturn(new ObjectMapper().createObjectNode());
+            when(dataResolverService.resolve(any(), any(), any(), any()))
+                    .thenReturn(new ObjectMapper().createObjectNode());
 
             JsonNode result = widgetService.preview(USER_ID, WIDGET_ID);
 
             assertNotNull(result);
-            verify(resolverRegistry).get(WidgetType.KPI);
+            verify(dataResolverService).resolve(eq(USER_ID), eq(WidgetType.KPI), any(), any());
         }
 
         @Test
@@ -521,9 +521,8 @@ class WidgetServiceTest {
         @Test
         @DisplayName("resolves preview for arbitrary configuration")
         void shouldResolveFromConfig() {
-            WidgetDataResolver resolver = mock(WidgetDataResolver.class);
-            when(resolverRegistry.get(WidgetType.KPI)).thenReturn(resolver);
-            when(resolver.resolve(any(), any(), any())).thenReturn(new ObjectMapper().createObjectNode());
+            when(dataResolverService.resolve(any(), any(), any(), any()))
+                    .thenReturn(new ObjectMapper().createObjectNode());
 
             JsonNode result = widgetService.previewConfiguration(
                     USER_ID, WidgetType.KPI, WidgetChartType.KPI_CARD, VALID_CONFIG, null);

@@ -21,7 +21,14 @@
       "Bash(docker compose:*)",
       "Bash(ls -la \"c:\\\\Users\\\\mroma\\\\Desktop\\\\FIC\\\\4.Cuarto\\\\TFG\\\\Balio\\\\backend\\\\src\\\\main\\\\resources\"\" 2>/dev/null || ls -la \"/c/Users/mroma/Desktop/FIC/4.Cuarto/TFG/Balio/backend/src/main/resources/ \")",
       "Bash(mvn clean:*)",
-      "WebFetch(domain:enablebanking.com)"
+      "WebFetch(domain:enablebanking.com)",
+      "Bash(xargs wc:*)",
+      "Bash(node -e \":*)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -r \"WidgetType\\\\|WidgetChartType\\\\|ChartWidget\" c:UsersmromaDesktopFIC4.CuartoTFGBaliobackendsrcmainjavaBaliowebrest --include=*.java)",
+      "Bash(./mvnw compile:*)",
+      "Bash(./mvnw test:*)",
+      "Bash(mvn test:*)"
     ]
   }
 }

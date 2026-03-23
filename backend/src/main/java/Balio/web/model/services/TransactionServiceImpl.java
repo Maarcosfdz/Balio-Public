@@ -139,13 +139,12 @@ public class TransactionServiceImpl implements TransactionService {
             throw new IllegalArgumentException("Amount must be positive");
         }
 
-        if ( accountId == null ) {
-            throw new AccountInvalidException("Account is required");
+        Account account = null;
+        if ( accountId != null ) {
+            account = accountDao
+                    .findByIdAndUserId(accountId, userId)
+                    .orElseThrow(() -> new AccountInvalidException("Account not linked"));
         }
-
-        Account account = accountDao
-                .findByIdAndUserId(accountId, userId)
-                .orElseThrow(() -> new AccountInvalidException("Account not linked"));
 
         if ( date == null ) {
             date = LocalDate.now();

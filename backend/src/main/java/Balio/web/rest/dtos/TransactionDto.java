@@ -23,7 +23,6 @@ public class TransactionDto {
 
     private LocalDate date;
 
-    @NotNull
     private UUID accountId;
 
     private UUID categoryId;

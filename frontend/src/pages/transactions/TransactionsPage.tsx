@@ -6,6 +6,7 @@ import {
   ArrowLeftRight,
   ArrowUpCircle,
   Bookmark,
+  CalendarClock,
   Loader2,
   Plus,
   RefreshCw,
@@ -419,6 +420,24 @@ export default function TransactionsPage() {
                 </svg>
                 <Tag className="relative z-10 h-4 w-4 text-slate-400 transition-colors duration-200 group-hover:text-sky-500" />
                 <span className="relative z-10 hidden sm:inline">{t("nav.categories")}</span>
+              </button>
+
+              <button
+                onClick={() => navigate(ROUTES.SCHEDULED_TRANSACTIONS)}
+                title={t("scheduled.title")}
+                className="group tx-outline-hover-btn self-center"
+              >
+                <svg
+                  className="tx-outline-hover-border"
+                  viewBox="0 0 100 36"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                >
+                  <rect className="tx-outline-hover-bg" x="1" y="1" width="98" height="34" rx="10" />
+                  <rect className="tx-outline-hover-hl" x="1" y="1" width="98" height="34" rx="10" />
+                </svg>
+                <CalendarClock className="relative z-10 h-4 w-4 text-slate-400 transition-colors duration-200 group-hover:text-amber-500" />
+                <span className="relative z-10 hidden sm:inline">{t("scheduled.title")}</span>
               </button>
 
               <button

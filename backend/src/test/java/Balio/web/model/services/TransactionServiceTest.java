@@ -183,13 +183,17 @@ class TransactionServiceTest {
         }
 
         @Test
-        @DisplayName("should throw AccountInvalidException when accountId is null")
-        void shouldThrowAccountInvalid_whenAccountIdNull() {
-            assertThrows(AccountInvalidException.class,
-                    () -> transactionService.addExpense(
-                            USER_ID, null, null, VALID_NAME, VALID_AMOUNT, VALID_DATE, true));
+        @DisplayName("should create expense without account when accountId is null")
+        void shouldCreateExpenseWithoutAccount_whenAccountIdNull() throws AccountInvalidException, UserNotFoundException {
+            when(userDao.findById(USER_ID)).thenReturn(Optional.of(user));
 
-            verify(transactionDao, never()).save(any());
+            Transaction result = transactionService.addExpense(
+                USER_ID, null, null, VALID_NAME, VALID_AMOUNT, VALID_DATE, true);
+
+            assertNotNull(result);
+            assertNull(result.getAccount());
+            verify(transactionDao).save(any(Transaction.class));
+            verify(accountDao, never()).findByIdAndUserId(any(), any());
         }
 
         @Test
@@ -303,11 +307,17 @@ class TransactionServiceTest {
         }
 
         @Test
-        @DisplayName("should throw AccountInvalidException when accountId is null")
-        void shouldThrowAccountInvalid_whenAccountIdNull() {
-            assertThrows(AccountInvalidException.class,
-                    () -> transactionService.addIncome(
-                            USER_ID, null, null, "Salary", VALID_AMOUNT, VALID_DATE, true));
+        @DisplayName("should create income without account when accountId is null")
+        void shouldCreateIncomeWithoutAccount_whenAccountIdNull() throws AccountInvalidException, UserNotFoundException {
+            when(userDao.findById(USER_ID)).thenReturn(Optional.of(user));
+
+            Transaction result = transactionService.addIncome(
+                USER_ID, null, null, "Salary", VALID_AMOUNT, VALID_DATE, true);
+
+            assertNotNull(result);
+            assertNull(result.getAccount());
+            verify(transactionDao).save(any(Transaction.class));
+            verify(accountDao, never()).findByIdAndUserId(any(), any());
         }
 
         @Test

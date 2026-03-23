@@ -6,4 +6,6 @@ export { transactionService } from "./transactionService";
 export { categoryService } from "./categoryService";
 export { filterService } from "./filterService";
 export { goalService } from "./goalService";
+export { budgetService } from "./budgetService";
+export { scheduledTransactionService } from "./scheduledTransactionService";
 export { chartService } from "./chartService";
