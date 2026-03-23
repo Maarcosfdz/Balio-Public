@@ -22,6 +22,8 @@ interface AddTransactionModalProps {
   open: boolean;
   onClose: () => void;
   onCreated: (tx: TransactionResponseDto) => void;
+  /** When provided, the modal opens in edit mode with pre-filled data */
+  editTransaction?: TransactionResponseDto;
 }
 
 // ── Shared helpers for subcomponents ──────────────────────────────────
@@ -240,9 +242,11 @@ export default function AddTransactionModal({
   open,
   onClose,
   onCreated,
+  editTransaction,
 }: AddTransactionModalProps) {
   const { t } = useTranslation();
   const isExpense = type === "EXPENSE";
+  const isEditMode = !!editTransaction;
 
   // ── Data lists ──
   const [accounts, setAccounts] = useState<AccountSummaryDto[]>([]);
@@ -271,31 +275,40 @@ export default function AddTransactionModal({
   const [freqWeeks, setFreqWeeks] = useState(0);
   const [freqDays, setFreqDays] = useState(0);
 
-  // Reset on open
+  // Reset on open (or pre-fill in edit mode)
   useEffect(() => {
     if (open) {
-      setName("");
-      setAmount("");
-      setDate(todayISO());
-      setAccountId("");
-      setCategoryId(null);
-      setAffectsBalance(true);
+      if (editTransaction) {
+        setName(editTransaction.name);
+        setAmount(String(editTransaction.amount));
+        setDate(editTransaction.date);
+        setAccountId(editTransaction.accountId ?? "");
+        setCategoryId(editTransaction.categoryId ?? null);
+        setAffectsBalance(editTransaction.affectsBalance);
+      } else {
+        setName("");
+        setAmount("");
+        setDate(todayISO());
+        setAccountId("");
+        setCategoryId(null);
+        setAffectsBalance(true);
+      }
       setError("");
       setIsRecurring(false);
       setFreqYears(0); setFreqMonths(1); setFreqWeeks(0); setFreqDays(0);
     }
-  }, [open]);
+  }, [open, editTransaction]);
 
   // Auto-select the default account once per modal open session.
   // Using a ref prevents re-selecting after the user has deliberately cleared the field.
   const didAutoSelectRef = useRef(false);
   useEffect(() => { if (!open) didAutoSelectRef.current = false; }, [open]);
   useEffect(() => {
-    if (!open || didAutoSelectRef.current || accounts.length === 0) return;
+    if (!open || didAutoSelectRef.current || accounts.length === 0 || editTransaction) return;
     didAutoSelectRef.current = true;
     const defaultAcc = accounts.find((a) => a.isDefault) ?? accounts[0];
     setAccountId(defaultAcc.id);
-  }, [open, accounts]);
+  }, [open, accounts, editTransaction]);
 
   const handleAccountChange = (v: string) => {
     setAccountId(v);
@@ -345,35 +358,43 @@ export default function AddTransactionModal({
     }
 
     try {
-      const created = isExpense
-        ? await transactionService.createExpense(dto)
-        : await transactionService.createIncome(dto);
+      let result: TransactionResponseDto;
 
-      // Also create scheduled transaction if recurring toggle is on
-      if (isRecurring && (freqYears + freqMonths + freqWeeks + freqDays) > 0) {
-        try {
-          await scheduledTransactionService.create({
-            name: name.trim(),
-            amount: parseFloat(amount),
-            type,
-            accountId: accountId || undefined,
-            categoryId: categoryId ?? undefined,
-            affectsBalance,
-            freqYears, freqMonths, freqWeeks, freqDays,
-            startDate: date,
-          });
-        } catch {
-          // Don't block transaction creation if schedule fails
-          if (import.meta.env.DEV) {
-            console.warn("[AddTransaction] Schedule creation failed");
+      if (editTransaction) {
+        // Edit mode — update existing transaction
+        result = await transactionService.update(editTransaction.id, { ...dto, type });
+      } else {
+        // Create mode
+        result = isExpense
+          ? await transactionService.createExpense(dto)
+          : await transactionService.createIncome(dto);
+
+        // Also create scheduled transaction if recurring toggle is on
+        if (isRecurring && (freqYears + freqMonths + freqWeeks + freqDays) > 0) {
+          try {
+            await scheduledTransactionService.create({
+              name: name.trim(),
+              amount: parseFloat(amount),
+              type,
+              accountId: accountId || undefined,
+              categoryId: categoryId ?? undefined,
+              affectsBalance,
+              freqYears, freqMonths, freqWeeks, freqDays,
+              startDate: date,
+            });
+          } catch {
+            // Don't block transaction creation if schedule fails
+            if (import.meta.env.DEV) {
+              console.warn("[AddTransaction] Schedule creation failed");
+            }
           }
         }
       }
 
       if (import.meta.env.DEV) {
-        console.log("[AddTransaction] ✓ Created:", created.id);
+        console.log(`[AddTransaction] ✓ ${editTransaction ? "Updated" : "Created"}:`, result.id);
       }
-      onCreated(created);
+      onCreated(result);
       onClose();
     } catch (err: unknown) {
       // Enhanced error logging for debugging 403/network issues
@@ -417,7 +438,9 @@ export default function AddTransactionModal({
               <DollarSign className={`h-5 w-5 ${accentText}`} />
             </div>
             <h2 className="text-xl font-bold text-slate-900">
-              {isExpense ? t("txPage.addExpense") : t("txPage.addIncome")}
+              {isEditMode
+                ? t("txPage.editTransaction")
+                : isExpense ? t("txPage.addExpense") : t("txPage.addIncome")}
             </h2>
           </div>
           <button
@@ -531,8 +554,8 @@ export default function AddTransactionModal({
             </div>
           </label>
 
-          {/* 7. Make recurring toggle */}
-          <div className={`sched-toggle-section ${isRecurring ? "sched-toggle-active" : ""}`}>
+          {/* 7. Make recurring toggle (hidden in edit mode) */}
+          {!isEditMode && <div className={`sched-toggle-section ${isRecurring ? "sched-toggle-active" : ""}`}>
             <label className="flex cursor-pointer items-center gap-2.5">
               <input
                 type="checkbox"
@@ -608,7 +631,7 @@ export default function AddTransactionModal({
                 )}
               </div>
             )}
-          </div>
+          </div>}
 
           {error && (
             <p className="text-sm text-red-600" role="alert">
@@ -632,9 +655,11 @@ export default function AddTransactionModal({
             >
               {submitting
                 ? t("common.loading")
-                : isExpense
-                  ? t("txPage.saveExpense")
-                  : t("txPage.saveIncome")}
+                : isEditMode
+                  ? t("txPage.saveChanges")
+                  : isExpense
+                    ? t("txPage.saveExpense")
+                    : t("txPage.saveIncome")}
             </button>
           </div>
         </form>

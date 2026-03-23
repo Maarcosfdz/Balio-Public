@@ -8,9 +8,11 @@ import {
   Bookmark,
   CalendarClock,
   Loader2,
+  Pencil,
   Plus,
   RefreshCw,
   Tag,
+  Trash2,
   X,
   } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
@@ -18,6 +20,7 @@ import type {
   FilterResponseDto,
   FilterSummaryDto,
   TransactionFilters,
+  TransactionResponseDto,
   TransactionSummaryDto,
   TransactionType,
 } from "@/types";
@@ -64,6 +67,7 @@ export default function TransactionsPage() {
   // ── Modals ──
   const [expenseOpen, setExpenseOpen] = useState(false);
   const [incomeOpen, setIncomeOpen] = useState(false);
+  const [editingTx, setEditingTx] = useState<TransactionResponseDto | null>(null);
 
   // ── Pagination ──
   const [page, setPage] = useState(1);
@@ -355,8 +359,29 @@ export default function TransactionsPage() {
   const handleTransactionCreated = () => {
     setExpenseOpen(false);
     setIncomeOpen(false);
+    setEditingTx(null);
     const cp = isServerPagedRef.current ? pageRef.current - 1 : 0;
     fetchTransactions(filtersRef.current, false, cp);
+  };
+
+  const handleEditTransaction = async (tx: TransactionSummaryDto) => {
+    try {
+      const full = await transactionService.getById(tx.id);
+      setEditingTx(full);
+    } catch {
+      // Fallback: can't fetch full details
+    }
+  };
+
+  const handleDeleteTransaction = async (tx: TransactionSummaryDto) => {
+    if (!window.confirm(t("transactions.deleteConfirm"))) return;
+    try {
+      await transactionService.remove(tx.id, true);
+      const cp = isServerPagedRef.current ? pageRef.current - 1 : 0;
+      fetchTransactions(filtersRef.current, false, cp);
+    } catch {
+      // Fail silently
+    }
   };
 
   const handleRemoveTab = (id: string) => {
@@ -597,14 +622,15 @@ export default function TransactionsPage() {
           )}
         </div>
       </div>
-        {/* Table header — 6 columns: tipo, concepto, fecha, cuenta, categoría, importe */}
+        {/* Table header — 7 columns: tipo, concepto, fecha, cuenta, categoría, importe, acciones */}
         <div className="hidden grid-cols-12 gap-2 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 sm:grid">
           <div className="col-span-1">{t("transactions.type")}</div>
-          <div className="col-span-3">{t("txPage.name")}</div>
+          <div className="col-span-2">{t("txPage.name")}</div>
           <div className="col-span-2">{t("txPage.date")}</div>
           <div className="col-span-2">{t("transactions.account")}</div>
           <div className="col-span-2">{t("transactions.category")}</div>
           <div className="col-span-2 text-right">{t("transactions.amount")}</div>
+          <div className="col-span-1 text-right">{t("txPage.actions")}</div>
         </div>
 
         {loading ? (
@@ -620,7 +646,7 @@ export default function TransactionsPage() {
             {paged.map((tx) => (
               <li
                 key={tx.id}
-                className="grid grid-cols-12 items-center gap-2 px-5 py-3 transition-colors duration-150 hover:bg-slate-50/60"
+                className="group grid grid-cols-12 items-center gap-2 px-5 py-3 transition-colors duration-150 hover:bg-slate-50/60"
               >
                 {/* 1. Type icon */}
                 <div className="col-span-1 flex items-center">
@@ -632,7 +658,7 @@ export default function TransactionsPage() {
                 </div>
 
                 {/* 2. Concepto */}
-                <div className="col-span-3 truncate text-sm font-medium text-slate-700">
+                <div className="col-span-2 truncate text-sm font-medium text-slate-700">
                   {tx.name}
                 </div>
 
@@ -658,6 +684,24 @@ export default function TransactionsPage() {
                   }`}
                 >
                   {formatAmount(tx.amount, tx.type)}
+                </div>
+
+                {/* 7. Actions */}
+                <div className="col-span-1 flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <button
+                    onClick={() => handleEditTransaction(tx)}
+                    className="rounded-md p-1.5 text-slate-400 transition hover:bg-sky-50 hover:text-sky-500"
+                    title={t("txPage.editTransaction")}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteTransaction(tx)}
+                    className="rounded-md p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+                    title={t("txPage.deleteTransaction")}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </li>
             ))}
@@ -685,6 +729,15 @@ export default function TransactionsPage() {
         onClose={() => setIncomeOpen(false)}
         onCreated={handleTransactionCreated}
       />
+      {editingTx && (
+        <AddTransactionModal
+          type={editingTx.type as TransactionType}
+          open={!!editingTx}
+          onClose={() => setEditingTx(null)}
+          onCreated={handleTransactionCreated}
+          editTransaction={editingTx}
+        />
+      )}
     </div>
   );
 }

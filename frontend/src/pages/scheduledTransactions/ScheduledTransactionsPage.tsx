@@ -55,17 +55,6 @@ function frequencyText(
   return `${t("scheduled.every")} ${parts.join(` ${t("scheduled.and")} `)}`;
 }
 
-/** Calculate next execution preview date from start + freq */
-function previewNextDate(
-  startDate: string, fy: number, fm: number, fw: number, fd: number,
-): string | null {
-  if (!startDate || (fy + fm + fw + fd === 0)) return null;
-  const d = new Date(startDate);
-  if (isNaN(d.getTime())) return null;
-  // The start date itself is the first execution
-  return startDate;
-}
-
 /** Calculate date after N intervals from a base date */
 function addInterval(
   base: string, fy: number, fm: number, fw: number, fd: number, times: number,

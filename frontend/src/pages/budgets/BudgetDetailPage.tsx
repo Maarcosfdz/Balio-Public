@@ -26,7 +26,6 @@ import { FieldError } from "@/components/ui/field-error";
 import type {
   BudgetResponseDto,
   BudgetCategoryResponseDto,
-  BudgetCategoryTransactionDto,
   CategorySummaryDto,
 } from "@/types";
 import { budgetService } from "@/backend/budgetService";

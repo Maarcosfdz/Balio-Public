@@ -28,7 +28,27 @@
       "Bash(grep -r \"WidgetType\\\\|WidgetChartType\\\\|ChartWidget\" c:UsersmromaDesktopFIC4.CuartoTFGBaliobackendsrcmainjavaBaliowebrest --include=*.java)",
       "Bash(./mvnw compile:*)",
       "Bash(./mvnw test:*)",
-      "Bash(mvn test:*)"
+      "Bash(mvn test:*)",
+      "Bash(find /c/Users/mroma/Desktop/FIC/4.Cuarto/TFG/Balio/frontend/src/styles -type f -name *.css)",
+      "Bash(find /c/Users/mroma/Desktop/FIC/4.Cuarto/TFG/Balio/backend -type f -name *.ts -o -name *.java)",
+      "Bash(npm run:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_fill_form",
+      "mcp__plugin_playwright_playwright__browser_snapshot",
+      "mcp__plugin_playwright_playwright__browser_take_screenshot",
+      "mcp__plugin_playwright_playwright__browser_resize",
+      "mcp__plugin_playwright_playwright__browser_click",
+      "mcp__plugin_playwright_playwright__browser_close",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/)",
+      "Bash(PGPASSWORD=baliopass psql -U baliouser -d balio -h localhost -c \"SELECT email, nickname FROM users LIMIT 5;\")",
+      "Bash(curl -s -X POST http://localhost:8080/user/signUp -H \"Content-Type: application/json\" -d '{\"\"nickname\"\":\"\"TestDash\"\",\"\"email\"\":\"\"testdash@test.com\"\",\"\"password\"\":\"\"TestDash1\"\"}')",
+      "mcp__plugin_playwright_playwright__browser_wait_for",
+      "Bash(for i:*)",
+      "Bash(do curl:*)",
+      "Bash(break)",
+      "mcp__plugin_playwright_playwright__browser_evaluate",
+      "mcp__plugin_playwright_playwright__browser_hover"
     ]
   }
 }
