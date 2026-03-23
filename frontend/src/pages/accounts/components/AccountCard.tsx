@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { ArrowDownCircle, ArrowUpCircle, Check, Pencil, SlidersHorizontal, Trash2, Loader2 } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Check, Download, Pencil, SlidersHorizontal, Trash2, Loader2 } from "lucide-react";
 import type { AccountSummaryDto, TransactionSummaryDto } from "@/types";
 import { transactionService } from "@/backend/transactionService";
 import { ROUTES } from "@/config/routes";
@@ -32,6 +32,7 @@ export default function AccountCard({
   const [txLoading, setTxLoading] = useState(true);
   const [txRefresh, setTxRefresh] = useState(0);
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     transactionService
@@ -51,6 +52,26 @@ export default function AccountCard({
 
   const handleViewAll = () => {
     navigate(ROUTES.TRANSACTIONS, { state: { accountId: account.id } });
+  };
+
+  const handleExport = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const blob = await transactionService.exportCsv(account.id);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${account.name.replace(/[^a-zA-Z0-9]/g, "_")}_transactions.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      /* ignore */
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -108,6 +129,18 @@ export default function AccountCard({
                 </span>
               </button>
             )}
+            <button
+              onClick={handleExport}
+              disabled={exporting}
+              className="rounded-lg p-1.5 text-slate-400 transition hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-50"
+              title={t("csv.export")}
+            >
+              {exporting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+            </button>
             <button
               onClick={() => onEdit(account)}
               className="rounded-lg p-1.5 text-slate-400 transition hover:bg-sky-50 hover:text-sky-600"

@@ -1,4 +1,5 @@
-import { Plus, Wallet } from "lucide-react";
+import { Plus, Upload, Wallet } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { fmtAmount } from "../utils";
 
 interface AccountsSummaryProps {
@@ -6,6 +7,7 @@ interface AccountsSummaryProps {
   defaultCurrency: string;
   canAdd: boolean;
   onAdd: () => void;
+  onImport: () => void;
   accountCount: number;
   maxAccounts: number;
 }
@@ -15,9 +17,11 @@ export default function AccountsSummary({
   defaultCurrency,
   canAdd,
   onAdd,
+  onImport,
   accountCount,
   maxAccounts,
 }: AccountsSummaryProps) {
+  const { t } = useTranslation();
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-sky-400 via-sky-500 to-emerald-500 p-6 text-white shadow-md">
       {/* Decorative circles */}
@@ -42,16 +46,25 @@ export default function AccountsSummary({
           </p>
         </div>
 
-        {/* Nueva cuenta button */}
-        {canAdd && (
+        {/* Action buttons */}
+        <div className="flex shrink-0 items-center gap-2">
           <button
-            onClick={onAdd}
-            className="flex shrink-0 items-center gap-1.5 rounded-xl bg-white/20 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/30 active:scale-95"
+            onClick={onImport}
+            className="flex items-center gap-1.5 rounded-xl bg-white/20 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/30 active:scale-95"
           >
-            <Plus className="h-4 w-4" />
-            Nueva cuenta
+            <Upload className="h-4 w-4" />
+            {t("csv.import")}
           </button>
-        )}
+          {canAdd && (
+            <button
+              onClick={onAdd}
+              className="flex items-center gap-1.5 rounded-xl bg-white/20 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/30 active:scale-95"
+            >
+              <Plus className="h-4 w-4" />
+              Nueva cuenta
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

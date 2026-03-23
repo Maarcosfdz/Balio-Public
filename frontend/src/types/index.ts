@@ -372,6 +372,84 @@ export interface BudgetCategoryUpdateDto {
 }
 
 // ============================================
+// Scheduled Transaction DTOs
+// ============================================
+
+export interface ScheduledTransactionDto {
+  name: string;
+  amount: number;
+  type: TransactionType;
+  accountId?: string;
+  categoryId?: string;
+  affectsBalance?: boolean;
+  freqYears: number;
+  freqMonths: number;
+  freqWeeks: number;
+  freqDays: number;
+  startDate: string;
+}
+
+export interface ScheduledTransactionUpdateDto {
+  name?: string;
+  amount?: number;
+  type?: TransactionType;
+  accountId?: string;
+  categoryId?: string;
+  affectsBalance?: boolean;
+  freqYears?: number;
+  freqMonths?: number;
+  freqWeeks?: number;
+  freqDays?: number;
+  startDate?: string;
+  active?: boolean;
+}
+
+export interface ScheduledTransactionResponseDto {
+  id: string;
+  name: string;
+  amount: number;
+  type: TransactionType;
+  affectsBalance: boolean;
+  freqYears: number;
+  freqMonths: number;
+  freqWeeks: number;
+  freqDays: number;
+  startDate: string;
+  lastExecution: string | null;
+  nextExecution: string | null;
+  active: boolean;
+  accountId: string | null;
+  accountName: string | null;
+  categoryId: string | null;
+  categoryName: string | null;
+}
+
+export interface ScheduledTransactionPage {
+  content: ScheduledTransactionResponseDto[];
+  totalPages: number;
+  totalElements: number;
+  number: number;
+  size: number;
+}
+
+// ============================================
+// CSV Import/Export DTOs
+// ============================================
+
+export interface CsvImportRuleDto {
+  pattern: string;
+  categoryId: string;
+  transactionType?: string; // "EXPENSE" | "INCOME" | undefined (both)
+  mappedName?: string;
+}
+
+export interface CsvImportResultDto {
+  imported: number;
+  skipped: number;
+  errors: string[];
+}
+
+// ============================================
 // Error DTOs
 // ============================================
 

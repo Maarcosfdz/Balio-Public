@@ -10,6 +10,7 @@ import AccountCard from "./components/AccountCard";
 import EmptyAccountCard from "./components/EmptyAccountCard";
 import AccountsSummary from "./components/AccountsSummary";
 import AccountFormDialog from "./components/AccountFormDialog";
+import ImportCsvModal from "./components/ImportCsvModal";
 
 const MAX_ACCOUNTS = 5;
 
@@ -33,6 +34,7 @@ export default function AccountsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<AccountSummaryDto | null>(null);
   const [deleteState, setDeleteState] = useState<DeleteState | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const fetchAccounts = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
     try {
@@ -183,6 +185,7 @@ export default function AccountsPage() {
           defaultCurrency={defaultCurrency}
           canAdd={canAdd}
           onAdd={() => { setEditTarget(null); setFormOpen(true); }}
+          onImport={() => setImportOpen(true)}
           accountCount={accounts.length}
           maxAccounts={MAX_ACCOUNTS}
         />
@@ -222,6 +225,13 @@ export default function AccountsPage() {
         initial={editTarget}
         onClose={() => { setFormOpen(false); setEditTarget(null); }}
         onSaved={handleSaved}
+      />
+
+      <ImportCsvModal
+        open={importOpen}
+        accounts={accounts}
+        onClose={() => setImportOpen(false)}
+        onImported={() => fetchAccounts()}
       />
 
       {deleteState && (

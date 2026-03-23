@@ -1,6 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { CalendarDays, Check, ChevronDown, DollarSign, X } from "lucide-react";
+import { CalendarClock, CalendarDays, Check, ChevronDown, DollarSign, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
@@ -12,6 +12,7 @@ import type {
   TransactionResponseDto,
 } from "@/types";
 import { transactionService } from "@/backend/transactionService";
+import { scheduledTransactionService } from "@/backend/scheduledTransactionService";
 import { accountService } from "@/backend/accountService";
 import { categoryService } from "@/backend/categoryService";
 import CategoryCombobox from "@/components/ui/CategoryCombobox";
@@ -263,6 +264,13 @@ export default function AddTransactionModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  // ── Scheduling state ──
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [freqYears, setFreqYears] = useState(0);
+  const [freqMonths, setFreqMonths] = useState(1);
+  const [freqWeeks, setFreqWeeks] = useState(0);
+  const [freqDays, setFreqDays] = useState(0);
+
   // Reset on open
   useEffect(() => {
     if (open) {
@@ -273,6 +281,8 @@ export default function AddTransactionModal({
       setCategoryId(null);
       setAffectsBalance(true);
       setError("");
+      setIsRecurring(false);
+      setFreqYears(0); setFreqMonths(1); setFreqWeeks(0); setFreqDays(0);
     }
   }, [open]);
 
@@ -338,6 +348,27 @@ export default function AddTransactionModal({
       const created = isExpense
         ? await transactionService.createExpense(dto)
         : await transactionService.createIncome(dto);
+
+      // Also create scheduled transaction if recurring toggle is on
+      if (isRecurring && (freqYears + freqMonths + freqWeeks + freqDays) > 0) {
+        try {
+          await scheduledTransactionService.create({
+            name: name.trim(),
+            amount: parseFloat(amount),
+            type,
+            accountId: accountId || undefined,
+            categoryId: categoryId ?? undefined,
+            affectsBalance,
+            freqYears, freqMonths, freqWeeks, freqDays,
+            startDate: date,
+          });
+        } catch {
+          // Don't block transaction creation if schedule fails
+          if (import.meta.env.DEV) {
+            console.warn("[AddTransaction] Schedule creation failed");
+          }
+        }
+      }
 
       if (import.meta.env.DEV) {
         console.log("[AddTransaction] ✓ Created:", created.id);
@@ -499,6 +530,85 @@ export default function AddTransactionModal({
               </p>
             </div>
           </label>
+
+          {/* 7. Make recurring toggle */}
+          <div className={`sched-toggle-section ${isRecurring ? "sched-toggle-active" : ""}`}>
+            <label className="flex cursor-pointer items-center gap-2.5">
+              <input
+                type="checkbox"
+                checked={isRecurring}
+                onChange={(e) => setIsRecurring(e.target.checked)}
+                className="h-4.5 w-4.5 rounded border-slate-300 text-amber-500 focus:ring-amber-200"
+              />
+              <div className="flex items-center gap-2">
+                <CalendarClock className="h-4 w-4 text-amber-500" />
+                <div>
+                  <span className="text-sm font-medium text-slate-700">
+                    {t("txPage.makeRecurring")}
+                  </span>
+                  <p className="text-xs text-slate-400">
+                    {t("txPage.recurringDesc")}
+                  </p>
+                </div>
+              </div>
+            </label>
+
+            {isRecurring && (
+              <div className="mt-3 space-y-3">
+                <div className="grid grid-cols-4 gap-2">
+                  <div className="text-center">
+                    <input
+                      type="number" min="0" value={freqYears}
+                      onChange={(e) => setFreqYears(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2 text-center text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                    />
+                    <span className="mt-0.5 block text-xs text-slate-400">{t("scheduled.years")}</span>
+                  </div>
+                  <div className="text-center">
+                    <input
+                      type="number" min="0" value={freqMonths}
+                      onChange={(e) => setFreqMonths(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2 text-center text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                    />
+                    <span className="mt-0.5 block text-xs text-slate-400">{t("scheduled.months")}</span>
+                  </div>
+                  <div className="text-center">
+                    <input
+                      type="number" min="0" value={freqWeeks}
+                      onChange={(e) => setFreqWeeks(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2 text-center text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                    />
+                    <span className="mt-0.5 block text-xs text-slate-400">{t("scheduled.weeks")}</span>
+                  </div>
+                  <div className="text-center">
+                    <input
+                      type="number" min="0" value={freqDays}
+                      onChange={(e) => setFreqDays(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2 text-center text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                    />
+                    <span className="mt-0.5 block text-xs text-slate-400">{t("scheduled.days")}</span>
+                  </div>
+                </div>
+                {(freqYears + freqMonths + freqWeeks + freqDays) > 0 && date && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+                    <p className="text-xs font-semibold text-amber-700">
+                      {t("scheduled.every")}{" "}
+                      {[
+                        freqYears > 0 ? `${freqYears} ${t(freqYears === 1 ? "scheduled.freqYear" : "scheduled.freqYears")}` : null,
+                        freqMonths > 0 ? `${freqMonths} ${t(freqMonths === 1 ? "scheduled.freqMonth" : "scheduled.freqMonths")}` : null,
+                        freqWeeks > 0 ? `${freqWeeks} ${t(freqWeeks === 1 ? "scheduled.freqWeek" : "scheduled.freqWeeks")}` : null,
+                        freqDays > 0 ? `${freqDays} ${t(freqDays === 1 ? "scheduled.freqDay" : "scheduled.freqDays")}` : null,
+                      ].filter(Boolean).join(` ${t("scheduled.and")} `)}
+                    </p>
+                    <p className="mt-0.5 text-xs text-amber-600">
+                      {t("scheduled.previewDates")}{" "}
+                      <strong>{new Date(date).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })}</strong>
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {error && (
             <p className="text-sm text-red-600" role="alert">

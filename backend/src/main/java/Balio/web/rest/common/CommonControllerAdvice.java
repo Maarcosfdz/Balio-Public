@@ -2,6 +2,7 @@ package Balio.web.rest.common;
 
 import Balio.web.model.Exceptions.AccountInvalidException;
 import Balio.web.model.Exceptions.BudgetInvalidException;
+import Balio.web.model.Exceptions.ScheduledTransactionInvalidException;
 import Balio.web.model.Exceptions.CategoryInvalidException;
 import Balio.web.model.Exceptions.DuplicateInstanceException;
 import Balio.web.model.Exceptions.FilterInvalidException;
@@ -146,6 +147,15 @@ public class CommonControllerAdvice {
     @ResponseBody
     public Map<String, String> handleBudgetInvalidException(BudgetInvalidException exception) {
         return Map.of("code", "project.exceptions.BudgetInvalidException", "message", exception.getMessage());
+    }
+
+    // --- ScheduledTransactionInvalidException (runtime) ---
+
+    @ExceptionHandler(ScheduledTransactionInvalidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public Map<String, String> handleScheduledTransactionInvalidException(ScheduledTransactionInvalidException exception) {
+        return Map.of("code", "project.exceptions.ScheduledTransactionInvalidException", "message", exception.getMessage());
     }
 
     // --- FilterInvalidException (runtime) ---

@@ -1,5 +1,7 @@
 import api from "./api";
 import type {
+  CsvImportResultDto,
+  CsvImportRuleDto,
   TransactionDto,
   TransactionFilters,
   TransactionPage,
@@ -31,5 +33,30 @@ export const transactionService = {
     return api.delete(`/transaction/${transactionId}`, {
       params: { revertBalance },
     });
+  },
+
+  exportCsv(accountId?: string): Promise<Blob> {
+    return api
+      .get("/transaction/export/csv", {
+        params: accountId ? { accountId } : {},
+        responseType: "blob",
+      })
+      .then((r) => r.data);
+  },
+
+  importCsv(
+    file: File,
+    accountId?: string,
+    rules?: CsvImportRuleDto[],
+  ): Promise<CsvImportResultDto> {
+    const form = new FormData();
+    form.append("file", file);
+    if (accountId) form.append("accountId", accountId);
+    if (rules && rules.length > 0) form.append("rules", JSON.stringify(rules));
+    return api
+      .post("/transaction/import/csv", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      .then((r) => r.data);
   },
 };

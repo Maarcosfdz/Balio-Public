@@ -15,6 +15,7 @@ import CategoriesPage from "@/pages/categories/CategoriesPage";
 import GoalsPage from "@/pages/goals/GoalsPage";
 import BudgetsPage from "@/pages/budgets/BudgetsPage";
 import BudgetDetailPage from "@/pages/budgets/BudgetDetailPage";
+import ScheduledTransactionsPage from "@/pages/scheduledTransactions/ScheduledTransactionsPage";
 import FiltersPage from "@/pages/filters/FiltersPage";
 import SettingsPage from "@/pages/settings/SettingsPage";
 
@@ -45,6 +46,7 @@ export const router = createBrowserRouter([
           { path: ROUTES.GOALS,          element: <GoalsPage /> },
           { path: ROUTES.BUDGETS,        element: <BudgetsPage /> },
           { path: ROUTES.BUDGET_DETAIL,  element: <BudgetDetailPage /> },
+          { path: ROUTES.SCHEDULED_TRANSACTIONS, element: <ScheduledTransactionsPage /> },
           { path: ROUTES.FILTERS,        element: <FiltersPage /> },
           { path: ROUTES.SETTINGS,     element: <SettingsPage /> },
         ],

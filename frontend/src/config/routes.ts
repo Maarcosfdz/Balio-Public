@@ -18,6 +18,7 @@ export const ROUTES = {
   BUDGET_DETAIL: "/budgets/:budgetId",
   CATEGORIES: "/categories",
   GOALS: "/goals",
+  SCHEDULED_TRANSACTIONS: "/scheduled-transactions",
   FILTERS: "/filters",
   SETTINGS: "/settings",
 } as const;
