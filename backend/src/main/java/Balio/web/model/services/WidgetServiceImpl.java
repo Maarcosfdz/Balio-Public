@@ -36,18 +36,18 @@ public class WidgetServiceImpl implements WidgetService {
     private final UserDao userDao;
     private final FilterDao filterDao;
     private final ChartWidgetDao chartWidgetDao;
-    private final WidgetResolverRegistry resolverRegistry;
+    private final WidgetDataResolverService dataResolverService;
     private final ObjectMapper objectMapper;
 
     public WidgetServiceImpl(UserDao userDao,
                              FilterDao filterDao,
                              ChartWidgetDao chartWidgetDao,
-                             WidgetResolverRegistry resolverRegistry,
+                             WidgetDataResolverService dataResolverService,
                              ObjectMapper objectMapper) {
         this.userDao = userDao;
         this.filterDao = filterDao;
         this.chartWidgetDao = chartWidgetDao;
-        this.resolverRegistry = resolverRegistry;
+        this.dataResolverService = dataResolverService;
         this.objectMapper = objectMapper;
     }
 
@@ -174,8 +174,8 @@ public class WidgetServiceImpl implements WidgetService {
     public JsonNode preview(UUID userId, UUID widgetId) throws InstanceNotFoundException {
         ChartWidget widget = findByIdAndUserId(widgetId, userId);
         JsonNode configuration = parseJson(widget.getConfiguration());
-        return resolverRegistry.get(widget.getWidgetType())
-                .resolve(userId, widget.getChartType(), configuration);
+        return dataResolverService.resolve(userId, widget.getWidgetType(),
+                widget.getChartType(), configuration);
     }
 
     @Override
@@ -192,7 +192,7 @@ public class WidgetServiceImpl implements WidgetService {
         validateTypeCompatibility(widgetType, chartType);
         String normalized = normalizeConfiguration(configuration, userId, importFilterId);
         JsonNode configNode = parseJson(normalized);
-        return resolverRegistry.get(widgetType).resolve(userId, chartType, configNode);
+        return dataResolverService.resolve(userId, widgetType, chartType, configNode);
     }
 
     @Override

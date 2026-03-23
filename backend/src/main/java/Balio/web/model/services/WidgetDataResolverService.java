@@ -18,29 +18,37 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Component
-public class ChartSeriesDataResolver implements WidgetDataResolver {
+public class WidgetDataResolverService {
 
     private final WidgetFilterEngine filterEngine;
     private final ObjectMapper objectMapper;
     private final int maxPoints;
+    private final int maxRows;
 
-    public ChartSeriesDataResolver(WidgetFilterEngine filterEngine,
-                                   ObjectMapper objectMapper,
-                                   @Value("${charts.preview.max-points:100}") int maxPoints) {
+    public WidgetDataResolverService(WidgetFilterEngine filterEngine,
+                                     ObjectMapper objectMapper,
+                                     @Value("${charts.preview.max-points:100}") int maxPoints,
+                                     @Value("${charts.preview.max-table-rows:200}") int maxRows) {
         this.filterEngine = filterEngine;
         this.objectMapper = objectMapper;
         this.maxPoints = maxPoints;
+        this.maxRows = maxRows;
     }
 
-    @Override
-    public WidgetType supports() {
-        return WidgetType.CHART;
+    public JsonNode resolve(UUID userId, WidgetType widgetType, WidgetChartType chartType, JsonNode configuration) {
+        return switch (widgetType) {
+            case CHART -> resolveChart(userId, chartType, configuration);
+            case KPI -> resolveKpi(userId, chartType, configuration);
+            case TABLE -> resolveTable(userId, chartType, configuration);
+        };
     }
 
-    @Override
-    public JsonNode resolve(java.util.UUID userId, WidgetChartType chartType, JsonNode configuration) {
+    // ── CHART ──────────────────────────────────────────────────────────────
+
+    private JsonNode resolveChart(UUID userId, WidgetChartType chartType, JsonNode configuration) {
         if (chartType == WidgetChartType.KPI_CARD || chartType == WidgetChartType.SUMMARY_TABLE) {
             throw new ChartWidgetInvalidException("Chart widget does not support chart type: " + chartType);
         }
@@ -118,6 +126,86 @@ public class ChartSeriesDataResolver implements WidgetDataResolver {
         result.set("meta", meta);
         return result;
     }
+
+    // ── KPI ────────────────────────────────────────────────────────────────
+
+    private JsonNode resolveKpi(UUID userId, WidgetChartType chartType, JsonNode configuration) {
+        if (chartType != WidgetChartType.KPI_CARD) {
+            throw new ChartWidgetInvalidException("KPI widget requires chart type KPI_CARD");
+        }
+
+        List<Transaction> txs = filterEngine.resolveTransactions(userId, configuration);
+        String kpiType = readUpper(configuration, "kpiType", "NET_BALANCE");
+
+        BigDecimal income = txs.stream()
+                .filter(tx -> tx.getType() == TransactionType.INCOME)
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal expense = txs.stream()
+                .filter(tx -> tx.getType() == TransactionType.EXPENSE)
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal value = switch (kpiType) {
+            case "TOTAL_EXPENSE" -> expense;
+            case "TOTAL_INCOME" -> income;
+            case "AVG_EXPENSE" -> {
+                long count = txs.stream().filter(tx -> tx.getType() == TransactionType.EXPENSE).count();
+                if (count == 0) {
+                    yield BigDecimal.ZERO;
+                }
+                yield expense.divide(BigDecimal.valueOf(count), 2, RoundingMode.HALF_UP);
+            }
+            case "TX_COUNT" -> BigDecimal.valueOf(txs.size());
+            default -> income.subtract(expense);
+        };
+
+        ObjectNode data = objectMapper.createObjectNode();
+        data.put("kpiType", kpiType);
+        data.put("value", value);
+        data.put("income", income);
+        data.put("expense", expense);
+        data.put("transactionCount", txs.size());
+        return data;
+    }
+
+    // ── TABLE ──────────────────────────────────────────────────────────────
+
+    private JsonNode resolveTable(UUID userId, WidgetChartType chartType, JsonNode configuration) {
+        if (chartType != WidgetChartType.SUMMARY_TABLE) {
+            throw new ChartWidgetInvalidException("Table widget requires chart type SUMMARY_TABLE");
+        }
+
+        List<Transaction> txs = filterEngine.resolveTransactions(userId, configuration).stream()
+                .sorted(Comparator.comparing(Transaction::getDate).reversed())
+                .limit(maxRows)
+                .toList();
+
+        ArrayNode rows = objectMapper.createArrayNode();
+        BigDecimal total = BigDecimal.ZERO;
+        for (Transaction tx : txs) {
+            ObjectNode row = objectMapper.createObjectNode();
+            row.put("id", tx.getId().toString());
+            row.put("name", tx.getName());
+            row.put("amount", tx.getAmount());
+            row.put("date", tx.getDate().toString());
+            row.put("type", tx.getType().name());
+            row.put("account", tx.getAccount() != null ? tx.getAccount().getName() : null);
+            row.put("category", tx.getCategory() != null ? tx.getCategory().getName() : null);
+            rows.add(row);
+            total = total.add(tx.getAmount());
+        }
+
+        ObjectNode result = objectMapper.createObjectNode();
+        result.set("rows", rows);
+        result.put("rowCount", txs.size());
+        result.put("totalAmount", total);
+        result.put("maxRows", maxRows);
+        return result;
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────
 
     private String readUpper(JsonNode configuration, String field, String defaultValue) {
         if (configuration == null || !configuration.has(field) || configuration.get(field).isNull()) {
