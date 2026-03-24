@@ -16,6 +16,80 @@
  *   background-position slides from right→left on hover (interpolable).
  */
 
+/* App-wide primary button — sliding gradient like login button */
+.btn-primary-gradient {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: none;
+  border-radius: 0.72rem;
+  padding: 0.62rem 1.1rem;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #0b3b2c;
+  background: linear-gradient(
+    270deg,
+    #70d7ff, #94e1ff, #67f5d6, #60f79f, #2af780, #70d7ff
+  );
+  background-size: 300% 100%;
+  background-position: right center;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition:
+    background-position 1400ms ease,
+    transform 180ms ease,
+    box-shadow 260ms ease;
+  box-shadow: 0 10px 20px -14px rgba(17, 94, 89, 0.48), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+/* holographic shimmer sweep */
+.btn-primary-gradient::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -80%;
+  width: 45%;
+  height: 200%;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(255, 255, 255, 0.38) 50%,
+    transparent 100%
+  );
+  transform: skewX(-18deg);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.btn-primary-gradient:hover {
+  background-position: left center;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px -14px rgba(15, 118, 110, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.62);
+}
+
+.btn-primary-gradient:hover::before {
+  animation: btn-shimmer-sweep 0.55s ease-in-out;
+}
+
+@keyframes btn-shimmer-sweep {
+  0%   { left: -80%; opacity: 0; }
+  25%  { opacity: 1; }
+  100% { left: 130%; opacity: 0; }
+}
+
+.btn-primary-gradient:active {
+  transform: translateY(0);
+}
+
+.btn-primary-gradient:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+
 .btn-register {
   position: relative;
   display: inline-flex;

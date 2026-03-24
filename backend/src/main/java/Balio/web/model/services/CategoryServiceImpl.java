@@ -29,7 +29,8 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public Category createCategory(UUID userId, String name, TransactionType type) {
+    public Category createCategory(UUID userId, String name, TransactionType type,
+                                   String iconName, String iconBgColor) {
 
         User user = userDao.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
@@ -41,10 +42,16 @@ public class CategoryServiceImpl implements CategoryService {
             throw new CategoryInvalidException("Category type is required");
         }
 
-        Category category = new Category(name, type, user);
+        Category category = new Category(
+                name.trim(), type, user, sanitizeOptional(iconName), sanitizeOptional(iconBgColor));
         categoryDao.save(category);
 
         return category;
+    }
+
+    @Override
+    public Category createCategory(UUID userId, String name, TransactionType type) {
+        return createCategory(userId, name, type, null, null);
     }
 
     @Override
@@ -57,7 +64,8 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public Category modifyCategory(UUID userId, UUID categoryId, String name, TransactionType type)
+    public Category modifyCategory(UUID userId, UUID categoryId, String name, TransactionType type,
+                                   String iconName, String iconBgColor)
             throws InstanceNotFoundException {
 
         Category category = categoryDao.findByIdAndUserId(categoryId, userId)
@@ -67,14 +75,26 @@ public class CategoryServiceImpl implements CategoryService {
             if (name.isBlank()) {
                 throw new CategoryInvalidException("Category name cannot be blank");
             }
-            category.setName(name);
+            category.setName(name.trim());
         }
         if (type != null) {
             category.setType(type);
         }
+        if (iconName != null) {
+            category.setIconName(sanitizeOptional(iconName));
+        }
+        if (iconBgColor != null) {
+            category.setIconBgColor(sanitizeOptional(iconBgColor));
+        }
 
         categoryDao.save(category);
         return category;
+    }
+
+    @Override
+    public Category modifyCategory(UUID userId, UUID categoryId, String name, TransactionType type)
+            throws InstanceNotFoundException {
+        return modifyCategory(userId, categoryId, name, type, null, null);
     }
 
     @Override
@@ -97,5 +117,13 @@ public class CategoryServiceImpl implements CategoryService {
     public Category findByIdAndUserId(UUID categoryId, UUID userId) throws InstanceNotFoundException {
         return categoryDao.findByIdAndUserId(categoryId, userId)
                 .orElseThrow(() -> new InstanceNotFoundException("Category", categoryId));
+    }
+
+    private String sanitizeOptional(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

@@ -22,19 +22,39 @@ import Pagination from "@/components/ui/Pagination";
 import type { CategorySummaryDto, TransactionType } from "@/types";
 import { categoryService } from "@/backend/categoryService";
 import { ROUTES } from "@/config/routes";
+import { IconAvatar } from "@/components/icons/IconAvatar";
+import { IconPicker } from "@/components/icons/IconPicker";
+import {
+  DEFAULT_ICON_BG_COLOR,
+  normalizeIconBgColor,
+  resolveEntityIconName,
+  suggestIconFromText,
+} from "@/components/icons/iconRegistry";
 
 // ── Inline editable chip ──────────────────────────────────────────────────
+
+function defaultCategoryBgColor(type: TransactionType | undefined): string {
+  if (type === "INCOME") return "#DCFCE7";
+  if (type === "EXPENSE") return "#FFE4E6";
+  return DEFAULT_ICON_BG_COLOR;
+}
 
 interface CategoryChipProps {
   category: CategorySummaryDto;
   onDeleted: () => void;
-  onRenamed: (id: string, newName: string) => void;
+  onUpdated: (updated: CategorySummaryDto) => void;
 }
 
-function CategoryChip({ category, onDeleted, onRenamed }: CategoryChipProps) {
+function CategoryChip({ category, onDeleted, onUpdated }: CategoryChipProps) {
   const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(category.name);
+  const [iconName, setIconName] = useState<string>(
+    resolveEntityIconName(category.iconName, category.name),
+  );
+  const [iconBgColor, setIconBgColor] = useState<string>(
+    normalizeIconBgColor(category.iconBgColor, defaultCategoryBgColor(category.type)),
+  );
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -43,22 +63,54 @@ function CategoryChip({ category, onDeleted, onRenamed }: CategoryChipProps) {
     if (editing) inputRef.current?.focus();
   }, [editing]);
 
+  useEffect(() => {
+    setName(category.name);
+    setIconName(resolveEntityIconName(category.iconName, category.name));
+    setIconBgColor(normalizeIconBgColor(category.iconBgColor, defaultCategoryBgColor(category.type)));
+  }, [category]);
+
+  const defaultIconName = suggestIconFromText(name || category.name);
+
   const handleSave = async () => {
-    if (!name.trim() || name.trim() === category.name) {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
       setName(category.name);
+      setEditing(false);
+      return;
+    }
+    const resolvedCurrentIcon = resolveEntityIconName(category.iconName, category.name);
+    const normalizedCurrentColor = normalizeIconBgColor(
+      category.iconBgColor,
+      defaultCategoryBgColor(category.type),
+    );
+    if (
+      trimmedName === category.name
+      && iconName === resolvedCurrentIcon
+      && iconBgColor === normalizedCurrentColor
+    ) {
       setEditing(false);
       return;
     }
     setSaving(true);
     try {
-      await categoryService.update(category.id, {
-        name: name.trim(),
+      const updated = await categoryService.update(category.id, {
+        name: trimmedName,
         type: category.type,
+        iconName,
+        iconBgColor,
       });
-      onRenamed(category.id, name.trim());
+      onUpdated({
+        id: updated.id,
+        name: updated.name,
+        type: updated.type,
+        iconName: updated.iconName,
+        iconBgColor: updated.iconBgColor,
+      });
       setEditing(false);
     } catch {
       setName(category.name);
+      setIconName(resolveEntityIconName(category.iconName, category.name));
+      setIconBgColor(normalizeIconBgColor(category.iconBgColor, defaultCategoryBgColor(category.type)));
       setEditing(false);
     } finally {
       setSaving(false);
@@ -77,39 +129,64 @@ function CategoryChip({ category, onDeleted, onRenamed }: CategoryChipProps) {
 
   return (
     <div
-      className={`group relative flex items-center gap-2 rounded-xl border bg-white px-3 py-2.5 shadow-sm transition ${
+      className={`group relative rounded-xl border bg-white px-3 py-2.5 shadow-sm transition ${
         confirmDelete
           ? "border-red-300 bg-red-50"
           : "border-slate-200 hover:border-slate-300 hover:shadow"
       }`}
     >
       {editing ? (
-        <>
-          <input
-            ref={inputRef}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSave();
-              if (e.key === "Escape") { setName(category.name); setEditing(false); }
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <input
+              ref={inputRef}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSave();
+                if (e.key === "Escape") {
+                  setName(category.name);
+                  setIconName(resolveEntityIconName(category.iconName, category.name));
+                  setIconBgColor(normalizeIconBgColor(category.iconBgColor, defaultCategoryBgColor(category.type)));
+                  setEditing(false);
+                }
+              }}
+              className="min-w-0 flex-1 bg-transparent text-sm font-medium text-slate-800 outline-none"
+            />
+            {saving ? (
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin text-slate-400" />
+            ) : (
+              <>
+                <button onClick={handleSave} className="rounded-md p-0.5 text-emerald-500 hover:bg-emerald-50">
+                  <Check className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    setName(category.name);
+                    setIconName(resolveEntityIconName(category.iconName, category.name));
+                    setIconBgColor(normalizeIconBgColor(category.iconBgColor, defaultCategoryBgColor(category.type)));
+                    setEditing(false);
+                  }}
+                  className="rounded-md p-0.5 text-slate-400 hover:bg-slate-100"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </>
+            )}
+          </div>
+          <IconPicker
+            iconName={iconName}
+            iconBgColor={iconBgColor}
+            defaultIconName={defaultIconName}
+            defaultIconBgColor={defaultCategoryBgColor(category.type)}
+            onChange={(value) => {
+              setIconName(value.iconName);
+              setIconBgColor(value.iconBgColor);
             }}
-            className="min-w-0 flex-1 bg-transparent text-sm font-medium text-slate-800 outline-none"
           />
-          {saving ? (
-            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-slate-400" />
-          ) : (
-            <>
-              <button onClick={handleSave} className="rounded-md p-0.5 text-emerald-500 hover:bg-emerald-50">
-                <Check className="h-4 w-4" />
-              </button>
-              <button onClick={() => { setName(category.name); setEditing(false); }} className="rounded-md p-0.5 text-slate-400 hover:bg-slate-100">
-                <X className="h-4 w-4" />
-              </button>
-            </>
-          )}
-        </>
+        </div>
       ) : confirmDelete ? (
-        <>
+        <div className="flex items-center gap-2">
           <span className="flex-1 truncate text-sm font-medium text-red-700">{t("categories.deleteConfirm")}</span>
           <button onClick={handleDelete} className="rounded-lg bg-red-500 px-2 py-0.5 text-xs font-bold text-white hover:bg-red-600">
             {t("common.delete")}
@@ -117,12 +194,17 @@ function CategoryChip({ category, onDeleted, onRenamed }: CategoryChipProps) {
           <button onClick={() => setConfirmDelete(false)} className="rounded-md p-0.5 text-slate-400 hover:bg-slate-100">
             <X className="h-4 w-4" />
           </button>
-        </>
+        </div>
       ) : (
-        <>
-          <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700">
-            {category.name}
-          </span>
+        <div className="flex items-center gap-2">
+          <IconAvatar
+            iconName={resolveEntityIconName(category.iconName, category.name)}
+            iconBgColor={normalizeIconBgColor(category.iconBgColor, defaultCategoryBgColor(category.type))}
+            fallbackText={category.name}
+            className="h-8 w-8 rounded-lg"
+            iconClassName="h-4 w-4"
+          />
+          <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700">{category.name}</span>
           <div className="flex items-center gap-0.5 opacity-0 transition group-hover:opacity-100">
             <button
               onClick={() => setEditing(true)}
@@ -137,7 +219,7 @@ function CategoryChip({ category, onDeleted, onRenamed }: CategoryChipProps) {
               <Trash2 className="h-3.5 w-3.5" />
             </button>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
@@ -154,6 +236,8 @@ function CreateChip({ type, onCreated }: CreateChipProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [iconName, setIconName] = useState<string>(suggestIconFromText("category"));
+  const [iconBgColor, setIconBgColor] = useState<string>(defaultCategoryBgColor(type));
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -166,9 +250,22 @@ function CreateChip({ type, onCreated }: CreateChipProps) {
     if (!name.trim()) return;
     setSaving(true);
     try {
-      const created = await categoryService.create({ name: name.trim(), type });
-      onCreated({ id: created.id, name: created.name, type: created.type });
+      const created = await categoryService.create({
+        name: name.trim(),
+        type,
+        iconName,
+        iconBgColor,
+      });
+      onCreated({
+        id: created.id,
+        name: created.name,
+        type: created.type,
+        iconName: created.iconName,
+        iconBgColor: created.iconBgColor,
+      });
       setName("");
+      setIconName(suggestIconFromText("category"));
+      setIconBgColor(defaultCategoryBgColor(type));
       setOpen(false);
     } catch {
       /* ignore */
@@ -192,30 +289,51 @@ function CreateChip({ type, onCreated }: CreateChipProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex items-center gap-2 rounded-xl border border-sky-300 bg-sky-50/50 px-3 py-2.5 shadow-sm"
+      className="space-y-2 rounded-xl border border-sky-300 bg-sky-50/50 px-3 py-2.5 shadow-sm"
     >
-      <input
-        ref={inputRef}
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
-        placeholder={t("categories.namePlaceholder")}
-        className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
+      <div className="flex items-center gap-2">
+        <input
+          ref={inputRef}
+          value={name}
+          onChange={(e) => {
+            setName(e.target.value);
+            if (!readEmojiIcon(iconName)) {
+              setIconName(suggestIconFromText(e.target.value || "category"));
+            }
+          }}
+          onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
+          placeholder={t("categories.namePlaceholder")}
+          className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
+        />
+        {saving ? (
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-slate-400" />
+        ) : (
+          <>
+            <button type="submit" disabled={!name.trim()} className="rounded-md p-0.5 text-emerald-500 hover:bg-emerald-50 disabled:opacity-40">
+              <Check className="h-4 w-4" />
+            </button>
+            <button type="button" onClick={() => { setName(""); setOpen(false); }} className="rounded-md p-0.5 text-slate-400 hover:bg-slate-100">
+              <X className="h-4 w-4" />
+            </button>
+          </>
+        )}
+      </div>
+      <IconPicker
+        iconName={iconName}
+        iconBgColor={iconBgColor}
+        defaultIconName={suggestIconFromText(name || "category")}
+        defaultIconBgColor={defaultCategoryBgColor(type)}
+        onChange={(value) => {
+          setIconName(value.iconName);
+          setIconBgColor(value.iconBgColor);
+        }}
       />
-      {saving ? (
-        <Loader2 className="h-4 w-4 shrink-0 animate-spin text-slate-400" />
-      ) : (
-        <>
-          <button type="submit" disabled={!name.trim()} className="rounded-md p-0.5 text-emerald-500 hover:bg-emerald-50 disabled:opacity-40">
-            <Check className="h-4 w-4" />
-          </button>
-          <button type="button" onClick={() => { setName(""); setOpen(false); }} className="rounded-md p-0.5 text-slate-400 hover:bg-slate-100">
-            <X className="h-4 w-4" />
-          </button>
-        </>
-      )}
     </form>
   );
+}
+
+function readEmojiIcon(iconName: string): string | null {
+  return iconName.startsWith("emoji:") ? iconName.slice("emoji:".length) : null;
 }
 
 // ── Column section ────────────────────────────────────────────────────────
@@ -230,7 +348,7 @@ interface CategoryColumnProps {
   totalPages: number;
   onPageChange: (p: number) => void;
   onDeleted: (id: string) => void;
-  onRenamed: (id: string, newName: string) => void;
+  onUpdated: (updated: CategorySummaryDto) => void;
   onCreated: (cat: CategorySummaryDto) => void;
 }
 
@@ -244,7 +362,7 @@ function CategoryColumn({
   totalPages,
   onPageChange,
   onDeleted,
-  onRenamed,
+  onUpdated,
   onCreated,
 }: CategoryColumnProps) {
   return (
@@ -271,7 +389,7 @@ function CategoryColumn({
             key={cat.id}
             category={cat}
             onDeleted={() => onDeleted(cat.id)}
-            onRenamed={onRenamed}
+            onUpdated={onUpdated}
           />
         ))}
         <CreateChip type={type} onCreated={onCreated} />
@@ -382,9 +500,9 @@ export default function CategoriesPage() {
     }
   };
 
-  const handleRenamed = (id: string, newName: string) => {
-    setExpenseCategories((prev) => prev.map((c) => (c.id === id ? { ...c, name: newName } : c)));
-    setIncomeCategories((prev) => prev.map((c) => (c.id === id ? { ...c, name: newName } : c)));
+  const handleUpdated = (updated: CategorySummaryDto) => {
+    setExpenseCategories((prev) => prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)));
+    setIncomeCategories((prev) => prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)));
   };
 
   const handleExpenseCreated = () => {
@@ -436,7 +554,7 @@ export default function CategoriesPage() {
             totalPages={expenseTotalPages}
             onPageChange={handleExpensePageChange}
             onDeleted={handleExpenseDeleted}
-            onRenamed={handleRenamed}
+            onUpdated={handleUpdated}
             onCreated={handleExpenseCreated}
           />
 
@@ -451,7 +569,7 @@ export default function CategoriesPage() {
             totalPages={incomeTotalPages}
             onPageChange={handleIncomePageChange}
             onDeleted={handleIncomeDeleted}
-            onRenamed={handleRenamed}
+            onUpdated={handleUpdated}
             onCreated={handleIncomeCreated}
           />
         </div>

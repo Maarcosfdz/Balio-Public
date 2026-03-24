@@ -29,14 +29,26 @@ public class Category {
     @Column(name = "category_type", nullable = false, length = 10)
     private TransactionType type; // EXPENSE / INCOME
 
+    @Column(name = "icon_name", length = 60)
+    private String iconName;
+
+    @Column(name = "icon_bg_color", length = 20)
+    private String iconBgColor;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "user_id")
     private User user;
 
     public Category(String name, TransactionType type, User user) {
+        this(name, type, user, null, null);
+    }
+
+    public Category(String name, TransactionType type, User user, String iconName, String iconBgColor) {
         this.name = name;
         this.type = type;
         this.user = user;
+        this.iconName = iconName;
+        this.iconBgColor = iconBgColor;
     }
 
     protected Category() {}
@@ -52,6 +64,14 @@ public class Category {
     public TransactionType getType() {return type;}
 
     public void setType(TransactionType type) {this.type = type;}
+
+    public String getIconName() { return iconName; }
+
+    public void setIconName(String iconName) { this.iconName = iconName; }
+
+    public String getIconBgColor() { return iconBgColor; }
+
+    public void setIconBgColor(String iconBgColor) { this.iconBgColor = iconBgColor; }
 
     public User getUser() {return user;}
 

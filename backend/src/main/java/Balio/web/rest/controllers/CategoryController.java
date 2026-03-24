@@ -79,7 +79,8 @@ public class CategoryController {
     public ResponseEntity<CategoryResponseDto> createCategory(@RequestAttribute UUID userId,
                                                               @Validated @RequestBody CategoryDto dto) {
 
-        Category category = categoryService.createCategory(userId, dto.getName(), dto.getType());
+        Category category = categoryService.createCategory(
+                userId, dto.getName(), dto.getType(), dto.getIconName(), dto.getIconBgColor());
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest().path("/{id}")
@@ -96,7 +97,8 @@ public class CategoryController {
                                               @Validated @RequestBody CategoryDto dto) throws
                                                                                        InstanceNotFoundException {
 
-        Category category = categoryService.modifyCategory(userId, categoryId, dto.getName(), dto.getType());
+        Category category = categoryService.modifyCategory(
+                userId, categoryId, dto.getName(), dto.getType(), dto.getIconName(), dto.getIconBgColor());
 
         return categoryConverter.toResponseDto(category);
     }

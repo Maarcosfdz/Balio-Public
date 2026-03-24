@@ -275,13 +275,14 @@ class ConverterDtosTest {
         void shouldRoundTripAllArgsConstructor() {
             String id = UUID.randomUUID().toString();
             AuthenticatedUserDto dto = new AuthenticatedUserDto(
-                    id, "alice", "alice@example.com", "access-token", "refresh-token");
+                    id, "alice", "alice@example.com", "access-token", "refresh-token", "EUR");
 
             assertEquals(id, dto.getId());
             assertEquals("alice", dto.getNickname());
             assertEquals("alice@example.com", dto.getEmail());
             assertEquals("access-token", dto.getAccessToken());
             assertEquals("refresh-token", dto.getRefreshToken());
+            assertEquals("EUR", dto.getPreferredCurrency());
         }
 
         @Test

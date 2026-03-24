@@ -7,6 +7,8 @@ public class CategoryResponseDto {
     private String id;
     private String name;
     private TransactionType type; // EXPENSE / INCOME
+    private String iconName;
+    private String iconBgColor;
     private String userId;
 
     public String getId() { return id; }
@@ -17,6 +19,12 @@ public class CategoryResponseDto {
 
     public TransactionType getType() { return type; }
     public void setType(TransactionType type) { this.type = type; }
+
+    public String getIconName() { return iconName; }
+    public void setIconName(String iconName) { this.iconName = iconName; }
+
+    public String getIconBgColor() { return iconBgColor; }
+    public void setIconBgColor(String iconBgColor) { this.iconBgColor = iconBgColor; }
 
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }

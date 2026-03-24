@@ -12,6 +12,8 @@ public class CategoryConverter {
         dto.setId(category.getId().toString());
         dto.setName(category.getName());
         dto.setType(category.getType());
+        dto.setIconName(category.getIconName());
+        dto.setIconBgColor(category.getIconBgColor());
         dto.setUserId(category.getUser().getId().toString());
         return dto;
     }
@@ -21,6 +23,8 @@ public class CategoryConverter {
         dto.setId(category.getId().toString());
         dto.setName(category.getName());
         dto.setType(category.getType());
+        dto.setIconName(category.getIconName());
+        dto.setIconBgColor(category.getIconBgColor());
         return dto;
     }
 }
