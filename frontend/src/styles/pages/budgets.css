@@ -53,6 +53,108 @@
   50%       { transform: translateY(-3px); }
 }
 
+/* ── Budget details tab — seamless part of the card, slides on hover ── */
+/*
+ * At rest: blends into the card bottom, shows only a small chevron.
+ * On hover: gradient fills in and text reveals with a slide-up effect.
+ * No border/shadow — it feels like part of the card, not a separate button.
+ */
+.budget-details-tab {
+  position: relative;
+  width: 100%;
+  height: 2.25rem;
+  border-radius: 0 0 0.75rem 0.75rem;
+  border: none;
+  background: transparent;
+  overflow: hidden;
+  cursor: pointer;
+  margin-top: auto;
+  transition: background 240ms ease;
+}
+
+/* subtle top separator */
+.budget-details-tab::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: #e2e8f0;
+  transition: opacity 240ms ease;
+}
+
+.budget-card:hover .budget-details-tab::after {
+  opacity: 0;
+}
+
+/* Icon layer — visible at rest, centered */
+.budget-details-slot-icon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cbd5e1;
+  transform: translateY(0);
+  transition: transform 380ms ease, opacity 260ms ease;
+}
+
+/* Text layer — hidden below at rest */
+.budget-details-slot-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #0f172a;
+  transform: translateY(100%);
+  transition: transform 380ms ease 60ms;
+}
+
+/* gradient fill sweeps in on hover */
+.budget-details-tab::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(134deg, rgba(112, 215, 255, 1) 0%, rgba(148, 225, 255, 1) 38%, rgba(103, 245, 214, 1) 65%, rgba(96, 247, 159, 1) 85%, rgba(42, 247, 128, 1) 97%);
+  transform: translateY(100%);
+  transform-origin: bottom;
+  transition: transform 380ms ease;
+  pointer-events: none;
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+
+.budget-card:hover .budget-details-tab::before,
+.budget-details-tab:hover::before {
+  transform: translateY(0);
+}
+
+/* icon slides up out of view */
+.budget-card:hover .budget-details-slot-icon,
+.budget-details-tab:hover .budget-details-slot-icon {
+  transform: translateY(-120%);
+  opacity: 0;
+}
+
+/* text slides up into view */
+.budget-card:hover .budget-details-slot-text,
+.budget-details-tab:hover .budget-details-slot-text {
+  transform: translateY(0);
+}
+
+.budget-card-wide {
+  min-height: 0;
+  height: 100%;
+}
+
+.budget-card-compact {
+  min-height: 17rem;
+}
+
 /* ── Usage color helpers (reusable) ────────────────────────────────── */
 
 .budget-usage-blue    { color: #3b82f6; }

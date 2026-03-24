@@ -55,7 +55,7 @@ public class BudgetServiceImpl implements BudgetService {
 
     @Override
     public Budget createBudget(UUID userId, String name, BudgetPeriodicity periodicity,
-                               LocalDate startDate) {
+                               LocalDate startDate, String iconName, String iconBgColor) {
         User user = userDao.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
@@ -72,9 +72,17 @@ public class BudgetServiceImpl implements BudgetService {
             throw new BudgetInvalidException("Maximum number of budgets (" + MAX_BUDGETS + ") reached");
         }
 
-        Budget budget = new Budget(name.trim(), periodicity, startDate, user);
+        Budget budget = new Budget(
+                name.trim(), periodicity, startDate, user,
+                sanitizeOptional(iconName), sanitizeOptional(iconBgColor));
         budgetDao.save(budget);
         return budget;
+    }
+
+    @Override
+    public Budget createBudget(UUID userId, String name, BudgetPeriodicity periodicity,
+                               LocalDate startDate) {
+        return createBudget(userId, name, periodicity, startDate, null, null);
     }
 
     @Override
@@ -86,7 +94,8 @@ public class BudgetServiceImpl implements BudgetService {
 
     @Override
     public Budget modifyBudget(UUID userId, UUID budgetId, String name,
-                               BudgetPeriodicity periodicity, LocalDate startDate)
+                               BudgetPeriodicity periodicity, LocalDate startDate,
+                               String iconName, String iconBgColor)
             throws InstanceNotFoundException {
         Budget budget = budgetDao.findByIdAndUserId(budgetId, userId)
                 .orElseThrow(() -> new InstanceNotFoundException("Budget", budgetId));
@@ -103,9 +112,22 @@ public class BudgetServiceImpl implements BudgetService {
         if (startDate != null) {
             budget.setStartDate(startDate);
         }
+        if (iconName != null) {
+            budget.setIconName(sanitizeOptional(iconName));
+        }
+        if (iconBgColor != null) {
+            budget.setIconBgColor(sanitizeOptional(iconBgColor));
+        }
 
         budgetDao.save(budget);
         return budget;
+    }
+
+    @Override
+    public Budget modifyBudget(UUID userId, UUID budgetId, String name,
+                               BudgetPeriodicity periodicity, LocalDate startDate)
+            throws InstanceNotFoundException {
+        return modifyBudget(userId, budgetId, name, periodicity, startDate, null, null);
     }
 
     @Override
@@ -360,5 +382,13 @@ public class BudgetServiceImpl implements BudgetService {
             case BIANNUAL -> date.plusMonths(6);
             case ANNUAL -> date.plusYears(1);
         };
+    }
+
+    private String sanitizeOptional(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

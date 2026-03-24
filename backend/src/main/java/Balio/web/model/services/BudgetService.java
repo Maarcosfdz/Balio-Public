@@ -13,13 +13,25 @@ import java.util.UUID;
 
 public interface BudgetService {
 
-    Budget createBudget(UUID userId, String name, BudgetPeriodicity periodicity, LocalDate startDate);
+    Budget createBudget(UUID userId, String name, BudgetPeriodicity periodicity, LocalDate startDate,
+                        String iconName, String iconBgColor);
+
+    default Budget createBudget(UUID userId, String name, BudgetPeriodicity periodicity, LocalDate startDate) {
+        return createBudget(userId, name, periodicity, startDate, null, null);
+    }
 
     void deleteBudget(UUID userId, UUID budgetId) throws InstanceNotFoundException;
 
     Budget modifyBudget(UUID userId, UUID budgetId, String name,
-                        BudgetPeriodicity periodicity, LocalDate startDate)
+                        BudgetPeriodicity periodicity, LocalDate startDate,
+                        String iconName, String iconBgColor)
             throws InstanceNotFoundException;
+
+    default Budget modifyBudget(UUID userId, UUID budgetId, String name,
+                                BudgetPeriodicity periodicity, LocalDate startDate)
+            throws InstanceNotFoundException {
+        return modifyBudget(userId, budgetId, name, periodicity, startDate, null, null);
+    }
 
     List<Budget> findAllByUserId(UUID userId);
 
