@@ -9,25 +9,27 @@
 import { useTranslation } from "react-i18next";
 import {
   CheckCircle2,
-  Gem,
   Loader2,
   Minus,
   Pencil,
   Plus,
   Save,
-  Sparkles,
-  Star,
   Target,
-  TrendingUp,
   Trash2,
-  Trophy,
   X,
-  Zap,
 } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import type { GoalSummaryDto } from "@/types";
 import { goalService } from "@/backend/goalService";
 import { FieldError } from "@/components/ui/field-error";
+import { IconAvatar } from "@/components/icons/IconAvatar";
+import { IconPicker } from "@/components/icons/IconPicker";
+import {
+  DEFAULT_ICON_BG_COLOR,
+  normalizeIconBgColor,
+  resolveEntityIconName,
+  suggestIconFromText,
+} from "@/components/icons/iconRegistry";
 
 const MAX_GOALS = 40;
 
@@ -44,7 +46,7 @@ function fmtAmt(n: number) {
 
 function pct(current: number, target: number) {
   if (target <= 0) return 0;
-  return Math.min(100, (current / target) * 100);
+  return (current / target) * 100;
 }
 
 function isCompleted(g: GoalSummaryDto) {
@@ -68,16 +70,6 @@ function progressColor(p: number): string {
   }
 }
 
-// Random-but-stable icon set per goal (seeded by id)
-const GOAL_ICONS = [Target, Star, Gem, TrendingUp, Zap, Trophy, Sparkles] as const;
-type GoalIconComponent = (typeof GOAL_ICONS)[number];
-
-function getGoalIcon(id: string): GoalIconComponent {
-  let hash = 0;
-  for (const c of id) hash = ((hash * 31) + c.charCodeAt(0)) >>> 0;
-  return GOAL_ICONS[hash % GOAL_ICONS.length];
-}
-
 // ── Circular progress ring ───────────────────────────────────────────────
 
 function CircleProgress({
@@ -91,7 +83,8 @@ function CircleProgress({
 }) {
   const r = 46;
   const circ = 2 * Math.PI * r;
-  const offset = circ - (value / 100) * circ;
+  const progress = Math.max(0, Math.min(100, value));
+  const offset = circ - (progress / 100) * circ;
 
   return (
     <div
@@ -235,6 +228,12 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
   const [targetAmount, setTargetAmount] = useState(
     initial ? String(initial.targetAmount) : ""
   );
+  const [iconName, setIconName] = useState<string>(
+    resolveEntityIconName(initial?.iconName, initial?.name ?? "goal"),
+  );
+  const [iconBgColor, setIconBgColor] = useState<string>(
+    normalizeIconBgColor(initial?.iconBgColor, DEFAULT_ICON_BG_COLOR),
+  );
   const [loading, setLoading] = useState(false);
   const [nameError, setNameError] = useState("");
   const [amountError, setAmountError] = useState("");
@@ -244,11 +243,15 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
     if (open) {
       setName(initial?.name ?? "");
       setTargetAmount(initial ? String(initial.targetAmount) : "");
+      setIconName(resolveEntityIconName(initial?.iconName, initial?.name ?? "goal"));
+      setIconBgColor(normalizeIconBgColor(initial?.iconBgColor, DEFAULT_ICON_BG_COLOR));
       setNameError("");
       setAmountError("");
       setFormError("");
     }
   }, [open, initial]);
+
+  const defaultIconName = useMemo(() => suggestIconFromText(name || initial?.name || "goal"), [name, initial?.name]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -261,9 +264,19 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
     setLoading(true);
     try {
       if (isEdit && initial) {
-        await goalService.update(initial.id, { name: name.trim(), targetAmount: amount });
+        await goalService.update(initial.id, {
+          name: name.trim(),
+          targetAmount: amount,
+          iconName,
+          iconBgColor,
+        });
       } else {
-        await goalService.create({ name: name.trim(), targetAmount: amount });
+        await goalService.create({
+          name: name.trim(),
+          targetAmount: amount,
+          iconName,
+          iconBgColor,
+        });
       }
       onSaved();
     } catch {
@@ -302,6 +315,17 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
             />
             <FieldError message={nameError} />
           </div>
+
+          <IconPicker
+            iconName={iconName}
+            iconBgColor={iconBgColor}
+            defaultIconName={defaultIconName}
+            defaultIconBgColor={DEFAULT_ICON_BG_COLOR}
+            onChange={(value) => {
+              setIconName(value.iconName);
+              setIconBgColor(value.iconBgColor);
+            }}
+          />
 
           <div className="space-y-1">
             <label className="text-xs font-semibold text-slate-500">{t("goals.targetAmount")}</label>
@@ -360,7 +384,8 @@ function GoalCard({ goal, onEdit, onDelete, onUpdated }: GoalCardProps) {
   const progress = pct(goal.currentAmount, goal.targetAmount);
   const completed = isCompleted(goal);
   const color = progressColor(progress);
-  const Icon: GoalIconComponent = getGoalIcon(goal.id);
+  const iconName = resolveEntityIconName(goal.iconName, goal.name);
+  const iconBgColor = normalizeIconBgColor(goal.iconBgColor, DEFAULT_ICON_BG_COLOR);
 
   const ringLabel = completed ? t("goals.completed").toUpperCase() : "SAVED";
 
@@ -386,17 +411,13 @@ function GoalCard({ goal, onEdit, onDelete, onUpdated }: GoalCardProps) {
         {/* Header: icon + name + buttons */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            {/* Random icon colored by progress */}
-            <div
-              className="flex h-10 w-10 items-center justify-center rounded-xl"
-              style={{
-                backgroundColor: `${color}22`,
-                color,
-                transition: "background-color 1.2s ease, color 1.2s ease",
-              }}
-            >
-              <Icon className="h-5 w-5" />
-            </div>
+            <IconAvatar
+              iconName={iconName}
+              iconBgColor={iconBgColor}
+              fallbackText={goal.name}
+              className="h-10 w-10 rounded-xl"
+              iconClassName="h-5 w-5"
+            />
             <div>
               <p className="font-bold text-slate-800">{goal.name}</p>
               {completed && (

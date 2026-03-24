@@ -58,6 +58,12 @@ public class ScheduledTransaction {
     @Column(nullable = false)
     private boolean active = true;
 
+    @Column(name = "original_currency", nullable = false, length = 3)
+    private String originalCurrency = "EUR";
+
+    @Column(name = "exchange_rate", nullable = false, precision = 18, scale = 8)
+    private BigDecimal exchangeRate = BigDecimal.ONE;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt = OffsetDateTime.now();
 
@@ -138,4 +144,10 @@ public class ScheduledTransaction {
 
     public Category getCategory() { return category; }
     public void setCategory(Category category) { this.category = category; }
+
+    public String getOriginalCurrency() { return originalCurrency; }
+    public void setOriginalCurrency(String originalCurrency) { this.originalCurrency = originalCurrency; }
+
+    public BigDecimal getExchangeRate() { return exchangeRate; }
+    public void setExchangeRate(BigDecimal exchangeRate) { this.exchangeRate = exchangeRate; }
 }

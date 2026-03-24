@@ -45,6 +45,7 @@ export interface AuthenticatedUserDto {
   email: string;
   accessToken: string;
   refreshToken: string;
+  preferredCurrency: string;
 }
 
 // ============================================
@@ -134,6 +135,9 @@ export interface TransactionDto {
   date?: string;
   categoryId?: string;
   affectsBalance?: boolean;
+  originalAmount?: number;
+  originalCurrency?: string;
+  exchangeRate?: number;
 }
 
 export interface TransactionSummaryDto {
@@ -145,6 +149,9 @@ export interface TransactionSummaryDto {
   accountName?: string;
   categoryName?: string;
   categoryId?: string | null;
+  currency?: string;
+  originalCurrency?: string;
+  originalAmount?: number;
 }
 
 export interface TransactionSummaryDtoWithCategoryIds extends TransactionSummaryDto {
@@ -160,8 +167,12 @@ export interface TransactionResponseDto {
   affectsBalance: boolean;
   accountId?: string | null;
   accountName?: string | null;
+  accountCurrency?: string;
   categoryId: string | null;
   categoryName: string | null;
+  originalAmount?: number;
+  originalCurrency?: string;
+  exchangeRate?: number;
 }
 
 export interface TransactionFilters {
@@ -203,18 +214,24 @@ export interface FilterPage {
 export interface CategoryDto {
   name: string;
   type?: TransactionType;
+  iconName?: string | null;
+  iconBgColor?: string | null;
 }
 
 export interface CategorySummaryDto {
   id: string;
   name: string;
   type?: TransactionType;
+  iconName?: string | null;
+  iconBgColor?: string | null;
 }
 
 export interface CategoryResponseDto {
   id: string;
   name: string;
   type: TransactionType;
+  iconName?: string | null;
+  iconBgColor?: string | null;
   userId: string;
 }
 
@@ -250,11 +267,15 @@ export interface FilterResponseDto {
 export interface GoalDto {
   name: string;
   targetAmount: number;
+  iconName?: string | null;
+  iconBgColor?: string | null;
 }
 
 export interface GoalUpdateDto {
   name?: string;
   targetAmount?: number;
+  iconName?: string | null;
+  iconBgColor?: string | null;
 }
 
 export interface GoalSummaryDto {
@@ -262,6 +283,8 @@ export interface GoalSummaryDto {
   name: string;
   targetAmount: number;
   currentAmount: number;
+  iconName?: string | null;
+  iconBgColor?: string | null;
 }
 
 export interface GoalResponseDto {
@@ -269,6 +292,8 @@ export interface GoalResponseDto {
   name: string;
   targetAmount: number;
   currentAmount: number;
+  iconName?: string | null;
+  iconBgColor?: string | null;
 }
 
 export interface GoalAmountDto {
@@ -293,12 +318,16 @@ export interface BudgetDto {
   name: string;
   periodicity: BudgetPeriodicity;
   startDate: string;
+  iconName?: string | null;
+  iconBgColor?: string | null;
 }
 
 export interface BudgetUpdateDto {
   name?: string;
   periodicity?: BudgetPeriodicity;
   startDate?: string;
+  iconName?: string | null;
+  iconBgColor?: string | null;
 }
 
 export interface BudgetSummaryDto {
@@ -306,6 +335,8 @@ export interface BudgetSummaryDto {
   name: string;
   periodicity: BudgetPeriodicity;
   startDate: string;
+  iconName?: string | null;
+  iconBgColor?: string | null;
   periodStart: string;
   periodEnd: string;
   totalBudget: number;
@@ -348,6 +379,8 @@ export interface BudgetResponseDto {
   name: string;
   periodicity: BudgetPeriodicity;
   startDate: string;
+  iconName?: string | null;
+  iconBgColor?: string | null;
   periodStart: string;
   periodEnd: string;
   totalBudget: number;
@@ -441,6 +474,22 @@ export interface CsvImportRuleDto {
   categoryId: string;
   transactionType?: string; // "EXPENSE" | "INCOME" | undefined (both)
   mappedName?: string;
+}
+
+// ============================================
+// Transaction Batch Rule DTOs
+// ============================================
+
+export interface TransactionBatchRuleDto {
+  // Filters
+  nameContains?: string;
+  categoryIds?: string[];
+  type?: TransactionType;
+  startDate?: string;
+  endDate?: string;
+  // Actions
+  newName?: string;
+  newCategoryId?: string;
 }
 
 export interface CsvImportResultDto {

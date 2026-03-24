@@ -7,6 +7,7 @@ import React, {
 import { useTranslation } from "react-i18next";
 import {
   AlignLeft,
+  CircleDollarSign,
   Eye,
   EyeOff,
   KeyRound,
@@ -125,7 +126,7 @@ function ProfileSection({ onToast }: { onToast: (t: Toast) => void }) {
         nickname: nickname.trim(),
         email: email.trim(),
       });
-      updateUser({ id: user.id, nickname: updated.nickname, email: updated.email });
+      updateUser({ id: user.id, nickname: updated.nickname, email: updated.email, preferredCurrency: user.preferredCurrency });
       setEditingField(null);
       onToast({ type: "success", message: t("settings.profileUpdated") });
     } catch (err: unknown) {
@@ -459,6 +460,81 @@ function PreferencesSection({ onToast }: { onToast: (t: Toast) => void }) {
   );
 }
 
+// ── Currency section ─────────────────────────────────────────────────────
+
+const COMMON_CURRENCIES = ["EUR", "USD", "GBP", "CHF", "JPY", "CAD", "AUD", "BRL", "MXN", "CNY"];
+
+function CurrencySection({ onToast }: { onToast: (t: Toast) => void }) {
+  const { t } = useTranslation();
+  const { user, updateUser } = useAuth();
+
+  const [currency, setCurrency] = useState(user?.preferredCurrency ?? "EUR");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => { setCurrency(user?.preferredCurrency ?? "EUR"); }, [user?.preferredCurrency]);
+
+  const dirty = currency !== (user?.preferredCurrency ?? "EUR");
+
+  const handleSave = async () => {
+    if (!user || !dirty) return;
+    setLoading(true);
+    try {
+      await authService.updatePreferredCurrency(user.id, currency);
+      updateUser({ ...user, preferredCurrency: currency });
+      onToast({ type: "success", message: t("settings.currencyUpdated") });
+    } catch {
+      onToast({ type: "error", message: t("common.error") });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <SectionCard
+      icon={<CircleDollarSign className="h-5 w-5" />}
+      title={t("settings.preferredCurrency")}
+      desc={t("settings.currencyDesc")}
+    >
+      <div className="flex flex-wrap gap-2">
+        {COMMON_CURRENCIES.map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => setCurrency(c)}
+            className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+              currency === c
+                ? "border-transparent bg-gradient-to-r from-sky-500 to-emerald-500 text-white shadow"
+                : "border-slate-200 text-slate-600 hover:border-sky-300 hover:bg-sky-50"
+            }`}
+          >
+            {c}
+          </button>
+        ))}
+      </div>
+      {dirty && (
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => setCurrency(user?.preferredCurrency ?? "EUR")}
+            className="rounded-lg border border-slate-300 px-5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+          >
+            {t("settings.resetChanges")}
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={loading}
+            className="squishy-save-btn"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {t("common.save")}
+          </button>
+        </div>
+      )}
+    </SectionCard>
+  );
+}
+
 // ── Danger Zone ──────────────────────────────────────────────────────────
 
 function DangerSection() {
@@ -600,6 +676,7 @@ export default function SettingsPage() {
         <ProfileSection onToast={showToast} />
         <PasswordSection onToast={showToast} />
         <PreferencesSection onToast={showToast} />
+        <CurrencySection onToast={showToast} />
         <DangerSection />
 
         <p className="pb-4 text-center text-xs text-slate-300">

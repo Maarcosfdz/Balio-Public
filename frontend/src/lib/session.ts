@@ -20,6 +20,7 @@ export interface SessionUser {
   id: string;
   nickname: string;
   email: string;
+  preferredCurrency: string;
 }
 
 export type SessionEndReason =
@@ -42,11 +43,12 @@ function emit(event: SessionEvent) {
   listeners.forEach((listener) => listener(event));
 }
 
-function toSessionUser(data: Pick<AuthenticatedUserDto, "id" | "nickname" | "email">): SessionUser {
+function toSessionUser(data: Pick<AuthenticatedUserDto, "id" | "nickname" | "email" | "preferredCurrency">): SessionUser {
   return {
     id: data.id,
     nickname: data.nickname,
     email: data.email,
+    preferredCurrency: data.preferredCurrency ?? "EUR",
   };
 }
 

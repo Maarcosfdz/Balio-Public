@@ -20,7 +20,11 @@ public interface GoalService {
      * @throws Balio.web.model.Exceptions.UserNotFoundException if the user does not exist
      * @throws Balio.web.model.Exceptions.GoalInvalidException  if validation fails
      */
-    Goal createGoal(UUID userId, String name, BigDecimal targetAmount);
+    Goal createGoal(UUID userId, String name, BigDecimal targetAmount, String iconName, String iconBgColor);
+
+    default Goal createGoal(UUID userId, String name, BigDecimal targetAmount) {
+        return createGoal(userId, name, targetAmount, null, null);
+    }
 
     /**
      * Deletes a goal owned by the user.
@@ -34,8 +38,14 @@ public interface GoalService {
      *
      * @throws InstanceNotFoundException if the goal does not exist or does not belong to the user
      */
-    Goal modifyGoal(UUID userId, UUID goalId, String name, BigDecimal targetAmount)
+    Goal modifyGoal(UUID userId, UUID goalId, String name, BigDecimal targetAmount,
+                    String iconName, String iconBgColor)
             throws InstanceNotFoundException;
+
+    default Goal modifyGoal(UUID userId, UUID goalId, String name, BigDecimal targetAmount)
+            throws InstanceNotFoundException {
+        return modifyGoal(userId, goalId, name, targetAmount, null, null);
+    }
 
     /**
      * Adds money to the goal's currentAmount.

@@ -28,7 +28,8 @@ public class GoalServiceImpl implements GoalService {
     }
 
     @Override
-    public Goal createGoal(UUID userId, String name, BigDecimal targetAmount) {
+    public Goal createGoal(UUID userId, String name, BigDecimal targetAmount,
+                           String iconName, String iconBgColor) {
 
         User user = userDao.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
@@ -40,9 +41,15 @@ public class GoalServiceImpl implements GoalService {
             throw new GoalInvalidException("Target amount must be positive");
         }
 
-        Goal goal = new Goal(name.trim(), targetAmount, user);
+        Goal goal = new Goal(
+                name.trim(), targetAmount, user, sanitizeOptional(iconName), sanitizeOptional(iconBgColor));
         goalDao.save(goal);
         return goal;
+    }
+
+    @Override
+    public Goal createGoal(UUID userId, String name, BigDecimal targetAmount) {
+        return createGoal(userId, name, targetAmount, null, null);
     }
 
     @Override
@@ -55,7 +62,8 @@ public class GoalServiceImpl implements GoalService {
     }
 
     @Override
-    public Goal modifyGoal(UUID userId, UUID goalId, String name, BigDecimal targetAmount)
+    public Goal modifyGoal(UUID userId, UUID goalId, String name, BigDecimal targetAmount,
+                           String iconName, String iconBgColor)
             throws InstanceNotFoundException {
 
         Goal goal = goalDao.findByIdAndUserId(goalId, userId)
@@ -73,9 +81,21 @@ public class GoalServiceImpl implements GoalService {
             }
             goal.setTargetAmount(targetAmount);
         }
+        if (iconName != null) {
+            goal.setIconName(sanitizeOptional(iconName));
+        }
+        if (iconBgColor != null) {
+            goal.setIconBgColor(sanitizeOptional(iconBgColor));
+        }
 
         goalDao.save(goal);
         return goal;
+    }
+
+    @Override
+    public Goal modifyGoal(UUID userId, UUID goalId, String name, BigDecimal targetAmount)
+            throws InstanceNotFoundException {
+        return modifyGoal(userId, goalId, name, targetAmount, null, null);
     }
 
     @Override
@@ -124,5 +144,13 @@ public class GoalServiceImpl implements GoalService {
     public Goal findByIdAndUserId(UUID goalId, UUID userId) throws InstanceNotFoundException {
         return goalDao.findByIdAndUserId(goalId, userId)
                 .orElseThrow(() -> new InstanceNotFoundException("Goal", goalId));
+    }
+
+    private String sanitizeOptional(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

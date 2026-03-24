@@ -48,10 +48,10 @@ function chartH(size: AnalysisWidget["size"]): number {
   return 180;
 }
 
-function toMoney(value: number): string {
+function toMoney(value: number, currency = "EUR"): string {
   return new Intl.NumberFormat("es-ES", {
     style: "currency",
-    currency: "EUR",
+    currency,
     maximumFractionDigits: 0,
   }).format(value);
 }

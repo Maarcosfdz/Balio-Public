@@ -48,7 +48,16 @@
       "Bash(do curl:*)",
       "Bash(break)",
       "mcp__plugin_playwright_playwright__browser_evaluate",
-      "mcp__plugin_playwright_playwright__browser_hover"
+      "mcp__plugin_playwright_playwright__browser_hover",
+      "Bash(find /c/Users/mroma/Desktop/FIC/4.Cuarto/TFG/Balio/frontend/src/components -type f \\\\\\(-name *Rule* -o -name *Import* -o -name *Csv* \\\\\\))",
+      "Bash(grep -E \"\\\\.java$\")",
+      "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''src/i18n/es.json'',''utf8''\\)\\); JSON.parse\\(require\\(''fs''\\).readFileSync\\(''src/i18n/en.json'',''utf8''\\)\\); JSON.parse\\(require\\(''fs''\\).readFileSync\\(''src/i18n/gal.json'',''utf8''\\)\\); console.log\\(''All JSON valid''\\)\")",
+      "mcp__plugin_playwright_playwright__browser_console_messages",
+      "mcp__plugin_playwright_playwright__browser_network_requests",
+      "Bash(curl -s -X POST http://localhost:8080/transaction/apply-rules -H \"Content-Type: application/json\" -H \"Authorization: Bearer test\" -d '{\"\"\"\"newName\"\"\"\":\"\"\"\"Test\"\"\"\"}')",
+      "Bash(curl -v -X POST http://localhost:8080/transaction/apply-rules -H \"Content-Type: application/json\" -d '{\"\"newName\"\":\"\"Test\"\"}')",
+      "Bash(grep -E \"\\(Account|Transaction|User\\).*\\\\.java$\")",
+      "Bash(grep -i \"currency\\\\|EUR\\\\|exchange\" ./frontend/src/i18n/*.json)"
     ]
   }
 }
