@@ -41,6 +41,7 @@ interface User {
   id: string;
   nickname: string;
   email: string;
+  preferredCurrency: string;
 }
 
 interface AuthState {
@@ -58,12 +59,12 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function toUser(data: Pick<AuthenticatedUserDto, "id" | "nickname" | "email">): User {
-  return { id: data.id, nickname: data.nickname, email: data.email };
+function toUser(data: Pick<AuthenticatedUserDto, "id" | "nickname" | "email" | "preferredCurrency">): User {
+  return { id: data.id, nickname: data.nickname, email: data.email, preferredCurrency: data.preferredCurrency ?? "EUR" };
 }
 
 function fromSessionUser(user: SessionUser | null): User | null {
-  return user ? { id: user.id, nickname: user.nickname, email: user.email } : null;
+  return user ? { id: user.id, nickname: user.nickname, email: user.email, preferredCurrency: user.preferredCurrency ?? "EUR" } : null;
 }
 
 function SessionToast({

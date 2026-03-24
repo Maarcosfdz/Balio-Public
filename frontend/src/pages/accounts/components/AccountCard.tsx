@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { ArrowDownCircle, ArrowUpCircle, Check, Download, Pencil, SlidersHorizontal, Trash2, Loader2 } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Check, Download, Pencil, PencilLine, SlidersHorizontal, Trash2, Loader2 } from "lucide-react";
 import type { AccountSummaryDto, TransactionSummaryDto } from "@/types";
 import { transactionService } from "@/backend/transactionService";
+import { accountService } from "@/backend/accountService";
 import { ROUTES } from "@/config/routes";
 import { typeIcon, typeHeaderBg, fmtAmount } from "../utils";
 import BankConnectionPanel from "./BankConnectionPanel";
@@ -16,6 +17,7 @@ interface AccountCardProps {
   onSetDefault: (a: AccountSummaryDto) => void;
   onClearDefault: () => void;
   onSynced?: () => void;
+  onBalanceAdjusted?: () => void;
 }
 
 export default function AccountCard({
@@ -25,6 +27,7 @@ export default function AccountCard({
   onSetDefault,
   onClearDefault,
   onSynced,
+  onBalanceAdjusted,
 }: AccountCardProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -33,6 +36,12 @@ export default function AccountCard({
   const [txRefresh, setTxRefresh] = useState(0);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+
+  // Balance adjustment (CASH / OTHER only)
+  const [balanceEditing, setBalanceEditing] = useState(false);
+  const [balanceInput, setBalanceInput] = useState("");
+  const [balanceSaving, setBalanceSaving] = useState(false);
+  const balanceInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     transactionService
@@ -71,6 +80,32 @@ export default function AccountCard({
       /* ignore */
     } finally {
       setExporting(false);
+    }
+  };
+
+  const openBalanceEdit = () => {
+    setBalanceInput(account.balance.toFixed(2));
+    setBalanceEditing(true);
+    setTimeout(() => balanceInputRef.current?.select(), 50);
+  };
+
+  const cancelBalanceEdit = () => {
+    setBalanceEditing(false);
+    setBalanceInput("");
+  };
+
+  const saveBalance = async () => {
+    const parsed = parseFloat(balanceInput.replace(",", "."));
+    if (isNaN(parsed)) return;
+    setBalanceSaving(true);
+    try {
+      await accountService.adjustBalance(account.id, parsed);
+      onBalanceAdjusted?.();
+      setBalanceEditing(false);
+    } catch {
+      /* ignore */
+    } finally {
+      setBalanceSaving(false);
     }
   };
 
@@ -159,10 +194,48 @@ export default function AccountCard({
 
         {/* Balance (below name) */}
         <div className="px-5 pt-3 pb-3">
-          <p className={`text-[10px] font-bold uppercase tracking-wider ${balanceColor} opacity-90`}>{t("accounts.balance")}</p>
-          <p className={`mt-0.5 text-3xl font-bold tabular-nums tracking-tight ${balanceColor}`}>
-            {fmtAmount(account.balance, account.currency)}
-          </p>
+          <div className="flex items-center justify-between">
+            <p className={`text-[10px] font-bold uppercase tracking-wider ${balanceColor} opacity-90`}>{t("accounts.balance")}</p>
+            {account.type !== "BANK" && !balanceEditing && (
+              <button
+                onClick={openBalanceEdit}
+                title={t("accounts.adjustBalance", "Ajustar saldo")}
+                className="rounded-lg p-1 text-slate-400 transition hover:bg-sky-50 hover:text-sky-600"
+              >
+                <PencilLine className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          {balanceEditing ? (
+            <div className="mt-1 flex items-center gap-2">
+              <input
+                ref={balanceInputRef}
+                type="number"
+                step="0.01"
+                value={balanceInput}
+                onChange={(e) => setBalanceInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") saveBalance(); if (e.key === "Escape") cancelBalanceEdit(); }}
+                className="h-9 w-32 rounded-xl border border-sky-300 bg-white px-3 text-lg font-bold tabular-nums text-slate-800 outline-none focus:ring-2 focus:ring-sky-100"
+              />
+              <button
+                onClick={saveBalance}
+                disabled={balanceSaving}
+                className="flex h-9 items-center gap-1 rounded-xl bg-sky-500 px-3 text-xs font-semibold text-white transition hover:bg-sky-600 disabled:opacity-60"
+              >
+                {balanceSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("common.save", "Guardar")}
+              </button>
+              <button
+                onClick={cancelBalanceEdit}
+                className="h-9 rounded-xl border border-slate-200 px-3 text-xs font-semibold text-slate-500 transition hover:bg-slate-50"
+              >
+                {t("common.cancel")}
+              </button>
+            </div>
+          ) : (
+            <p className={`mt-0.5 text-3xl font-bold tabular-nums tracking-tight ${balanceColor}`}>
+              {fmtAmount(account.balance, account.currency)}
+            </p>
+          )}
         </div>
 
         {/* Divider */}
