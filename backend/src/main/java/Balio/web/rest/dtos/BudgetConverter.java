@@ -31,6 +31,8 @@ public class BudgetConverter {
         dto.setName(budget.getName());
         dto.setPeriodicity(budget.getPeriodicity());
         dto.setStartDate(budget.getStartDate());
+        dto.setIconName(budget.getIconName());
+        dto.setIconBgColor(budget.getIconBgColor());
         dto.setCategoryCount(budget.getCategories().size());
 
         UUID userId = budget.getUser().getId();
@@ -76,6 +78,8 @@ public class BudgetConverter {
         dto.setName(budget.getName());
         dto.setPeriodicity(budget.getPeriodicity());
         dto.setStartDate(budget.getStartDate());
+        dto.setIconName(budget.getIconName());
+        dto.setIconBgColor(budget.getIconBgColor());
 
         UUID userId = budget.getUser().getId();
 

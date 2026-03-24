@@ -72,7 +72,8 @@ public class BudgetController {
     public ResponseEntity<BudgetResponseDto> createBudget(@RequestAttribute UUID userId,
                                                            @Validated @RequestBody BudgetDto dto) {
         Budget budget = budgetService.createBudget(
-                userId, dto.getName(), dto.getPeriodicity(), dto.getStartDate());
+                userId, dto.getName(), dto.getPeriodicity(), dto.getStartDate(),
+                dto.getIconName(), dto.getIconBgColor());
 
         log.info("Budget created: budgetId={}, userId={}", budget.getId(), userId);
 
@@ -91,7 +92,8 @@ public class BudgetController {
                                            @Validated @RequestBody BudgetUpdateDto dto)
             throws InstanceNotFoundException {
         Budget budget = budgetService.modifyBudget(
-                userId, budgetId, dto.getName(), dto.getPeriodicity(), dto.getStartDate());
+                userId, budgetId, dto.getName(), dto.getPeriodicity(), dto.getStartDate(),
+                dto.getIconName(), dto.getIconBgColor());
         return budgetConverter.toResponseDto(budget);
     }
 

@@ -10,10 +10,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   ChevronDown,
-  ChevronRight,
   Loader2,
   Pencil,
-  PiggyBank,
   Plus,
   Save,
   Trash2,
@@ -21,7 +19,6 @@ import {
   Link2,
   Unlink,
 } from "lucide-react";
-import PageHeader from "@/components/layout/PageHeader";
 import { FieldError } from "@/components/ui/field-error";
 import type {
   BudgetResponseDto,
@@ -32,8 +29,17 @@ import { budgetService } from "@/backend/budgetService";
 import { categoryService } from "@/backend/categoryService";
 import { transactionService } from "@/backend/transactionService";
 import type { TransactionSummaryDto } from "@/types";
+import { AppIcon } from "@/components/icons/AppIcon";
+import { IconAvatar } from "@/components/icons/IconAvatar";
+import {
+  DEFAULT_ICON_BG_COLOR,
+  normalizeIconBgColor,
+  resolveEntityIconName,
+  suggestIconFromText,
+} from "@/components/icons/iconRegistry";
 
 const MAX_CATEGORIES = 40;
+const TX_FETCH_PAGE_SIZE = 200;
 
 // ── Formatting ──────────────────────────────────────────────────────
 const _nf = new Intl.NumberFormat(undefined, {
@@ -73,6 +79,10 @@ function statusLabel(pct: number, t: (k: string) => string): string {
   if (pct <= 80) return t("budgets.detail.statusApproaching");
   if (pct <= 95) return t("budgets.detail.statusWarning");
   return t("budgets.detail.statusCritical");
+}
+
+function hasPreviousPeriodData(prevTotalBudget: number, prevTotalSpent: number): boolean {
+  return prevTotalBudget > 0 || prevTotalSpent > 0;
 }
 
 // ── Category form dialog ────────────────────────────────────────────
@@ -297,19 +307,49 @@ function AddTransactionDialog({
 
   useEffect(() => {
     if (!open) return;
-    setLoading(true);
-    setSearchTerm("");
-    transactionService.getAll({ type: "EXPENSE" }, 0, 500)
-      .then((page) => setTransactions(page.content))
-      .catch(() => setTransactions([]))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    const stateResetTimer = window.setTimeout(() => {
+      setLoading(true);
+      setSearchTerm("");
+    }, 0);
+
+    const fetchAllExpenseTransactions = async () => {
+      try {
+        const allTransactions: TransactionSummaryDto[] = [];
+        let pageIndex = 0;
+        let totalPages = 1;
+
+        while (pageIndex < totalPages) {
+          const page = await transactionService.getAll(
+            { type: "EXPENSE" },
+            pageIndex,
+            TX_FETCH_PAGE_SIZE,
+          );
+          allTransactions.push(...page.content);
+          totalPages = Math.max(totalPages, page.totalPages);
+          pageIndex += 1;
+        }
+
+        if (!cancelled) setTransactions(allTransactions);
+      } catch {
+        if (!cancelled) setTransactions([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void fetchAllExpenseTransactions();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(stateResetTimer);
+    };
   }, [open]);
 
   const filtered = useMemo(() => {
     const q = searchTerm.toLowerCase().trim();
     const available = transactions.filter((tx) => !existingTxIds.has(tx.id));
-    if (!q) return available.slice(0, 50);
-    return available.filter((tx) => tx.name.toLowerCase().includes(q)).slice(0, 50);
+    if (!q) return available;
+    return available.filter((tx) => tx.name.toLowerCase().includes(q));
   }, [transactions, searchTerm, existingTxIds]);
 
   const handleLink = async (txId: string) => {
@@ -407,9 +447,11 @@ function CategoryRow({ cat, budgetId, onEdit, onDelete, onRefresh }: CategoryRow
   const [addTxOpen, setAddTxOpen] = useState(false);
   const [unlinking, setUnlinking] = useState<string | null>(null);
 
-  const pct = Math.min(100, Math.max(0, cat.usagePercent));
-  const colors = usageColor(pct);
-  const label = statusLabel(pct, t);
+  const rawPct = Math.max(0, cat.usagePercent);
+  const progressPct = Math.min(100, rawPct);
+  const colors = usageColor(rawPct);
+  const label = statusLabel(rawPct, t);
+  const iconName = suggestIconFromText(cat.name);
 
   const existingTxIds = useMemo(
     () => new Set(cat.transactions.map((tx) => tx.id)),
@@ -426,74 +468,71 @@ function CategoryRow({ cat, budgetId, onEdit, onDelete, onRefresh }: CategoryRow
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-      {/* Header — collapsible */}
-      <div
-        className="budget-cat-toggle flex items-center gap-3 px-5 py-4"
-        onClick={() => setExpanded((v) => !v)}
-      >
-        {expanded ? (
-          <ChevronDown className="h-4 w-4 text-slate-400 flex-shrink-0" />
-        ) : (
-          <ChevronRight className="h-4 w-4 text-slate-400 flex-shrink-0" />
-        )}
-
-        <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${colors.bg}`}>
-          <PiggyBank className={`h-4 w-4 ${colors.text}`} />
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="font-semibold text-slate-800 truncate">{cat.name}</p>
-            <span className="text-[10px] text-slate-400">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100">
+            <AppIcon name={iconName} className="h-4 w-4 text-slate-600" />
+          </div>
+          <div className="min-w-0">
+            <p className="truncate font-semibold text-slate-800">{cat.name}</p>
+            <p className="text-[11px] text-slate-400">
               {fmtAmt(cat.spent)} / {fmtAmt(cat.maxAmount)}
-            </span>
-          </div>
-          {/* Progress bar */}
-          <div className="mt-1.5 h-1.5 w-full max-w-xs rounded-full bg-slate-100 overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-700 ${colors.bar}`}
-              style={{ width: `${pct}%` }}
-            />
+            </p>
           </div>
         </div>
+        <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${colors.bg} ${colors.text}`}>
+          {label}
+        </span>
+      </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <span className={`text-xs font-bold ${colors.text}`}>{pct.toFixed(0)}%</span>
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${colors.bg} ${colors.text}`}>
-            {label}
-          </span>
+      <div className="mt-4">
+        <div className="mb-1.5 flex items-center justify-between text-xs">
+          <span className="font-semibold text-slate-500">{rawPct.toFixed(0)}% {t("budgets.usagePercent")}</span>
+          <span className={`font-semibold ${colors.text}`}>{fmtAmt(cat.remaining)}</span>
         </div>
+        <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+          <div
+            className={`h-full rounded-full transition-all duration-700 ${colors.bar}`}
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
+      </div>
 
-        {/* Edit / delete */}
-        <div className="flex items-center gap-0.5 ml-2" onClick={(e) => e.stopPropagation()}>
+      <div className="mt-4 flex items-center justify-between gap-2">
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+        >
+          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? "" : "-rotate-90"}`} />
+          {t("budgets.detail.transactions")} ({cat.transactions.length})
+        </button>
+
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => onEdit(cat)}
             className="rounded-lg p-1.5 text-slate-400 hover:bg-sky-50 hover:text-sky-600"
+            aria-label={t("common.edit")}
           >
             <Pencil className="h-3.5 w-3.5" />
           </button>
           <button
-            onClick={() => {
-              if (!deleteConfirm) { setDeleteConfirm(true); return; }
-              onDelete(cat);
-              setDeleteConfirm(false);
-            }}
+            onClick={() => setDeleteConfirm((v) => !v)}
             className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-500"
+            aria-label={t("common.delete")}
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
 
-      {/* Delete confirmation */}
       {deleteConfirm && (
-        <div className="flex items-center justify-between border-t border-slate-100 bg-red-50/60 px-5 py-2">
+        <div className="mt-3 flex items-center justify-between rounded-lg bg-red-50/60 px-3 py-2">
           <p className="text-xs text-red-600 font-medium">{t("budgets.detail.deleteConfirm")}</p>
           <div className="flex gap-2">
             <button
               onClick={() => setDeleteConfirm(false)}
-              className="rounded px-3 py-1 text-xs text-slate-600 hover:bg-white"
+              className="rounded px-2.5 py-1 text-xs text-slate-600 hover:bg-white"
             >
               {t("common.cancel")}
             </button>
@@ -507,10 +546,8 @@ function CategoryRow({ cat, budgetId, onEdit, onDelete, onRefresh }: CategoryRow
         </div>
       )}
 
-      {/* Expanded content */}
       {expanded && (
-        <div className="border-t border-slate-100 px-5 pb-4 pt-3 space-y-3">
-          {/* Linked categories pills */}
+        <div className="mt-4 space-y-3 border-t border-slate-100 pt-3">
           {cat.linkedCategories.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {cat.linkedCategories.map((lc) => (
@@ -524,7 +561,6 @@ function CategoryRow({ cat, budgetId, onEdit, onDelete, onRefresh }: CategoryRow
             </div>
           )}
 
-          {/* Transactions list */}
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold text-slate-500">
               {t("budgets.detail.transactions")} ({cat.transactions.length})
@@ -543,7 +579,7 @@ function CategoryRow({ cat, budgetId, onEdit, onDelete, onRefresh }: CategoryRow
               {t("budgets.detail.noTransactions")}
             </p>
           ) : (
-            <div className="space-y-1 max-h-60 overflow-y-auto">
+            <div className="max-h-56 space-y-1 overflow-y-auto">
               {cat.transactions.map((tx) => (
                 <div
                   key={tx.id}
@@ -675,134 +711,204 @@ export default function BudgetDetailPage() {
     );
   }
 
-  const pct = Math.min(100, Math.max(0, budget.usagePercent));
-  const colors = usageColor(pct);
+  const rawPct = Math.max(0, budget.usagePercent);
+  const progressPct = Math.min(100, rawPct);
+  const colors = usageColor(rawPct);
   const canAddCat = (budget.categories?.length ?? 0) < MAX_CATEGORIES;
+  const usageLabel = statusLabel(rawPct, t);
+  const hasPrevData = hasPreviousPeriodData(budget.prevTotalBudget, budget.prevTotalSpent);
+  const budgetIconName = resolveEntityIconName(budget.iconName, budget.name);
+  const budgetIconBgColor = normalizeIconBgColor(budget.iconBgColor, DEFAULT_ICON_BG_COLOR);
+  const leadingCategory = budget.categories.reduce<BudgetCategoryResponseDto | null>((lead, current) => {
+    if (!lead || current.usagePercent > lead.usagePercent) return current;
+    return lead;
+  }, null);
+  const recentManualTransactions = budget.categories
+    .flatMap((cat) => cat.transactions
+      .filter((tx) => tx.manual)
+      .map((tx) => ({ ...tx, budgetCategoryName: cat.name })))
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 4);
 
   return (
     <div className="space-y-6">
-      {/* Back button + header */}
-      <div className="rounded-xl bg-white px-5 py-4">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5">
         <button
           onClick={() => navigate("/budgets")}
-          className="mb-3 flex items-center gap-1.5 text-sm text-slate-400 hover:text-sky-500 transition-colors"
+          className="mb-4 flex items-center gap-1.5 text-sm text-slate-400 transition-colors hover:text-sky-500"
         >
           <ArrowLeft className="h-4 w-4" />
           {t("budgets.detail.backToList")}
         </button>
 
-        <PageHeader
-          left={<PiggyBank className="h-8 w-8 text-sky-500" />}
-          title={budget.name}
-          subtitle={
-            <p className="text-sm text-slate-400">
-              {t(`budgets.periodicities.${budget.periodicity}`)} ·{" "}
-              {formatDate(budget.periodStart)} — {formatDate(budget.periodEnd)}
-            </p>
-          }
-          actions={
-            <button
-              onClick={() => { setEditCat(null); setCatFormOpen(true); }}
-              disabled={!canAddCat}
-              className="budget-new-btn"
-            >
-              <Plus className="budget-new-icon h-4 w-4" />
-              {t("budgets.detail.addCategory")}
-            </button>
-          }
-        />
-
-        {/* Summary cards */}
-        <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {/* Usage circle */}
-          <div className="flex flex-col items-center rounded-xl border border-slate-100 bg-slate-50 p-4">
-            <div className="relative flex items-center justify-center" style={{ width: 80, height: 80 }}>
-              <svg width="80" height="80" className="-rotate-90">
-                <circle cx="40" cy="40" r="32" fill="none" stroke="#f1f5f9" strokeWidth="7" />
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+          <div className="flex items-center justify-center lg:col-span-4">
+            <div className="relative flex items-center justify-center" style={{ width: 220, height: 220 }}>
+              <svg width="220" height="220" className="-rotate-90">
+                <circle cx="110" cy="110" r="86" fill="none" stroke="#e2e8f0" strokeWidth="12" />
                 <circle
-                  cx="40" cy="40" r="32" fill="none"
-                  strokeWidth="7" strokeLinecap="round"
-                  stroke={strokeColorFromPct(pct)}
-                  strokeDasharray={2 * Math.PI * 32}
-                  strokeDashoffset={2 * Math.PI * 32 - (pct / 100) * 2 * Math.PI * 32}
+                  cx="110"
+                  cy="110"
+                  r="86"
+                  fill="none"
+                  strokeWidth="12"
+                  strokeLinecap="round"
+                  stroke={strokeColorFromPct(rawPct)}
+                  strokeDasharray={2 * Math.PI * 86}
+                  strokeDashoffset={2 * Math.PI * 86 - (progressPct / 100) * 2 * Math.PI * 86}
                   style={{ transition: "stroke-dashoffset 1s ease, stroke 1s ease" }}
                 />
               </svg>
-              <span className={`absolute text-lg font-extrabold ${colors.text}`}>
-                {pct.toFixed(0)}%
-              </span>
+              <div className="absolute text-center">
+                <p className={`text-5xl font-extrabold tabular-nums ${colors.text}`}>{rawPct.toFixed(0)}%</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  {t("budgets.usagePercent")}
+                </p>
+              </div>
             </div>
-            <span className="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-              {t("budgets.usagePercent")}
-            </span>
           </div>
 
-          {/* Total spent */}
-          <div className="flex flex-col justify-center rounded-xl border border-slate-100 bg-slate-50 p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-              {t("budgets.totalSpent")}
-            </p>
-            <p className="mt-1 text-xl font-extrabold tabular-nums text-slate-800">
-              {fmtAmt(budget.totalSpent)}
-            </p>
-          </div>
+          <div className="space-y-4 lg:col-span-8">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <IconAvatar
+                    iconName={budgetIconName}
+                    iconBgColor={budgetIconBgColor}
+                    fallbackText={budget.name}
+                    className="h-9 w-9 rounded-xl"
+                    iconClassName="h-5 w-5"
+                  />
+                  <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">{budget.name}</h1>
+                </div>
+                <p className="mt-2 text-sm text-slate-400">
+                  {t(`budgets.periodicities.${budget.periodicity}`)} · {formatDate(budget.periodStart)} — {formatDate(budget.periodEnd)}
+                </p>
+              </div>
+              <button
+                onClick={() => { setEditCat(null); setCatFormOpen(true); }}
+                disabled={!canAddCat}
+                className="budget-new-btn"
+              >
+                <Plus className="budget-new-icon h-4 w-4" />
+                {t("budgets.detail.addCategory")}
+              </button>
+            </div>
 
-          {/* Remaining */}
-          <div className="flex flex-col justify-center rounded-xl border border-slate-100 bg-slate-50 p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-              {t("budgets.totalRemaining")}
-            </p>
-            <p className={`mt-1 text-xl font-extrabold tabular-nums ${budget.totalRemaining >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-              {fmtAmt(budget.totalRemaining)}
-            </p>
-          </div>
-
-          {/* Previous period */}
-          <div className="flex flex-col justify-center rounded-xl border border-slate-100 bg-slate-50 p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-              {t("budgets.prevPeriod")}
-            </p>
-            <p className="mt-1 text-xl font-extrabold tabular-nums text-slate-800">
-              {fmtAmt(budget.prevTotalSpent)}
-            </p>
-            <p className="text-[10px] text-slate-400">
-              {t("budgets.detail.of")} {fmtAmt(budget.prevTotalBudget)}
-            </p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{t("budgets.totalSpent")}</p>
+                <p className="mt-1 text-3xl font-extrabold tabular-nums text-slate-900">{fmtAmt(budget.totalSpent)}</p>
+              </div>
+              <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{t("budgets.totalRemaining")}</p>
+                <p className={`mt-1 text-3xl font-extrabold tabular-nums ${budget.totalRemaining >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                  {fmtAmt(budget.totalRemaining)}
+                </p>
+                <p className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${colors.bg} ${colors.text}`}>
+                  {usageLabel}
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{t("budgets.prevPeriod")}</p>
+                {hasPrevData ? (
+                  <>
+                    <p className="mt-1 text-3xl font-extrabold tabular-nums text-slate-900">{fmtAmt(budget.prevTotalSpent)}</p>
+                    <p className="mt-0.5 text-xs text-slate-400">
+                      {t("budgets.detail.of")} {fmtAmt(budget.prevTotalBudget)}
+                    </p>
+                  </>
+                ) : (
+                  <p className="mt-3 text-lg font-bold text-slate-500">{t("common.noData")}</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Categories */}
-      <div className="space-y-3">
-        {budget.categories.map((cat) => (
-          <CategoryRow
-            key={cat.id}
-            cat={cat}
-            budgetId={budgetId}
-            onEdit={(c) => { setEditCat(c); setCatFormOpen(true); }}
-            onDelete={handleDeleteCategory}
-            onRefresh={() => fetchBudget(false)}
-          />
-        ))}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">{t("budgets.categories")}</h2>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+            {budget.categories.length}/{MAX_CATEGORIES}
+          </span>
+        </div>
 
-        {canAddCat && (
-          <button
-            className="budget-add-category w-full"
-            onClick={() => { setEditCat(null); setCatFormOpen(true); }}
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-dashed border-current">
-              <Plus className="h-5 w-5" />
-            </div>
-            <span className="text-sm font-semibold">{t("budgets.detail.addCategory")}</span>
-          </button>
-        )}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {budget.categories.map((cat) => (
+            <CategoryRow
+              key={cat.id}
+              cat={cat}
+              budgetId={budgetId}
+              onEdit={(c) => { setEditCat(c); setCatFormOpen(true); }}
+              onDelete={handleDeleteCategory}
+              onRefresh={() => fetchBudget(false)}
+            />
+          ))}
+
+          {canAddCat && (
+            <button
+              className="flex min-h-[228px] flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-200 bg-white text-slate-400 transition hover:border-sky-300 hover:bg-sky-50/40 hover:text-sky-500"
+              onClick={() => { setEditCat(null); setCatFormOpen(true); }}
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-dashed border-current">
+                <Plus className="h-6 w-6" />
+              </div>
+              <span className="text-sm font-semibold">{t("budgets.detail.addCategory")}</span>
+            </button>
+          )}
+        </div>
 
         {budget.categories.length === 0 && (
-          <div className="py-12 text-center text-slate-400">
-            {t("budgets.detail.noCategories")}
-          </div>
+          <div className="py-6 text-center text-slate-400">{t("budgets.detail.noCategories")}</div>
         )}
-      </div>
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <div className="rounded-2xl bg-slate-900 p-5 text-white lg:col-span-8">
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">{t("budgets.title")}</p>
+          {leadingCategory ? (
+            <>
+              <p className="mt-3 text-xl font-bold">{leadingCategory.name}</p>
+              <p className="mt-1 text-sm text-slate-300">
+                {leadingCategory.usagePercent.toFixed(0)}% {t("budgets.usagePercent")} · {statusLabel(leadingCategory.usagePercent, t)}
+              </p>
+            </>
+          ) : (
+            <p className="mt-3 text-sm text-slate-300">{t("budgets.detail.noCategories")}</p>
+          )}
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="rounded-xl bg-white/10 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-widest text-slate-300">{t("budgets.totalRemaining")}</p>
+              <p className="text-xl font-bold tabular-nums">{fmtAmt(budget.totalRemaining)}</p>
+            </div>
+            <div className="rounded-xl bg-white/10 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-widest text-slate-300">{t("budgets.totalBudget")}</p>
+              <p className="text-xl font-bold tabular-nums">{fmtAmt(budget.totalBudget)}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 lg:col-span-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+            {t("budgets.detail.transactions")}
+          </p>
+          {recentManualTransactions.length === 0 ? (
+            <p className="mt-3 text-sm text-slate-400">{t("budgets.detail.noTransactions")}</p>
+          ) : (
+            <div className="mt-3 space-y-2">
+              {recentManualTransactions.map((tx) => (
+                <div key={tx.id} className="rounded-xl border border-slate-100 px-3 py-2">
+                  <p className="truncate text-sm font-semibold text-slate-700">{tx.name}</p>
+                  <p className="text-[11px] text-slate-400">{tx.budgetCategoryName} · {tx.date}</p>
+                  <p className="mt-1 text-sm font-bold tabular-nums text-slate-800">{fmtAmt(tx.amount)}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
 
       <CategoryFormDialog
         open={catFormOpen}
