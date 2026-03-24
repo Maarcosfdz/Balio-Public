@@ -30,4 +30,8 @@ export const authService = {
   changePassword(userId: string, data: ChangePasswordParamsDto): Promise<void> {
     return api.post(`/user/${userId}/changePassword`, data);
   },
+
+  updatePreferredCurrency(userId: string, preferredCurrency: string): Promise<void> {
+    return api.put(`/user/${userId}/preferredCurrency`, { preferredCurrency });
+  },
 };

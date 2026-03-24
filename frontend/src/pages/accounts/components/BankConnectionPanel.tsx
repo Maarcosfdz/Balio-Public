@@ -14,6 +14,7 @@ export default function BankConnectionPanel({ accountId, onSynced }: BankConnect
   const [syncing, setSyncing] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [syncResult, setSyncResult] = useState<number | null>(null);
+  const [lookBackDays, setLookBackDays] = useState(90);
 
   // Institution picker state
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -68,7 +69,7 @@ export default function BankConnectionPanel({ accountId, onSynced }: BankConnect
     setSyncing(true);
     setSyncResult(null);
     try {
-      const result = await bankService.sync(accountId);
+      const result = await bankService.sync(accountId, lookBackDays);
       setSyncResult(result.imported);
       onSynced?.();
       const newStatus = await bankService.getStatus(accountId);
@@ -127,6 +128,18 @@ export default function BankConnectionPanel({ accountId, onSynced }: BankConnect
 
           {isLinked ? (
             <div className="flex items-center gap-1.5">
+              <select
+                value={lookBackDays}
+                onChange={(e) => setLookBackDays(Number(e.target.value))}
+                disabled={syncing}
+                className="h-7 rounded-lg border border-slate-200 bg-white px-1.5 text-[11px] text-slate-600 outline-none focus:border-sky-300 disabled:opacity-60"
+                title="Período a importar"
+              >
+                <option value={90}>90 días</option>
+                <option value={365}>1 año</option>
+                <option value={730}>2 años</option>
+                <option value={1095}>3 años</option>
+              </select>
               <button
                 onClick={handleSync}
                 disabled={syncing}

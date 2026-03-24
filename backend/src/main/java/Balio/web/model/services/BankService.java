@@ -47,10 +47,19 @@ public interface BankService {
 
     /**
      * Triggers a manual synchronization via Enable Banking: fetches transactions and updates the balance.
+     * Defaults to 90 days look-back.
      *
      * @return number of new transactions imported
      */
     int syncTransactions(UUID userId, UUID accountId) throws InstanceNotFoundException;
+
+    /**
+     * Triggers a manual synchronization fetching transactions going back {@code lookBackDays} days.
+     *
+     * @param lookBackDays days to look back (e.g. 90, 365, 730, 1095)
+     * @return number of new transactions imported
+     */
+    int syncTransactions(UUID userId, UUID accountId, int lookBackDays) throws InstanceNotFoundException;
 
         int syncStaleConnections(UUID userId, int staleMinutes);
 

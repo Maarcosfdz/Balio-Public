@@ -32,6 +32,7 @@
     "loading": "Loading...",
     "optional": "optional",
     "noResults": "No results",
+    "noData": "No data",
     "error": "An error occurred",
     "success": "Operation completed successfully",
     "currency": "€"
@@ -231,7 +232,9 @@
       "BANK": "Bank",
       "OTHER": "Other"
     },
-    "deleteConfirm": "Are you sure you want to delete this account?"
+    "deleteConfirm": "Are you sure you want to delete this account?",
+    "adjustBalance": "Adjust balance",
+    "default": "Default"
   },
   "accountsPage": {
     "totalNetWorth": "Total Net Worth",
@@ -362,6 +365,9 @@
     "langDesc": "Select your preferred interface language.",
     "savePreferences": "Save Preferences",
     "resetChanges": "Reset Changes",
+    "preferredCurrency": "Preferred Currency",
+    "currencyDesc": "Choose the default currency for dashboard and analytics.",
+    "currencyUpdated": "Preferred currency updated",
     "dangerZone": "Danger Zone",
     "dangerDesc": "Once you delete your account, there is no going back. Please be certain.",
     "deleteAccount": "Delete Account",
@@ -493,6 +499,9 @@
     "clearLooseDates": "Clear loose dates",
     "singleDate": "Day",
     "dateRange": "Range",
+    "differentCurrency": "Different currency",
+    "originalCurrency": "Currency",
+    "exchangeRate": "Exchange rate",
     "makeRecurring": "Make recurring",
     "recurringDesc": "Create this transaction automatically on a schedule",
     "editTransaction": "Edit transaction",
@@ -573,5 +582,29 @@
     "formatHint": "Accepted formats: App CSV (Date, Name, Amount, Category) or tab-separated bank CSV",
     "exportingAccount": "Exporting transactions...",
     "noTransactionsToExport": "This account has no transactions to export"
+  },
+  "rules": {
+    "title": "Rules",
+    "description": "Define rules to batch-modify transactions. Changes are applied directly and rules are not saved.",
+    "ruleLabel": "Rule {{n}}",
+    "filters": "Filters (which transactions to affect)",
+    "nameContains": "Name contains",
+    "nameContainsPlaceholder": "E.g.: Grocery, Salary...",
+    "typeFilter": "Transaction type",
+    "allTypes": "All types",
+    "categoryFilter": "Categories",
+    "allCategories": "No filter — applies to all categories",
+    "noCategories": "No categories available",
+    "startDate": "From",
+    "endDate": "To",
+    "actions": "Actions (what to change)",
+    "newName": "New name",
+    "newNamePlaceholder": "Leave empty to keep current",
+    "newCategory": "New category",
+    "keepCategory": "Keep current category",
+    "addRule": "Add another rule",
+    "apply": "Apply rules",
+    "close": "Close",
+    "result": "{{count}} transactions updated"
   }
 }

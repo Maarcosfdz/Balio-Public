@@ -68,10 +68,15 @@ public class BankServiceImpl implements BankService {
 
     @Override
     public int syncTransactions(UUID userId, UUID accountId) throws InstanceNotFoundException {
+        return syncTransactions(userId, accountId, 90);
+    }
+
+    @Override
+    public int syncTransactions(UUID userId, UUID accountId, int lookBackDays) throws InstanceNotFoundException {
         BankConnection connection = bankConnectionDao.findByAccountIdAndUserId(accountId, userId)
                 .orElseThrow(() -> new InstanceNotFoundException("BankConnection", accountId));
 
-        return syncWithProvider(connection);
+        return enableBankingSyncService.sync(connection, lookBackDays);
     }
 
     @Override

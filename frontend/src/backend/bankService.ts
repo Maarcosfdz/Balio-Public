@@ -21,8 +21,10 @@ export const bankService = {
     return api.get(`/bank/accounts/${accountId}/status`).then((r) => r.data);
   },
 
-  sync(accountId: string): Promise<BankSyncResultDto> {
-    return api.post(`/bank/accounts/${accountId}/sync`).then((r) => r.data);
+  sync(accountId: string, lookBackDays = 90): Promise<BankSyncResultDto> {
+    return api
+      .post(`/bank/accounts/${accountId}/sync`, null, { params: { lookBackDays } })
+      .then((r) => r.data);
   },
 
   syncStale(minutes = 15): Promise<BankSyncResultDto> {

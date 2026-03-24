@@ -58,12 +58,23 @@ public class EnableBankingSyncService {
     }
 
     /**
-     * Synchronizes transactions and balance for an Enable Banking connection.
+     * Synchronizes transactions and balance for an Enable Banking connection (last 90 days).
      *
      * @return number of new transactions imported
      */
     @Transactional
     public int sync(BankConnection connection) {
+        return sync(connection, 90);
+    }
+
+    /**
+     * Synchronizes transactions and balance for an Enable Banking connection.
+     *
+     * @param lookBackDays how many days back to fetch transactions
+     * @return number of new transactions imported
+     */
+    @Transactional
+    public int sync(BankConnection connection, int lookBackDays) {
         String ebAccountId = connection.getExternalAccountId();
         Account account = connection.getAccount();
         User user = connection.getUser();
@@ -82,7 +93,7 @@ public class EnableBankingSyncService {
             userId, account.getId());
 
         // ── Fetch and import transactions ────────────────────────────────
-        JsonNode txRoot = enableBankingClient.fetchTransactions(ebAccountId);
+        JsonNode txRoot = enableBankingClient.fetchTransactions(ebAccountId, lookBackDays);
         log.info("Enable Banking transactions raw response: {}", txRoot);
         // Enable Banking returns: { transactions: [ ... ] }
         JsonNode transactions = txRoot.path("transactions");

@@ -32,6 +32,7 @@
     "loading": "Cargando...",
     "optional": "opcional",
     "noResults": "Sin resultados",
+    "noData": "Sin datos",
     "error": "Ha ocurrido un error",
     "success": "Operación realizada correctamente",
     "currency": "€"
@@ -231,7 +232,9 @@
       "BANK": "Banco",
       "OTHER": "Otro"
     },
-    "deleteConfirm": "¿Seguro que quieres eliminar esta cuenta?"
+    "deleteConfirm": "¿Seguro que quieres eliminar esta cuenta?",
+    "adjustBalance": "Ajustar saldo",
+    "default": "Predeterminada"
   },
   "accountsPage": {
     "totalNetWorth": "Patrimonio neto total",
@@ -362,6 +365,9 @@
     "langDesc": "Selecciona el idioma de la interfaz.",
     "savePreferences": "Guardar preferencias",
     "resetChanges": "Restablecer",
+    "preferredCurrency": "Moneda preferida",
+    "currencyDesc": "Elige la moneda predeterminada para el panel y las estadísticas.",
+    "currencyUpdated": "Moneda preferida actualizada",
     "dangerZone": "Zona de peligro",
     "dangerDesc": "Una vez elimines tu cuenta, no hay vuelta atrás. Por favor, sé prudente.",
     "deleteAccount": "Eliminar cuenta",
@@ -493,6 +499,9 @@
     "clearLooseDates": "Limpiar fechas sueltas",
     "singleDate": "Día",
     "dateRange": "Rango",
+    "differentCurrency": "Moneda diferente",
+    "originalCurrency": "Moneda",
+    "exchangeRate": "Tipo de cambio",
     "makeRecurring": "Hacer recurrente",
     "recurringDesc": "Crear esta transacción automáticamente de forma periódica",
     "editTransaction": "Editar transacción",
@@ -573,5 +582,29 @@
     "formatHint": "Formatos aceptados: CSV de la app (Date, Name, Amount, Category) o CSV bancario separado por tabuladores",
     "exportingAccount": "Exportando transacciones...",
     "noTransactionsToExport": "Esta cuenta no tiene transacciones para exportar"
+  },
+  "rules": {
+    "title": "Reglas",
+    "description": "Define reglas para modificar transacciones en lote. Los cambios se aplican directamente y las reglas no se guardan.",
+    "ruleLabel": "Regla {{n}}",
+    "filters": "Filtros (a qué transacciones aplicar)",
+    "nameContains": "El nombre contiene",
+    "nameContainsPlaceholder": "Ej: Supermercado, Nómina...",
+    "typeFilter": "Tipo de transacción",
+    "allTypes": "Todos los tipos",
+    "categoryFilter": "Categorías",
+    "allCategories": "Sin filtro — se aplica a todas las categorías",
+    "noCategories": "No hay categorías disponibles",
+    "startDate": "Desde",
+    "endDate": "Hasta",
+    "actions": "Acciones (qué cambiar)",
+    "newName": "Nuevo nombre",
+    "newNamePlaceholder": "Dejar vacío para no cambiar",
+    "newCategory": "Nueva categoría",
+    "keepCategory": "No cambiar categoría",
+    "addRule": "Añadir otra regla",
+    "apply": "Aplicar reglas",
+    "close": "Cerrar",
+    "result": "Se actualizaron {{count}} transacciones"
   }
 }

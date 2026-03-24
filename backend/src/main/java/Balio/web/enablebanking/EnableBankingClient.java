@@ -109,7 +109,12 @@ public class EnableBankingClient {
 
     /** Fetches transactions for a connected account (last 90 days). */
     public JsonNode fetchTransactions(String accountId) {
-        String dateFrom = Instant.now().minus(90, ChronoUnit.DAYS)
+        return fetchTransactions(accountId, 90);
+    }
+
+    /** Fetches transactions for a connected account going back {@code lookBackDays} days. */
+    public JsonNode fetchTransactions(String accountId, int lookBackDays) {
+        String dateFrom = Instant.now().minus(lookBackDays, ChronoUnit.DAYS)
                 .toString().substring(0, 10);
         HttpRequest request = authGet(
                 "/accounts/" + accountId + "/transactions?date_from=" + dateFrom);
