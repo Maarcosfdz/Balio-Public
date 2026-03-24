@@ -14,7 +14,13 @@ export function typeBg(type: AccountType) {
 }
 
 export function fmtAmount(n: number, currency: string, type?: "EXPENSE" | "INCOME") {
-  const sign = type === "EXPENSE" ? "−" : type === "INCOME" ? "+" : "";
+  const sign = type === "EXPENSE"
+    ? "−"
+    : type === "INCOME"
+      ? "+"
+      : n < 0
+        ? "−"
+        : "";
   const nf = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return `${sign}${nf.format(Math.abs(n))} ${currency}`;
 }

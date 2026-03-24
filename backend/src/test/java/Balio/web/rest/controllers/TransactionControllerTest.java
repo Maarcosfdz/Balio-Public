@@ -135,7 +135,8 @@ class TransactionControllerTest {
         void shouldReturn201_whenValidExpense() throws Exception {
             when(transactionService.addExpense(
                     eq(USER_ID), eq(ACCOUNT_ID), eq(CATEGORY_ID),
-                    eq(VALID_NAME), eq(VALID_AMOUNT), eq(VALID_DATE), eq(true)))
+                    eq(VALID_NAME), eq(VALID_AMOUNT), eq(VALID_DATE), eq(true),
+                    isNull(), isNull(), isNull()))
                     .thenReturn(testTransaction);
 
             mockMvc.perform(post("/transaction/expense")
@@ -162,7 +163,8 @@ class TransactionControllerTest {
 
             when(transactionService.addExpense(
                     eq(USER_ID), eq(ACCOUNT_ID), isNull(),
-                    eq(VALID_NAME), eq(VALID_AMOUNT), isNull(), isNull()))
+                    eq(VALID_NAME), eq(VALID_AMOUNT), isNull(), isNull(),
+                    isNull(), isNull(), isNull()))
                     .thenReturn(minimal);
 
             mockMvc.perform(post("/transaction/expense")
@@ -243,7 +245,8 @@ class TransactionControllerTest {
 
             when(transactionService.addExpense(
                     eq(USER_ID), isNull(), isNull(),
-                    eq(VALID_NAME), eq(VALID_AMOUNT), isNull(), isNull()))
+                    eq(VALID_NAME), eq(VALID_AMOUNT), isNull(), isNull(),
+                    isNull(), isNull(), isNull()))
                     .thenReturn(noAccountTx);
 
             mockMvc.perform(post("/transaction/expense")
@@ -269,7 +272,8 @@ class TransactionControllerTest {
         void shouldReturn400_whenAccountNotLinked() throws Exception {
             when(transactionService.addExpense(
                     eq(USER_ID), eq(ACCOUNT_ID), isNull(),
-                    eq(VALID_NAME), eq(VALID_AMOUNT), eq(VALID_DATE), eq(true)))
+                    eq(VALID_NAME), eq(VALID_AMOUNT), eq(VALID_DATE), eq(true),
+                    isNull(), isNull(), isNull()))
                     .thenThrow(new AccountInvalidException("Account not linked"));
 
             mockMvc.perform(post("/transaction/expense")
@@ -285,7 +289,8 @@ class TransactionControllerTest {
         void shouldReturn404_whenUserNotFound() throws Exception {
             when(transactionService.addExpense(
                     eq(USER_ID), eq(ACCOUNT_ID), isNull(),
-                    eq(VALID_NAME), eq(VALID_AMOUNT), eq(VALID_DATE), eq(true)))
+                    eq(VALID_NAME), eq(VALID_AMOUNT), eq(VALID_DATE), eq(true),
+                    isNull(), isNull(), isNull()))
                     .thenThrow(new UserNotFoundException("User not found"));
 
             mockMvc.perform(post("/transaction/expense")
@@ -315,7 +320,8 @@ class TransactionControllerTest {
 
             when(transactionService.addIncome(
                     eq(USER_ID), eq(ACCOUNT_ID), isNull(),
-                    eq("Salary"), eq(new BigDecimal("2000.00")), eq(VALID_DATE), eq(true)))
+                    eq("Salary"), eq(new BigDecimal("2000.00")), eq(VALID_DATE), eq(true),
+                    isNull(), isNull(), isNull()))
                     .thenReturn(incomeTx);
 
             mockMvc.perform(post("/transaction/income")
@@ -357,7 +363,8 @@ class TransactionControllerTest {
 
             when(transactionService.addIncome(
                     eq(USER_ID), isNull(), isNull(),
-                    eq(VALID_NAME), eq(VALID_AMOUNT), isNull(), isNull()))
+                    eq(VALID_NAME), eq(VALID_AMOUNT), isNull(), isNull(),
+                    isNull(), isNull(), isNull()))
                     .thenReturn(noAccountTx);
 
             mockMvc.perform(post("/transaction/income")
@@ -373,7 +380,8 @@ class TransactionControllerTest {
         void shouldReturn400_whenAccountInvalid() throws Exception {
             when(transactionService.addIncome(
                     eq(USER_ID), eq(ACCOUNT_ID), isNull(),
-                    eq(VALID_NAME), eq(VALID_AMOUNT), isNull(), isNull()))
+                    eq(VALID_NAME), eq(VALID_AMOUNT), isNull(), isNull(),
+                    isNull(), isNull(), isNull()))
                     .thenThrow(new AccountInvalidException("Account not linked"));
 
             mockMvc.perform(post("/transaction/income")
@@ -389,7 +397,8 @@ class TransactionControllerTest {
         void shouldReturn404_whenUserNotFound() throws Exception {
             when(transactionService.addIncome(
                     eq(USER_ID), eq(ACCOUNT_ID), isNull(),
-                    eq(VALID_NAME), eq(VALID_AMOUNT), isNull(), isNull()))
+                    eq(VALID_NAME), eq(VALID_AMOUNT), isNull(), isNull(),
+                    isNull(), isNull(), isNull()))
                     .thenThrow(new UserNotFoundException("User not found"));
 
             mockMvc.perform(post("/transaction/income")
@@ -419,7 +428,8 @@ class TransactionControllerTest {
             when(transactionService.updateTransaction(
                     eq(USER_ID), eq(TRANSACTION_ID), eq(ACCOUNT_ID), isNull(),
                     eq(TransactionType.INCOME), eq("Updated"), eq(new BigDecimal("75.00")),
-                    eq(VALID_DATE), eq(true)))
+                    eq(VALID_DATE), eq(true),
+                    isNull(), isNull(), isNull()))
                     .thenReturn(updated);
 
             mockMvc.perform(put("/transaction/{id}", TRANSACTION_ID)
@@ -438,7 +448,8 @@ class TransactionControllerTest {
             when(transactionService.updateTransaction(
                     eq(USER_ID), eq(TRANSACTION_ID), eq(ACCOUNT_ID), isNull(),
                     eq(TransactionType.EXPENSE), eq(VALID_NAME), eq(VALID_AMOUNT),
-                    eq(VALID_DATE), eq(true)))
+                    eq(VALID_DATE), eq(true),
+                    isNull(), isNull(), isNull()))
                     .thenThrow(new InstanceNotFoundException());
 
             mockMvc.perform(put("/transaction/{id}", TRANSACTION_ID)
@@ -454,7 +465,8 @@ class TransactionControllerTest {
             when(transactionService.updateTransaction(
                     eq(USER_ID), eq(TRANSACTION_ID), eq(ACCOUNT_ID), isNull(),
                     eq(TransactionType.EXPENSE), eq(VALID_NAME), eq(VALID_AMOUNT),
-                    eq(VALID_DATE), eq(true)))
+                    eq(VALID_DATE), eq(true),
+                    isNull(), isNull(), isNull()))
                     .thenThrow(new AccountInvalidException("Account not linked"));
 
             mockMvc.perform(put("/transaction/{id}", TRANSACTION_ID)
@@ -506,7 +518,8 @@ class TransactionControllerTest {
 
             when(transactionService.updateTransaction(
                     eq(USER_ID), eq(TRANSACTION_ID), isNull(), isNull(),
-                    eq(TransactionType.EXPENSE), eq(VALID_NAME), eq(VALID_AMOUNT), eq(VALID_DATE), eq(true)))
+                    eq(TransactionType.EXPENSE), eq(VALID_NAME), eq(VALID_AMOUNT), eq(VALID_DATE), eq(true),
+                    isNull(), isNull(), isNull()))
                     .thenReturn(updated);
 
             mockMvc.perform(put("/transaction/{id}", TRANSACTION_ID)

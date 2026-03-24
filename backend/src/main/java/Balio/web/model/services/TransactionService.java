@@ -19,14 +19,32 @@ public interface TransactionService {
                                                                                       AccountInvalidException,
                                                                                       UserNotFoundException;
 
+    Transaction addExpense(UUID userId, UUID accountId, UUID categoryId, String name,
+                           BigDecimal amount, LocalDate date, Boolean affectsBalance,
+                           BigDecimal originalAmount, String originalCurrency, BigDecimal exchangeRate) throws
+                                                                                      AccountInvalidException,
+                                                                                      UserNotFoundException;
+
     Transaction addIncome(UUID userId, UUID accountId, UUID categoryId, String name,
                           BigDecimal amount, LocalDate date, Boolean affectsBalance) throws
+                                                                                     AccountInvalidException,
+                                                                                     UserNotFoundException;
+
+    Transaction addIncome(UUID userId, UUID accountId, UUID categoryId, String name,
+                          BigDecimal amount, LocalDate date, Boolean affectsBalance,
+                          BigDecimal originalAmount, String originalCurrency, BigDecimal exchangeRate) throws
                                                                                      AccountInvalidException,
                                                                                      UserNotFoundException;
 
     Transaction updateTransaction(UUID userId, UUID transactionId, UUID accountId,
             UUID categoryId, TransactionType type, String name,
             BigDecimal amount, LocalDate date, Boolean affectsBalance)
+            throws InstanceNotFoundException, AccountInvalidException;
+
+    Transaction updateTransaction(UUID userId, UUID transactionId, UUID accountId,
+            UUID categoryId, TransactionType type, String name,
+            BigDecimal amount, LocalDate date, Boolean affectsBalance,
+            BigDecimal originalAmount, String originalCurrency, BigDecimal exchangeRate)
             throws InstanceNotFoundException, AccountInvalidException;
 
     void deleteTransaction(UUID userId, UUID transactionId, boolean revertBalance) throws
@@ -47,5 +65,14 @@ public interface TransactionService {
     Page<Transaction> findPaged(UUID userId, TransactionType type, UUID accountId,
                                 UUID categoryId, LocalDate startDate, LocalDate endDate,
                                 int page, int size);
+
+    /**
+     * Applies a batch rule: finds transactions matching the filters and updates name/category.
+     * Fire-and-forget — the rule itself is not persisted.
+     * @return number of transactions updated
+     */
+    int applyBatchRule(UUID userId, TransactionType type, List<UUID> categoryIds,
+                       String nameContains, LocalDate startDate, LocalDate endDate,
+                       String newName, UUID newCategoryId);
 }
 

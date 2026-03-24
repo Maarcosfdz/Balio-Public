@@ -98,4 +98,15 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(newRawPassword));
     }
 
+    @Override
+    public User updatePreferredCurrency(UUID id, String currency) throws InstanceNotFoundException {
+        if (currency == null || !currency.matches("^[A-Z]{3}$")) {
+            throw new IllegalArgumentException("Currency must be a valid 3-letter ISO code");
+        }
+        User user = userDao.findById(id)
+                .orElseThrow(InstanceNotFoundException::new);
+        user.setPreferredCurrency(currency);
+        return user;
+    }
+
 }

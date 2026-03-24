@@ -51,4 +51,22 @@ public class TransactionResponseDto {
 
     public String getBankCategory() { return bankCategory; }
     public void setBankCategory(String bankCategory) { this.bankCategory = bankCategory; }
+
+    // ── Currency ──
+    private BigDecimal originalAmount;
+    private String originalCurrency;
+    private BigDecimal exchangeRate;
+    private String accountCurrency;
+
+    public BigDecimal getOriginalAmount() { return originalAmount; }
+    public void setOriginalAmount(BigDecimal originalAmount) { this.originalAmount = originalAmount; }
+
+    public String getOriginalCurrency() { return originalCurrency; }
+    public void setOriginalCurrency(String originalCurrency) { this.originalCurrency = originalCurrency; }
+
+    public BigDecimal getExchangeRate() { return exchangeRate; }
+    public void setExchangeRate(BigDecimal exchangeRate) { this.exchangeRate = exchangeRate; }
+
+    public String getAccountCurrency() { return accountCurrency; }
+    public void setAccountCurrency(String accountCurrency) { this.accountCurrency = accountCurrency; }
 }

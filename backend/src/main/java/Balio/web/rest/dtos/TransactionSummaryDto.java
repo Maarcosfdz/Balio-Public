@@ -39,4 +39,18 @@ public class TransactionSummaryDto {
 
     public String getCategoryId() { return categoryId; }
     public void setCategoryId(String categoryId) { this.categoryId = categoryId; }
+
+    // ── Currency ──
+    private String currency;
+    private String originalCurrency;
+    private java.math.BigDecimal originalAmount;
+
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
+
+    public String getOriginalCurrency() { return originalCurrency; }
+    public void setOriginalCurrency(String originalCurrency) { this.originalCurrency = originalCurrency; }
+
+    public java.math.BigDecimal getOriginalAmount() { return originalAmount; }
+    public void setOriginalAmount(java.math.BigDecimal originalAmount) { this.originalAmount = originalAmount; }
 }

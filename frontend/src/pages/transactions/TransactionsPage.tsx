@@ -5,8 +5,8 @@ import {
   ArrowDownCircle,
   ArrowLeftRight,
   ArrowUpCircle,
-  Bookmark,
   CalendarClock,
+  ListChecks,
   Loader2,
   Pencil,
   Plus,
@@ -15,8 +15,8 @@ import {
   Trash2,
   X,
   } from "lucide-react";
-import PageHeader from "@/components/layout/PageHeader";
 import type {
+  CategorySummaryDto,
   FilterResponseDto,
   FilterSummaryDto,
   TransactionFilters,
@@ -27,7 +27,10 @@ import type {
 import { transactionService } from "@/backend/transactionService";
 import { bankService } from "@/backend/bankService";
 import { filterService } from "@/backend/filterService";
+import { categoryService } from "@/backend/categoryService";
+import "@/styles/pages/transactions.css";
 import AddTransactionModal from "@/components/transactions/AddTransactionModal";
+import ApplyRulesModal from "@/components/transactions/ApplyRulesModal";
 import Pagination from "@/components/ui/Pagination";
 import FilterPanel, {
   type ActiveFilters,
@@ -55,6 +58,7 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [syncingAll, setSyncingAll] = useState(false);
   const [syncSummary, setSyncSummary] = useState<string | null>(null);
+  const [categories, setCategories] = useState<CategorySummaryDto[]>([]);
 
   // ── Filters — pre-populate from navigation state ──
   const [filters, setFilters] = useState<ActiveFilters>(() =>
@@ -67,6 +71,7 @@ export default function TransactionsPage() {
   // ── Modals ──
   const [expenseOpen, setExpenseOpen] = useState(false);
   const [incomeOpen, setIncomeOpen] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
   const [editingTx, setEditingTx] = useState<TransactionResponseDto | null>(null);
 
   // ── Pagination ──
@@ -92,6 +97,7 @@ export default function TransactionsPage() {
   // Fetch all saved filters for the add-to-tabs picker
   useEffect(() => {
     filterService.getAll().then(setAllSavedFilters).catch(() => {});
+    categoryService.getAll().then(setCategories).catch(() => {});
   }, []);
 
   // Close picker on outside click + refresh list when picker opens
@@ -302,6 +308,11 @@ export default function TransactionsPage() {
     [transactions]
   );
 
+  const categoryMap = useMemo(
+    () => new Map(categories.map((c) => [c.id, c])),
+    [categories],
+  );
+
   // ── Handlers ──
   const handleApplyFilters = (f: ActiveFilters) => {
     setFilters(f);
@@ -409,9 +420,14 @@ export default function TransactionsPage() {
     });
   };
 
-  const formatAmount = (amount: number, type: TransactionType) => {
-    const sign = type === "EXPENSE" ? "-" : "+";
-    return `${sign}${amount.toFixed(2)} €`;
+  const formatAmount = (tx: TransactionSummaryDto) => {
+    const sign = tx.type === "EXPENSE" ? "-" : "+";
+    const currency = tx.currency ?? "EUR";
+    const main = `${sign}${tx.amount.toFixed(2)} ${currency}`;
+    if (tx.originalCurrency && tx.originalCurrency !== currency && tx.originalAmount != null) {
+      return `${main} (${sign}${tx.originalAmount.toFixed(2)} ${tx.originalCurrency})`;
+    }
+    return main;
   };
 
   return (
@@ -422,109 +438,87 @@ export default function TransactionsPage() {
         </div>
       )}
 
-      {/* ── Header ── */}
-      <div className="rounded-xl bg-white px-5 py-4">
-        <PageHeader
-          left={<ArrowLeftRight className="h-8 w-8 text-sky-500" />}
-          title={t("transactions.title")}
-          actions={
-            <div className="flex flex-wrap items-center gap-3 page-header-actions">
-              <button
-                onClick={() => navigate(ROUTES.CATEGORIES)}
-                title={t("nav.categories")}
-                className="group tx-outline-hover-btn self-center"
-              >
-                <svg
-                  className="tx-outline-hover-border"
-                  viewBox="0 0 100 36"
-                  preserveAspectRatio="none"
-                  aria-hidden="true"
-                >
-                  <rect className="tx-outline-hover-bg" x="1" y="1" width="98" height="34" rx="10" />
-                  <rect className="tx-outline-hover-hl" x="1" y="1" width="98" height="34" rx="10" />
-                </svg>
-                <Tag className="relative z-10 h-4 w-4 text-slate-400 transition-colors duration-200 group-hover:text-sky-500" />
-                <span className="relative z-10 hidden sm:inline">{t("nav.categories")}</span>
-              </button>
+      {/* ── Hero Header ── */}
+      <div className="tx-hero-section">
+        <div className="tx-hero-inner">
+          <div className="tx-hero-title">
+            <ArrowLeftRight className="h-7 w-7 text-white/80" />
+            <h1>{t("transactions.title")}</h1>
+          </div>
 
-              <button
-                onClick={() => navigate(ROUTES.SCHEDULED_TRANSACTIONS)}
-                title={t("scheduled.title")}
-                className="group tx-outline-hover-btn self-center"
-              >
-                <svg
-                  className="tx-outline-hover-border"
-                  viewBox="0 0 100 36"
-                  preserveAspectRatio="none"
-                  aria-hidden="true"
-                >
-                  <rect className="tx-outline-hover-bg" x="1" y="1" width="98" height="34" rx="10" />
-                  <rect className="tx-outline-hover-hl" x="1" y="1" width="98" height="34" rx="10" />
-                </svg>
-                <CalendarClock className="relative z-10 h-4 w-4 text-slate-400 transition-colors duration-200 group-hover:text-amber-500" />
-                <span className="relative z-10 hidden sm:inline">{t("scheduled.title")}</span>
-              </button>
-
-              <button
-                onClick={() => navigate(ROUTES.FILTERS)}
-                title={t("nav.filters")}
-                className="group tx-outline-hover-btn self-center"
-              >
-                <svg
-                  className="tx-outline-hover-border"
-                  viewBox="0 0 100 36"
-                  preserveAspectRatio="none"
-                  aria-hidden="true"
-                >
-                  <rect className="tx-outline-hover-bg" x="1" y="1" width="98" height="34" rx="10" />
-                  <rect className="tx-outline-hover-hl" x="1" y="1" width="98" height="34" rx="10" />
-                </svg>
-                <Bookmark className="relative z-10 h-4 w-4 text-slate-400 transition-colors duration-200 group-hover:text-sky-500" />
-                <span className="relative z-10 hidden sm:inline">{t("nav.filters")}</span>
-              </button>
-
-              <button
-                onClick={handleSyncAll}
-                disabled={syncingAll}
-                title="Sincronizar cuentas bancarias"
-                className="group tx-outline-hover-btn self-center disabled:opacity-60"
-              >
-                <svg
-                  className="tx-outline-hover-border"
-                  viewBox="0 0 100 36"
-                  preserveAspectRatio="none"
-                  aria-hidden="true"
-                >
-                  <rect className="tx-outline-hover-bg" x="1" y="1" width="98" height="34" rx="10" />
-                  <rect className="tx-outline-hover-hl" x="1" y="1" width="98" height="34" rx="10" />
-                </svg>
-                {syncingAll ? (
-                  <Loader2 className="relative z-10 h-4 w-4 animate-spin text-slate-400" />
-                ) : (
-                  <RefreshCw className="relative z-10 h-4 w-4 text-slate-400 transition-colors duration-200 group-hover:text-sky-500" />
-                )}
-                <span className="relative z-10 hidden sm:inline">Sync bancos</span>
-              </button>
-
-              <div className="flex items-center gap-2.5 ml-3">
-                <button
-                  onClick={() => setExpenseOpen(true)}
-                  className="tx-squishy-tech tx-header-cta tx-squishy-expense"
-                >
-                  <Plus className="tx-squishy-icon relative z-10 h-4 w-4" />
-                  <span className="relative z-10">{t("txPage.addExpense")}</span>
-                </button>
-                <button
-                  onClick={() => setIncomeOpen(true)}
-                  className="tx-squishy-tech tx-header-cta tx-squishy-income"
-                >
-                  <Plus className="tx-squishy-icon relative z-10 h-4 w-4" />
-                  <span className="relative z-10">{t("txPage.addIncome")}</span>
-                </button>
+          <div className="tx-bento-grid">
+            {/* Expense card */}
+            <div className="tx-bento-card tx-bento-expense">
+              <div className="tx-bento-icon">
+                <ArrowDownCircle className="h-5 w-5 text-rose-500" />
               </div>
+              <p className="tx-bento-card-title">{t("txPage.addExpense")}</p>
+              <p className="tx-bento-card-desc">Registra tus gastos al instante.</p>
+              <button
+                className="tx-bento-btn tx-bento-btn-dark"
+                onClick={() => setExpenseOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+                {t("txPage.addExpense")}
+              </button>
             </div>
-          }
-        />
+
+            {/* Income card */}
+            <div className="tx-bento-card tx-bento-income">
+              <div className="tx-bento-income-bg" />
+              <div className="tx-bento-icon" style={{ position: "relative", zIndex: 1 }}>
+                <ArrowUpCircle className="h-5 w-5 text-emerald-800" />
+              </div>
+              <p className="tx-bento-card-title" style={{ position: "relative", zIndex: 1 }}>{t("txPage.addIncome")}</p>
+              <p className="tx-bento-card-desc" style={{ position: "relative", zIndex: 1 }}>Registra tus ingresos fácilmente.</p>
+              <button
+                className="tx-bento-btn tx-bento-btn-light"
+                style={{ position: "relative", zIndex: 1 }}
+                onClick={() => setIncomeOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+                {t("txPage.addIncome")}
+              </button>
+            </div>
+          </div>
+
+          {/* Action buttons — standalone pills, no card wrapper */}
+          <div className="tx-hero-actions">
+            <button
+              className="tx-action-pill"
+              onClick={() => navigate(ROUTES.CATEGORIES)}
+            >
+              <Tag className="h-4 w-4" />
+              {t("nav.categories")}
+            </button>
+            <button
+              className="tx-action-pill"
+              onClick={() => navigate(ROUTES.SCHEDULED_TRANSACTIONS)}
+            >
+              <CalendarClock className="h-4 w-4" />
+              {t("scheduled.title")}
+            </button>
+            <button
+              className="tx-action-pill"
+              onClick={handleSyncAll}
+              disabled={syncingAll}
+            >
+              {syncingAll ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              Sync bancos
+            </button>
+            <button
+              className="tx-action-pill"
+              onClick={() => setRulesOpen(true)}
+            >
+              <ListChecks className="h-4 w-4" />
+              {t("rules.title")}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
@@ -658,8 +652,43 @@ export default function TransactionsPage() {
                 </div>
 
                 {/* 2. Concepto */}
-                <div className="col-span-2 truncate text-sm font-medium text-slate-700">
-                  {tx.name}
+                <div className="col-span-2 flex items-center gap-2 min-w-0">
+                  {(() => {
+                    const cat = tx.categoryId ? categoryMap.get(tx.categoryId) : null;
+                    if (cat?.iconName) {
+                      const bg = cat.iconBgColor ?? "#e2e8f0";
+                      return (
+                        <span
+                          className="tx-cat-icon flex-shrink-0"
+                          style={{ background: bg }}
+                          title={cat.name}
+                        >
+                          {cat.iconName.startsWith("emoji:") ? (
+                            <span>{cat.iconName.slice(6)}</span>
+                          ) : (
+                            <span style={{ fontSize: "0.6rem", fontWeight: 800, color: "#475569" }}>
+                              {cat.name.charAt(0).toUpperCase()}
+                            </span>
+                          )}
+                        </span>
+                      );
+                    }
+                    if (tx.categoryName) {
+                      return (
+                        <span
+                          className="tx-cat-icon flex-shrink-0"
+                          style={{ background: "#f1f5f9" }}
+                          title={tx.categoryName}
+                        >
+                          <span style={{ fontSize: "0.6rem", fontWeight: 800, color: "#94a3b8" }}>
+                            {tx.categoryName.charAt(0).toUpperCase()}
+                          </span>
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
+                  <span className="truncate text-sm font-medium text-slate-700">{tx.name}</span>
                 </div>
 
                 {/* 3. Fecha */}
@@ -683,7 +712,7 @@ export default function TransactionsPage() {
                     tx.type === "EXPENSE" ? "text-red-500" : "text-emerald-500"
                   }`}
                 >
-                  {formatAmount(tx.amount, tx.type)}
+                  {formatAmount(tx)}
                 </div>
 
                 {/* 7. Actions */}
@@ -738,6 +767,14 @@ export default function TransactionsPage() {
           editTransaction={editingTx}
         />
       )}
+      <ApplyRulesModal
+        open={rulesOpen}
+        onClose={() => setRulesOpen(false)}
+        onApplied={() => {
+          const cp = isServerPagedRef.current ? pageRef.current - 1 : 0;
+          fetchTransactions(filtersRef.current, false, cp);
+        }}
+      />
     </div>
   );
 }

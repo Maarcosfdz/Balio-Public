@@ -144,6 +144,21 @@ public class UserController {
         return userConverter.toUserDto(user);
     }
 
+    @PutMapping("/{id}/preferredCurrency")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updatePreferredCurrency(@RequestAttribute UUID userId,
+                                         @PathVariable UUID id,
+                                         @RequestBody java.util.Map<String, String> body)
+            throws InstanceNotFoundException, PermissionException {
+
+        if (!id.equals(userId)) {
+            throw new PermissionException();
+        }
+
+        userService.updatePreferredCurrency(id, body.get("preferredCurrency"));
+        log.info("Preferred currency updated: userId={}, currency={}", id, body.get("preferredCurrency"));
+    }
+
     @PostMapping("/{id}/changePassword")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void changePassword(@RequestAttribute UUID userId,

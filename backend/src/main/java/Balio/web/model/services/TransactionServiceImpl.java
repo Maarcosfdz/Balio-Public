@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.management.InstanceNotFoundException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -44,7 +45,18 @@ public class TransactionServiceImpl implements TransactionService {
                                                                                              UserNotFoundException {
 
         return addTransaction(userId, accountId, categoryId, name, amount, date, affectsBalance,
-                              TransactionType.EXPENSE);
+                              TransactionType.EXPENSE, null, null, null);
+    }
+
+    @Override
+    public Transaction addExpense(UUID userId, UUID accountId, UUID categoryId, String name,
+                                  BigDecimal amount, LocalDate date, Boolean affectsBalance,
+                                  BigDecimal originalAmount, String originalCurrency, BigDecimal exchangeRate) throws
+                                                                                             AccountInvalidException,
+                                                                                             UserNotFoundException {
+
+        return addTransaction(userId, accountId, categoryId, name, amount, date, affectsBalance,
+                              TransactionType.EXPENSE, originalAmount, originalCurrency, exchangeRate);
     }
 
     @Override
@@ -54,13 +66,35 @@ public class TransactionServiceImpl implements TransactionService {
                                                                                             UserNotFoundException {
 
         return addTransaction(userId, accountId, categoryId, name, amount, date, affectsBalance,
-                              TransactionType.INCOME);
+                              TransactionType.INCOME, null, null, null);
+    }
+
+    @Override
+    public Transaction addIncome(UUID userId, UUID accountId, UUID categoryId, String name,
+                                 BigDecimal amount, LocalDate date, Boolean affectsBalance,
+                                 BigDecimal originalAmount, String originalCurrency, BigDecimal exchangeRate) throws
+                                                                                            AccountInvalidException,
+                                                                                            UserNotFoundException {
+
+        return addTransaction(userId, accountId, categoryId, name, amount, date, affectsBalance,
+                              TransactionType.INCOME, originalAmount, originalCurrency, exchangeRate);
     }
 
     @Override
     public Transaction updateTransaction(UUID userId, UUID transactionId, UUID accountId,
             UUID categoryId, TransactionType type, String name,
             BigDecimal amount, LocalDate date, Boolean affectsBalance)
+            throws InstanceNotFoundException, AccountInvalidException {
+
+        return updateTransaction(userId, transactionId, accountId, categoryId, type, name,
+                amount, date, affectsBalance, null, null, null);
+    }
+
+    @Override
+    public Transaction updateTransaction(UUID userId, UUID transactionId, UUID accountId,
+            UUID categoryId, TransactionType type, String name,
+            BigDecimal amount, LocalDate date, Boolean affectsBalance,
+            BigDecimal originalAmount, String originalCurrency, BigDecimal exchangeRate)
             throws InstanceNotFoundException, AccountInvalidException {
 
         if ( name == null || name.isBlank() ) {
@@ -97,6 +131,20 @@ public class TransactionServiceImpl implements TransactionService {
 
         boolean affects = affectsBalance != null ? affectsBalance : true;
 
+        // Currency info
+        String acctCurrency = newAccount != null ? newAccount.getCurrency() : "EUR";
+        if (originalCurrency != null && !originalCurrency.isBlank() && originalAmount != null
+                && exchangeRate != null && exchangeRate.compareTo(BigDecimal.ZERO) > 0) {
+            transaction.setOriginalAmount(originalAmount);
+            transaction.setOriginalCurrency(originalCurrency);
+            transaction.setExchangeRate(exchangeRate);
+            amount = originalAmount.multiply(exchangeRate).setScale(2, RoundingMode.HALF_UP);
+        } else {
+            transaction.setOriginalAmount(amount);
+            transaction.setOriginalCurrency(acctCurrency);
+            transaction.setExchangeRate(BigDecimal.ONE);
+        }
+
         transaction.setName(name);
         transaction.setAmount(amount);
         transaction.setDate(date != null ? date : LocalDate.now());
@@ -129,7 +177,8 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     private Transaction addTransaction(UUID userId, UUID accountId, UUID categoryId, String name,
-            BigDecimal amount, LocalDate date, Boolean affectsBalance, TransactionType type)
+            BigDecimal amount, LocalDate date, Boolean affectsBalance, TransactionType type,
+            BigDecimal originalAmount, String originalCurrency, BigDecimal exchangeRate)
             throws AccountInvalidException, UserNotFoundException {
 
         if ( name == null || name.isBlank() ) {
@@ -162,16 +211,38 @@ public class TransactionServiceImpl implements TransactionService {
 
         boolean affects = affectsBalance != null ? affectsBalance : true;
 
-        Transaction transaction = new Transaction(name, amount, date, type, user);
+        // Currency handling
+        String acctCurrency = account != null ? account.getCurrency() : "EUR";
+        BigDecimal finalAmount = amount;
+        BigDecimal finalOriginalAmount;
+        String finalOriginalCurrency;
+        BigDecimal finalExchangeRate;
+
+        if (originalCurrency != null && !originalCurrency.isBlank() && originalAmount != null
+                && exchangeRate != null && exchangeRate.compareTo(BigDecimal.ZERO) > 0) {
+            finalOriginalAmount = originalAmount;
+            finalOriginalCurrency = originalCurrency;
+            finalExchangeRate = exchangeRate;
+            finalAmount = originalAmount.multiply(exchangeRate).setScale(2, RoundingMode.HALF_UP);
+        } else {
+            finalOriginalAmount = amount;
+            finalOriginalCurrency = acctCurrency;
+            finalExchangeRate = BigDecimal.ONE;
+        }
+
+        Transaction transaction = new Transaction(name, finalAmount, date, type, user);
+        transaction.setOriginalAmount(finalOriginalAmount);
+        transaction.setOriginalCurrency(finalOriginalCurrency);
+        transaction.setExchangeRate(finalExchangeRate);
         transaction.setAccount(account);
         transaction.setCategory(category);
         transaction.setAffectsBalance(affects);
 
         transactionDao.save(transaction);
 
-        // Update account balance
+        // Update account balance (always uses account-currency amount)
         if ( affects && account != null ) {
-            applyBalance(account, amount, type, false);
+            applyBalance(account, finalAmount, type, false);
         }
 
         return transaction;
@@ -213,6 +284,55 @@ public class TransactionServiceImpl implements TransactionService {
     public List<Transaction> findFiltered(UUID userId, TransactionType type, UUID accountId,
                                           UUID categoryId, LocalDate startDate, LocalDate endDate) {
         return transactionDao.findFiltered(userId, type, accountId, categoryId, startDate, endDate);
+    }
+
+    @Override
+    public int applyBatchRule(UUID userId, TransactionType type, List<UUID> categoryIds,
+                              String nameContains, LocalDate startDate, LocalDate endDate,
+                              String newName, UUID newCategoryId) {
+
+        // Resolve target category once
+        Category targetCategory = null;
+        if (newCategoryId != null) {
+            targetCategory = categoryDao.findByIdAndUserId(newCategoryId, userId).orElse(null);
+        }
+
+        // Build LIKE pattern: null if no filter, otherwise %term%
+        String nameLike = (nameContains != null && !nameContains.isBlank())
+                ? "%" + nameContains.toLowerCase() + "%" : null;
+
+        // Collect matching transactions
+        java.util.Set<UUID> seen = new java.util.HashSet<>();
+        List<Transaction> matches = new java.util.ArrayList<>();
+
+        if (categoryIds != null && !categoryIds.isEmpty()) {
+            for (UUID catId : categoryIds) {
+                for (Transaction tx : transactionDao.findForBatchRule(userId, type, catId,
+                        nameLike, startDate, endDate)) {
+                    if (seen.add(tx.getId())) { matches.add(tx); }
+                }
+            }
+        } else {
+            matches = transactionDao.findForBatchRule(userId, type, null,
+                    nameLike, startDate, endDate);
+        }
+
+        int updated = 0;
+        for (Transaction tx : matches) {
+            boolean changed = false;
+            if (newName != null && !newName.isBlank() && !newName.equals(tx.getName())) {
+                tx.setName(newName.trim());
+                changed = true;
+            }
+            if (targetCategory != null && (tx.getCategory() == null
+                    || !targetCategory.getId().equals(tx.getCategory().getId()))) {
+                tx.setCategory(targetCategory);
+                changed = true;
+            }
+            if (changed) { updated++; }
+        }
+
+        return updated;
     }
 
     @Override

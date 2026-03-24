@@ -48,6 +48,7 @@ import Balio.web.model.entities.Transaction;
 import Balio.web.model.services.TransactionService;
 import Balio.web.rest.dtos.CsvImportResultDto;
 import Balio.web.rest.dtos.CsvImportRuleDto;
+import Balio.web.rest.dtos.TransactionBatchRuleDto;
 import Balio.web.rest.dtos.TransactionConverter;
 import Balio.web.rest.dtos.TransactionDto;
 import Balio.web.rest.dtos.TransactionResponseDto;
@@ -114,7 +115,8 @@ public class TransactionController {
 
         Transaction transaction = transactionService.addExpense(
                 userId, dto.getAccountId(), dto.getCategoryId(),
-                dto.getName(), dto.getAmount(), dto.getDate(), dto.getAffectsBalance());
+                dto.getName(), dto.getAmount(), dto.getDate(), dto.getAffectsBalance(),
+                dto.getOriginalAmount(), dto.getOriginalCurrency(), dto.getExchangeRate());
 
         log.info("Expense created: txId={}, userId={}, amount={}, accountId={}",
                 transaction.getId(), userId, dto.getAmount(), dto.getAccountId());
@@ -136,7 +138,8 @@ public class TransactionController {
 
         Transaction transaction = transactionService.addIncome(
                 userId, dto.getAccountId(), dto.getCategoryId(),
-                dto.getName(), dto.getAmount(), dto.getDate(), dto.getAffectsBalance());
+                dto.getName(), dto.getAmount(), dto.getDate(), dto.getAffectsBalance(),
+                dto.getOriginalAmount(), dto.getOriginalCurrency(), dto.getExchangeRate());
 
         log.info("Income created: txId={}, userId={}, amount={}, accountId={}",
                 transaction.getId(), userId, dto.getAmount(), dto.getAccountId());
@@ -159,7 +162,8 @@ public class TransactionController {
 
         Transaction transaction = transactionService.updateTransaction(
                 userId, transactionId, dto.getAccountId(), dto.getCategoryId(),
-                dto.getType(), dto.getName(), dto.getAmount(), dto.getDate(), dto.getAffectsBalance());
+                dto.getType(), dto.getName(), dto.getAmount(), dto.getDate(), dto.getAffectsBalance(),
+                dto.getOriginalAmount(), dto.getOriginalCurrency(), dto.getExchangeRate());
 
         return transactionConverter.toResponseDto(transaction);
     }
@@ -176,6 +180,22 @@ public class TransactionController {
 
         transactionService.deleteTransaction(userId, transactionId, revertBalance);
         log.info("Transaction deleted: txId={}, userId={}, revertBalance={}", transactionId, userId, revertBalance);
+    }
+
+    // ── APPLY BATCH RULES ──────────────────────────────────────────────
+
+    @PostMapping("/apply-rules")
+    public ResponseEntity<java.util.Map<String, Integer>> applyBatchRules(
+            @RequestAttribute UUID userId,
+            @RequestBody TransactionBatchRuleDto dto) {
+
+        int updated = transactionService.applyBatchRule(
+                userId, dto.getType(), dto.getCategoryIds(),
+                dto.getNameContains(), dto.getStartDate(), dto.getEndDate(),
+                dto.getNewName(), dto.getNewCategoryId());
+
+        log.info("Batch rules applied: userId={}, updated={}", userId, updated);
+        return ResponseEntity.ok(java.util.Map.of("updated", updated));
     }
 
     // ── EXPORT CSV ─────────────────────────────────────────────────────

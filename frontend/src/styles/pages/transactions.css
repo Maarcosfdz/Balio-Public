@@ -394,3 +394,255 @@
     transform: translateX(120%);
   }
 }
+
+/* ── Transactions hero header — bento style ─────────────────────────── */
+
+.tx-hero-section {
+  position: relative;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  margin-bottom: 0.25rem;
+  background: #0f2e22;
+}
+
+.tx-hero-inner {
+  position: relative;
+  z-index: 1;
+  padding: 1.75rem 2rem 2rem;
+}
+
+.tx-hero-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.tx-hero-title h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+/* bento grid: expense + income side by side */
+.tx-bento-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+/* base card */
+.tx-bento-card {
+  border-radius: 1.125rem;
+  padding: 1.5rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tx-bento-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px -10px rgba(0, 0, 0, 0.2);
+}
+
+/* Expense card — white glass */
+.tx-bento-expense {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* Glow decoration */
+.tx-bento-expense::before {
+  content: "";
+  position: absolute;
+  top: -20%;
+  right: -10%;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Income card — brand gradient + screen.png background */
+.tx-bento-income {
+  background: linear-gradient(
+    134deg,
+    rgba(112, 215, 255, 0.95) 0%,
+    rgba(103, 245, 214, 0.95) 55%,
+    rgba(42, 247, 128, 0.95) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 24px -8px rgba(42, 247, 128, 0.4);
+}
+
+/* screen.png image only inside income card */
+.tx-bento-income-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url("../../assets/screen.png");
+  background-size: cover;
+  background-position: center;
+  opacity: 0.15;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+/* Card icon circle */
+.tx-bento-icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
+.tx-bento-expense .tx-bento-icon {
+  background: #fff1f2;
+}
+
+.tx-bento-income .tx-bento-icon {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(4px);
+}
+
+/* Card title */
+.tx-bento-card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.tx-bento-expense .tx-bento-card-title {
+  color: #0f172a;
+}
+
+.tx-bento-income .tx-bento-card-title {
+  color: #0b3b2c;
+}
+
+.tx-bento-card-desc {
+  font-size: 0.85rem;
+  margin-bottom: 1.25rem;
+  flex: 1;
+}
+
+.tx-bento-expense .tx-bento-card-desc {
+  color: #64748b;
+}
+
+.tx-bento-income .tx-bento-card-desc {
+  color: rgba(15, 60, 40, 0.7);
+}
+
+/* CTA buttons inside bento cards */
+.tx-bento-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 200ms ease, opacity 200ms ease;
+  margin-top: auto;
+}
+
+.tx-bento-btn:hover {
+  transform: translateY(-1px);
+}
+
+.tx-bento-btn-dark {
+  background: #0f172a;
+  color: #ffffff;
+  box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.35);
+}
+
+.tx-bento-btn-dark:hover {
+  box-shadow: 0 6px 16px -4px rgba(15, 23, 42, 0.45);
+}
+
+.tx-bento-btn-light {
+  background: #ffffff;
+  color: #0b3b2c;
+  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.18);
+}
+
+.tx-bento-btn-light:hover {
+  box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.25);
+  opacity: 0.95;
+}
+
+/* ── Action buttons row — standalone, bigger, below bento cards ────── */
+.tx-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+}
+
+.tx-action-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.625rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(4px);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 200ms, color 200ms, border-color 200ms, transform 160ms;
+}
+
+.tx-action-pill:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+}
+
+.tx-action-pill:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* category icon pill in transaction row */
+.tx-cat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+/* responsive: stack on small screens */
+@media (max-width: 640px) {
+  .tx-bento-grid {
+    grid-template-columns: 1fr;
+  }
+  .tx-hero-actions {
+    gap: 0.5rem;
+  }
+  .tx-action-pill {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.75rem;
+  }
+}
