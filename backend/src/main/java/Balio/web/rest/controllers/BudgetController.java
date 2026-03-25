@@ -116,7 +116,8 @@ public class BudgetController {
             @Validated @RequestBody BudgetCategoryDto dto) throws InstanceNotFoundException {
 
         budgetService.createBudgetCategory(
-                userId, budgetId, dto.getName(), dto.getMaxAmount(), dto.getLinkedCategoryIds());
+            userId, budgetId, dto.getName(), dto.getMaxAmount(),
+            dto.getLinkedCategoryIds(), dto.getIconName(), dto.getIconBgColor());
 
         Budget budget = budgetService.findByIdAndUserId(budgetId, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(budgetConverter.toResponseDto(budget));
@@ -131,7 +132,8 @@ public class BudgetController {
 
         budgetService.modifyBudgetCategory(
                 userId, budgetId, categoryId,
-                dto.getName(), dto.getMaxAmount(), dto.getLinkedCategoryIds());
+            dto.getName(), dto.getMaxAmount(), dto.getLinkedCategoryIds(),
+            dto.getIconName(), dto.getIconBgColor());
 
         Budget budget = budgetService.findByIdAndUserId(budgetId, userId);
         return budgetConverter.toResponseDto(budget);

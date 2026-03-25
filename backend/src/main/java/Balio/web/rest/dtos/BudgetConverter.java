@@ -126,6 +126,8 @@ public class BudgetConverter {
         dto.setName(bc.getName());
         dto.setMaxAmount(bc.getMaxAmount());
         dto.setDisplayOrder(bc.getDisplayOrder());
+        dto.setIconName(bc.getIconName());
+        dto.setIconBgColor(bc.getIconBgColor());
 
         BigDecimal spent = budgetService.calculateSpent(userId, bc, periodStart, periodEnd);
         dto.setSpent(spent);

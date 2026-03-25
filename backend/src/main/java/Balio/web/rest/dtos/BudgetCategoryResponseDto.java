@@ -9,6 +9,8 @@ public class BudgetCategoryResponseDto {
     private String name;
     private BigDecimal maxAmount;
     private int displayOrder;
+    private String iconName;
+    private String iconBgColor;
     private BigDecimal spent;
     private BigDecimal remaining;
     private double usagePercent;
@@ -68,6 +70,12 @@ public class BudgetCategoryResponseDto {
 
     public int getDisplayOrder() { return displayOrder; }
     public void setDisplayOrder(int displayOrder) { this.displayOrder = displayOrder; }
+
+    public String getIconName() { return iconName; }
+    public void setIconName(String iconName) { this.iconName = iconName; }
+
+    public String getIconBgColor() { return iconBgColor; }
+    public void setIconBgColor(String iconBgColor) { this.iconBgColor = iconBgColor; }
 
     public BigDecimal getSpent() { return spent; }
     public void setSpent(BigDecimal spent) { this.spent = spent; }
