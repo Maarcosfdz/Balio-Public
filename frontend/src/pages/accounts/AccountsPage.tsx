@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { AlertCircle, CheckCircle2, Wallet, Loader2 } from "lucide-react";
-import PageHeader from "@/components/layout/PageHeader";
+import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import type { AccountSummaryDto } from "@/types";
 import { accountService } from "@/backend/accountService";
+import { transactionService } from "@/backend/transactionService";
 
 import AccountCard from "./components/AccountCard";
 import EmptyAccountCard from "./components/EmptyAccountCard";
@@ -141,6 +141,22 @@ export default function AccountsPage() {
     try { await accountService.clearDefault(); fetchAccounts(); } catch { /* ignore */ }
   };
 
+  const handleExportAll = async () => {
+    for (const a of accounts) {
+      try {
+        const blob = await transactionService.exportCsv(a.id);
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${a.name.replace(/[^a-zA-Z0-9]/g, "_")}_transactions.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } catch { /* ignore */ }
+    }
+  };
+
   const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
 
   const defaultCurrency =
@@ -171,21 +187,14 @@ export default function AccountsPage() {
           </div>
         )}
 
-        {/* ── Page header ── */}
-        <div className="rounded-xl bg-white px-5 py-4">
-          <PageHeader
-            left={<Wallet className="h-8 w-8 text-sky-500" />}
-            title={t("accounts.title")}
-          />
-        </div>
-
-        {/* ── Summary banner ── */}
+        {/* ── Hero + summary ── */}
         <AccountsSummary
           totalBalance={totalBalance}
           defaultCurrency={defaultCurrency}
           canAdd={canAdd}
           onAdd={() => { setEditTarget(null); setFormOpen(true); }}
           onImport={() => setImportOpen(true)}
+          onExport={handleExportAll}
           accountCount={accounts.length}
           maxAccounts={MAX_ACCOUNTS}
         />
