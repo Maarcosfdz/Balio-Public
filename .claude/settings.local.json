@@ -57,7 +57,10 @@
       "Bash(curl -s -X POST http://localhost:8080/transaction/apply-rules -H \"Content-Type: application/json\" -H \"Authorization: Bearer test\" -d '{\"\"\"\"newName\"\"\"\":\"\"\"\"Test\"\"\"\"}')",
       "Bash(curl -v -X POST http://localhost:8080/transaction/apply-rules -H \"Content-Type: application/json\" -d '{\"\"newName\"\":\"\"Test\"\"}')",
       "Bash(grep -E \"\\(Account|Transaction|User\\).*\\\\.java$\")",
-      "Bash(grep -i \"currency\\\\|EUR\\\\|exchange\" ./frontend/src/i18n/*.json)"
+      "Bash(grep -i \"currency\\\\|EUR\\\\|exchange\" ./frontend/src/i18n/*.json)",
+      "Bash(find c:Usersmarcos.romayDesktopCodigosbalioBaliofrontenddistassets -name image-*.png)",
+      "Bash(find /c/Users/marcos.romay/Desktop/Codigos/balio/Balio/frontend/src -type f -name *account*)",
+      "Bash(grep -r import.*.css c:/Users/marcos.romay/Desktop/Codigos/balio/Balio/frontend/src/main.tsx c:/Users/marcos.romay/Desktop/Codigos/balio/Balio/frontend/src/App.tsx)"
     ]
   }
 }

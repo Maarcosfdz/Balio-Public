@@ -42,6 +42,8 @@ interface FilterPanelProps {
   editFilterId?: string;
   editFilterName?: string;
   onUpdated?: () => void;
+  /** When true, the built-in toggle button is hidden (toggle is handled externally) */
+  hideToggleButton?: boolean;
 }
 
 interface SelectOption {
@@ -347,6 +349,7 @@ export default function FilterPanel({
   editFilterId,
   editFilterName,
   onUpdated,
+  hideToggleButton,
 }: FilterPanelProps) {
   const { t } = useTranslation();
 
@@ -459,26 +462,28 @@ export default function FilterPanel({
 
   return (
     <>
-      <button
-        onClick={onToggle}
-        className="group inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-all duration-200 hover:border-slate-400 hover:bg-slate-50 hover:shadow-sm"
-        aria-expanded={open}
-        aria-controls="filter-panel"
-      >
-        <Filter className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
-        {t("txPage.filters")}
-        <span className={`transition-transform duration-300 ${open ? "rotate-180" : ""}`}>
-          <ChevronDown className="h-4 w-4" />
-        </span>
-      </button>
+      {!hideToggleButton && (
+        <button
+          onClick={onToggle}
+          className="group inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-all duration-200 hover:border-slate-400 hover:bg-slate-50 hover:shadow-sm"
+          aria-expanded={open}
+          aria-controls="filter-panel"
+        >
+          <Filter className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+          {t("txPage.filters")}
+          <span className={`transition-transform duration-300 ${open ? "rotate-180" : ""}`}>
+            <ChevronDown className="h-4 w-4" />
+          </span>
+        </button>
+      )}
 
       <div
         id="filter-panel"
-        className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          open ? "max-h-[1200px] opacity-100" : "max-h-0 opacity-0"
+        className={`transition-all duration-300 ease-in-out ${
+          open ? "max-h-[2000px] opacity-100 overflow-visible" : "max-h-0 opacity-0 overflow-hidden"
         }`}
       >
-        <div className="mt-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mt-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <SingleSelectDropdown
               value={type}

@@ -176,7 +176,7 @@
   },
   "nav": {
     "dashboard": "Panel",
-    "analysis": "Analisis",
+    "analysis": "Análisis",
     "transactions": "Transacciones",
     "accounts": "Cuentas",
     "budgets": "Presupuestos",
@@ -606,5 +606,245 @@
     "apply": "Aplicar reglas",
     "close": "Cerrar",
     "result": "Se actualizaron {{count}} transacciones"
+  },
+  "analysis": {
+    "title": "Análisis",
+    "subtitle": "Crea, previsualiza y organiza tus widgets usando los mismos filtros que en transacciones.",
+    "loading": "Cargando análisis...",
+    "actions": {
+      "sync": "Sincronizar",
+      "syncing": "Sincronizando...",
+      "editDashboard": "Editar dashboard",
+      "exitEdit": "Salir de edicion",
+      "addWidget": "Añadir widget"
+    },
+    "toasts": {
+      "dashboardSaved": "Cambios del dashboard guardados.",
+      "dashboardSynced": "Dashboard sincronizado. Los widgets se han recalculado.",
+      "syncError": "No se ha podido sincronizar ahora. Intentalo de nuevo.",
+      "previewRefreshError": "No se pudo refrescar la previsualizacion.",
+      "filterLoadError": "No se pudo cargar el filtro seleccionado.",
+      "filterIncompatible": "El filtro guardado tiene un formato incompatible.",
+      "filterImported": "Filtro \"{{name}}\" importado al widget.",
+      "widgetSaveError": "No se pudo guardar el widget.",
+      "widgetUpdateError": "No se pudo actualizar el widget.",
+      "widgetDeleteError": "No se pudo eliminar el widget."
+    },
+    "board": {
+      "editModeHintPrefix": "Modo edicion:",
+      "drag": "arrastra",
+      "editModeHintMiddle": "para reordenar,",
+      "corners": "esquinas",
+      "editModeHintSuffix": "para redimensionar",
+      "expand": "Expandir",
+      "edit": "Editar",
+      "delete": "Borrar",
+      "expandedDialogDescription": "Vista ampliada del widget seleccionado."
+    },
+    "widgetTypes": {
+      "kpi": { "label": "KPI", "description": "Resumen rapido de una metrica." },
+      "table": { "label": "Tabla", "description": "Listado agregado por categoria o cuenta." },
+      "bar": { "label": "Barras", "description": "Compara importes por categoria." },
+      "line": { "label": "Linea/Area", "description": "Evolucion temporal de ingresos y gastos." },
+      "donut": { "label": "Donut", "description": "Peso relativo de cada categoria." },
+      "stackedBar": { "label": "Barras apiladas", "description": "Compara segmentos entre periodos." },
+      "heatmap": { "label": "Heatmap", "description": "Detecta concentraciones por dias." },
+      "comparison": { "label": "Comparacion", "description": "Periodo actual vs anterior." }
+    },
+    "configurator": {
+      "title": "Configurador de widgets",
+      "editHintPrefix": "Haz clic en un grafico para editarlo. Usa",
+      "editHintSuffix": "para el tamaño.",
+      "noCharts": "Todavia no hay graficos.",
+      "inDashboard": "En dashboard",
+      "outDashboard": "Fuera del dashboard (abajo)",
+      "removeFromDashboard": "Quitar del dashboard",
+      "addToDashboard": "Añadir al dashboard",
+      "remove": "Quitar",
+      "add": "Añadir",
+      "delete": "Borrar",
+      "noActiveCharts": "No hay graficos activos en el dashboard.",
+      "allChartsActive": "Todos los graficos estan activos.",
+      "startHint": "Elige el tipo de grafico para empezar. Despues podras afinar filtros, fechas y formato.",
+      "importSavedFilter": "Importar filtro guardado",
+      "selectFilter": "Selecciona un filtro",
+      "selectType": "Selecciona tipo",
+      "selectSize": "Selecciona tamaño",
+      "selectMetric": "Selecciona metrica",
+      "selectGroup": "Selecciona grupo",
+      "selectValue": "Selecciona valor",
+      "selectMode": "Selecciona modo",
+      "selectCriteria": "Selecciona criterio",
+      "selectComparison": "Selecciona comparacion",
+      "all": "Todos",
+      "noCategories": "No hay categorias",
+      "categoriesCount": "categorias",
+      "noQuickRange": "Sin rango rapido",
+      "uncategorized": "Sin categoria",
+      "colorPerBar": "Color por barra",
+      "colorsAndLegend": "Colores y leyenda",
+      "saveChart": "Guardar grafico",
+      "updateChart": "Actualizar grafico",
+      "preview": "Previsualizacion",
+      "reload": "Recargar",
+      "expandedPreview": "Previsualizacion ampliada",
+      "expandedPreviewDescription": "Vista ampliada de la previsualizacion del grafico en edicion.",
+      "sizes": {
+        "small": "Pequeño",
+        "medium": "Mediano",
+        "large": "Grande"
+      },
+      "dateRanges": {
+        "30d": "Ultimos 30 dias",
+        "90d": "Ultimos 90 dias",
+        "365d": "Ultimos 12 meses",
+        "ytd": "Año actual (YTD)"
+      },
+      "transactionTypeOptions": {
+        "income": "Ingresos",
+        "expense": "Gastos"
+      },
+      "fields": {
+        "title": "Titulo",
+        "titlePlaceholder": "Ej. Gastos por categoria",
+        "description": "Descripcion",
+        "descriptionPlaceholder": "Ej. Comparativa mensual de tus gastos",
+        "type": "Tipo",
+        "size": "Tamaño",
+        "quickRange": "Rango rapido",
+        "transactionType": "Tipo movimiento",
+        "account": "Cuenta",
+        "searchName": "Buscar nombre",
+        "searchNamePlaceholder": "Ej. alquiler, nomina...",
+        "amountMin": "Importe minimo",
+        "amountMax": "Importe maximo",
+        "categories": "Categorias",
+        "kpiMetric": "Metrica KPI",
+        "groupBy": "Agrupar por",
+        "value": "Valor",
+        "barMode": "Modo barras",
+        "yAxis": "Eje Y",
+        "lineMode": "Modo linea",
+        "lineVisualization": "Estilo de linea",
+        "lineSeries": "Series de linea",
+        "donutMode": "Modo donut",
+        "stackBy": "Apilar por",
+        "comparison": "Comparacion"
+      },
+      "kpiOptions": {
+        "income": "Ingresos",
+        "expense": "Gastos",
+        "balance": "Balance",
+        "savingsRate": "Tasa de ahorro"
+      },
+      "groupByOptions": {
+        "category": "Categoria",
+        "account": "Cuenta"
+      },
+      "valueOptions": {
+        "amount": "Importe",
+        "count": "Conteo de transacciones"
+      },
+      "barModeOptions": {
+        "expensesByCategory": "Por categoria",
+        "incomeByMonth": "Por mes"
+      },
+      "lineModeOptions": {
+        "balanceTrend": "Tendencia de balance",
+        "incomeVsExpense": "Ingresos vs gastos",
+        "byCategory": "Por categoria",
+        "byAccount": "Por cuenta"
+      },
+      "lineVisualizationOptions": {
+        "line": "Linea",
+        "area": "Area"
+      },
+      "donutModeOptions": {
+        "expensesByCategory": "Por categoria",
+        "expensesByAccount": "Por cuenta"
+      },
+      "stackByOptions": {
+        "type": "Tipo (ingreso/gasto)",
+        "account": "Cuenta",
+        "category": "Categoria"
+      },
+      "comparisonOptions": {
+        "weekVsPrevious": "Semana actual vs anterior",
+        "monthVsPrevious": "Mes actual vs anterior",
+        "quarterVsPrevious": "Trimestre actual vs anterior",
+        "yearVsPrevious": "Año actual vs anterior"
+      }
+    },
+    "templates": {
+      "tpl-kpi-balance": {
+        "label": "KPI: Balance neto",
+        "description": "Ingresos - gastos en el periodo seleccionado."
+      },
+      "tpl-table-category": {
+        "label": "Tabla por categoria",
+        "description": "Top categorias por importe."
+      },
+      "tpl-bar-expenses": {
+        "label": "Barras de gasto",
+        "description": "Distribucion de gastos por categoria."
+      },
+      "tpl-line-trend": {
+        "label": "Linea de balance",
+        "description": "Evolucion del balance acumulado."
+      },
+      "tpl-donut": {
+        "label": "Donut de gastos",
+        "description": "Peso de cada categoria en tus gastos."
+      },
+      "tpl-stacked": {
+        "label": "Barras apiladas",
+        "description": "Ingresos y gastos por cuenta y mes."
+      },
+      "tpl-heatmap": {
+        "label": "Heatmap",
+        "description": "Concentracion de gastos diarios."
+      },
+      "tpl-comparison": {
+        "label": "Comparacion de periodos",
+        "description": "Periodo actual vs anterior."
+      }
+    },
+    "registry": {
+      "transactionsCount": "{{count}} transacciones",
+      "series": "Serie",
+      "showLegend": "Mostrar leyenda",
+      "legend": "Leyenda",
+      "outOfRange": "Fuera de rango",
+      "uncategorized": "Sin categoria",
+      "incomeShort": "ingreso",
+      "expenseShort": "gasto",
+      "basedOnTransactions": "Basado en {{count}} movimientos",
+      "weekdays": {
+        "mon": "L",
+        "tue": "M",
+        "wed": "X",
+        "thu": "J",
+        "fri": "V",
+        "sat": "S",
+        "sun": "D"
+      },
+      "period": {
+        "current": "Actual",
+        "previous": "Anterior"
+      },
+      "kpiType": {
+        "income": "Ingresos",
+        "expense": "Gastos",
+        "balance": "Balance",
+        "savingsRate": "Tasa de ahorro"
+      },
+      "table": {
+        "name": "Nombre",
+        "amount": "Importe",
+        "category": "Categoria",
+        "account": "Cuenta",
+        "transactions": "Transacciones"
+      }
+    }
   }
 }

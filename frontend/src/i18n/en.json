@@ -606,5 +606,245 @@
     "apply": "Apply rules",
     "close": "Close",
     "result": "{{count}} transactions updated"
+  },
+  "analysis": {
+    "title": "Analysis",
+    "subtitle": "Create, preview and arrange your widgets using the same filters you use in transactions.",
+    "loading": "Loading analysis...",
+    "actions": {
+      "sync": "Sync",
+      "syncing": "Syncing...",
+      "editDashboard": "Edit dashboard",
+      "exitEdit": "Exit edit",
+      "addWidget": "Add widget"
+    },
+    "toasts": {
+      "dashboardSaved": "Dashboard changes saved.",
+      "dashboardSynced": "Dashboard synchronized. Widgets have been recalculated.",
+      "syncError": "Could not synchronize now. Please try again.",
+      "previewRefreshError": "Could not refresh the preview.",
+      "filterLoadError": "Could not load the selected filter.",
+      "filterIncompatible": "Saved filter has an incompatible format.",
+      "filterImported": "Filter \"{{name}}\" imported to the widget.",
+      "widgetSaveError": "Could not save the widget.",
+      "widgetUpdateError": "Could not update the widget.",
+      "widgetDeleteError": "Could not delete the widget."
+    },
+    "board": {
+      "editModeHintPrefix": "Edit mode:",
+      "drag": "drag",
+      "editModeHintMiddle": "to reorder,",
+      "corners": "corners",
+      "editModeHintSuffix": "to resize",
+      "expand": "Expand",
+      "edit": "Edit",
+      "delete": "Delete",
+      "expandedDialogDescription": "Expanded view of the selected widget."
+    },
+    "widgetTypes": {
+      "kpi": { "label": "KPI", "description": "Quick summary of a metric." },
+      "table": { "label": "Table", "description": "Aggregated list by category or account." },
+      "bar": { "label": "Bars", "description": "Compare amounts by category." },
+      "line": { "label": "Line/Area", "description": "Time evolution of incomes and expenses." },
+      "donut": { "label": "Donut", "description": "Relative weight of each category." },
+      "stackedBar": { "label": "Stacked Bars", "description": "Compare segments across periods." },
+      "heatmap": { "label": "Heatmap", "description": "Detect concentration by days." },
+      "comparison": { "label": "Comparison", "description": "Current period vs previous." }
+    },
+    "configurator": {
+      "title": "Widget configurator",
+      "editHintPrefix": "Click a chart to edit it. Use",
+      "editHintSuffix": "for size.",
+      "noCharts": "No charts yet.",
+      "inDashboard": "In dashboard",
+      "outDashboard": "Out of dashboard (below)",
+      "removeFromDashboard": "Remove from dashboard",
+      "addToDashboard": "Add to dashboard",
+      "remove": "Remove",
+      "add": "Add",
+      "delete": "Delete",
+      "noActiveCharts": "No active charts in the dashboard.",
+      "allChartsActive": "All charts are active.",
+      "startHint": "Choose the chart type to start. Then you can refine filters, dates and format.",
+      "importSavedFilter": "Import saved filter",
+      "selectFilter": "Select a filter",
+      "selectType": "Select type",
+      "selectSize": "Select size",
+      "selectMetric": "Select metric",
+      "selectGroup": "Select group",
+      "selectValue": "Select value",
+      "selectMode": "Select mode",
+      "selectCriteria": "Select criteria",
+      "selectComparison": "Select comparison",
+      "all": "All",
+      "noCategories": "No categories",
+      "categoriesCount": "categories",
+      "noQuickRange": "No quick range",
+      "uncategorized": "Uncategorized",
+      "colorPerBar": "Color per bar",
+      "colorsAndLegend": "Colors and legend",
+      "saveChart": "Save chart",
+      "updateChart": "Update chart",
+      "preview": "Preview",
+      "reload": "Reload",
+      "expandedPreview": "Expanded preview",
+      "expandedPreviewDescription": "Expanded view of the chart preview being edited.",
+      "sizes": {
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large"
+      },
+      "dateRanges": {
+        "30d": "Last 30 days",
+        "90d": "Last 90 days",
+        "365d": "Last 12 months",
+        "ytd": "Year to date (YTD)"
+      },
+      "transactionTypeOptions": {
+        "income": "Income",
+        "expense": "Expenses"
+      },
+      "fields": {
+        "title": "Title",
+        "titlePlaceholder": "E.g. Expenses by category",
+        "description": "Description",
+        "descriptionPlaceholder": "E.g. Monthly comparison of your expenses",
+        "type": "Type",
+        "size": "Size",
+        "quickRange": "Quick range",
+        "transactionType": "Movement type",
+        "account": "Account",
+        "searchName": "Search name",
+        "searchNamePlaceholder": "E.g. rent, salary...",
+        "amountMin": "Minimum amount",
+        "amountMax": "Maximum amount",
+        "categories": "Categories",
+        "kpiMetric": "KPI metric",
+        "groupBy": "Group by",
+        "value": "Value",
+        "barMode": "Bar mode",
+        "yAxis": "Y axis",
+        "lineMode": "Line mode",
+        "lineVisualization": "Line style",
+        "lineSeries": "Line series",
+        "donutMode": "Donut mode",
+        "stackBy": "Stack by",
+        "comparison": "Comparison"
+      },
+      "kpiOptions": {
+        "income": "Income",
+        "expense": "Expenses",
+        "balance": "Balance",
+        "savingsRate": "Savings rate"
+      },
+      "groupByOptions": {
+        "category": "Category",
+        "account": "Account"
+      },
+      "valueOptions": {
+        "amount": "Amount",
+        "count": "Transaction count"
+      },
+      "barModeOptions": {
+        "expensesByCategory": "By category",
+        "incomeByMonth": "By month"
+      },
+      "lineModeOptions": {
+        "balanceTrend": "Balance trend",
+        "incomeVsExpense": "Income vs expenses",
+        "byCategory": "By category",
+        "byAccount": "By account"
+      },
+      "lineVisualizationOptions": {
+        "line": "Line",
+        "area": "Area"
+      },
+      "donutModeOptions": {
+        "expensesByCategory": "By category",
+        "expensesByAccount": "By account"
+      },
+      "stackByOptions": {
+        "type": "Type (income/expense)",
+        "account": "Account",
+        "category": "Category"
+      },
+      "comparisonOptions": {
+        "weekVsPrevious": "Current week vs previous",
+        "monthVsPrevious": "Current month vs previous",
+        "quarterVsPrevious": "Current quarter vs previous",
+        "yearVsPrevious": "Current year vs previous"
+      }
+    },
+    "templates": {
+      "tpl-kpi-balance": {
+        "label": "KPI: Net balance",
+        "description": "Income - expenses in the selected period."
+      },
+      "tpl-table-category": {
+        "label": "Table by category",
+        "description": "Top categories by amount."
+      },
+      "tpl-bar-expenses": {
+        "label": "Expense bars",
+        "description": "Distribution of expenses by category."
+      },
+      "tpl-line-trend": {
+        "label": "Balance line",
+        "description": "Evolution of accumulated balance."
+      },
+      "tpl-donut": {
+        "label": "Expenses donut",
+        "description": "Weight of each category in your expenses."
+      },
+      "tpl-stacked": {
+        "label": "Stacked bars",
+        "description": "Income and expense by account and month."
+      },
+      "tpl-heatmap": {
+        "label": "Heatmap",
+        "description": "Concentration of daily expenses."
+      },
+      "tpl-comparison": {
+        "label": "Period comparison",
+        "description": "Current period vs previous."
+      }
+    },
+    "registry": {
+      "transactionsCount": "{{count}} transactions",
+      "series": "Series",
+      "showLegend": "Show legend",
+      "legend": "Legend",
+      "outOfRange": "Out of range",
+      "uncategorized": "Uncategorized",
+      "incomeShort": "income",
+      "expenseShort": "expense",
+      "basedOnTransactions": "Based on {{count}} transactions",
+      "weekdays": {
+        "mon": "M",
+        "tue": "T",
+        "wed": "W",
+        "thu": "T",
+        "fri": "F",
+        "sat": "S",
+        "sun": "S"
+      },
+      "period": {
+        "current": "Current",
+        "previous": "Previous"
+      },
+      "kpiType": {
+        "income": "Income",
+        "expense": "Expenses",
+        "balance": "Balance",
+        "savingsRate": "Savings rate"
+      },
+      "table": {
+        "name": "Name",
+        "amount": "Amount",
+        "category": "Category",
+        "account": "Account",
+        "transactions": "Transactions"
+      }
+    }
   }
 }

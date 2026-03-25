@@ -367,6 +367,8 @@ export interface BudgetCategoryResponseDto {
   name: string;
   maxAmount: number;
   displayOrder: number;
+  iconName?: string | null;
+  iconBgColor?: string | null;
   spent: number;
   remaining: number;
   usagePercent: number;
@@ -396,12 +398,16 @@ export interface BudgetCategoryDto {
   name: string;
   maxAmount: number;
   linkedCategoryIds?: string[];
+  iconName?: string | null;
+  iconBgColor?: string | null;
 }
 
 export interface BudgetCategoryUpdateDto {
   name?: string;
   maxAmount?: number;
   linkedCategoryIds?: string[];
+  iconName?: string | null;
+  iconBgColor?: string | null;
 }
 
 // ============================================

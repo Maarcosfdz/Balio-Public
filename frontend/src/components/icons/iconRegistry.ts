@@ -336,6 +336,7 @@ export const ICON_BG_COLOR_OPTIONS = [
 
 export const DEFAULT_ICON_BG_COLOR: string = ICON_BG_COLOR_OPTIONS[0];
 export const EMOJI_ICON_PREFIX = "emoji:";
+export const EMOJI_ICON_SAFE_PREFIX = "emoji_u";
 export const ASSET_ICON_PREFIX = "asset:";
 
 const KEYWORD_ICON_MAP: Array<{ pattern: RegExp; icon: AppIconName }> = [
@@ -380,11 +381,37 @@ export function isAssetIconName(value?: string | null): boolean {
 }
 
 export function toEmojiIconName(emoji: string): string {
-  return `${EMOJI_ICON_PREFIX}${emoji}`;
+  const codePoints = Array.from(emoji)
+    .map((char) => char.codePointAt(0))
+    .filter((value): value is number => value != null)
+    .map((value) => value.toString(16).toUpperCase());
+
+  if (codePoints.length === 0) {
+    return `${EMOJI_ICON_PREFIX}${emoji}`;
+  }
+
+  // ASCII-safe format prevents persistence issues on DBs with limited Unicode support.
+  return `${EMOJI_ICON_SAFE_PREFIX}${codePoints.join("_")}`;
 }
 
 export function readEmojiFromIconName(iconName?: string | null): string | null {
   if (!iconName) return null;
+  if (iconName.startsWith(EMOJI_ICON_SAFE_PREFIX)) {
+    const encoded = iconName.slice(EMOJI_ICON_SAFE_PREFIX.length).trim();
+    if (!encoded) return null;
+    const points = encoded
+      .split("_")
+      .map((part) => Number.parseInt(part, 16))
+      .filter((point) => Number.isFinite(point) && point > 0);
+
+    if (points.length === 0) return null;
+
+    try {
+      return String.fromCodePoint(...points);
+    } catch {
+      return null;
+    }
+  }
   if (!iconName.startsWith(EMOJI_ICON_PREFIX)) return null;
   return iconName.slice(EMOJI_ICON_PREFIX.length).trim() || null;
 }

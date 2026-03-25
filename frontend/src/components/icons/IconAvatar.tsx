@@ -31,8 +31,12 @@ export function IconAvatar({
 
   return (
     <div
-      className={cn("flex items-center justify-center rounded-xl", className)}
-      style={{ backgroundColor: bgColor }}
+      className={cn(
+        assetIconUrl ? "overflow-hidden" : "flex items-center justify-center",
+        "rounded-xl",
+        className,
+      )}
+      style={assetIconUrl ? undefined : { backgroundColor: bgColor }}
     >
       {emoji ? (
         <span className={cn("select-none text-base leading-none", iconClassName)}>{emoji}</span>
@@ -40,7 +44,7 @@ export function IconAvatar({
         <img
           src={assetIconUrl}
           alt=""
-          className={cn("h-5 w-5 object-contain", iconClassName)}
+          className="h-full w-full object-cover"
           loading="lazy"
         />
       ) : isAppIconName(resolvedName) ? (

@@ -60,6 +60,117 @@
   50%       { transform: translateY(-3px); }
 }
 
+/* ── Hero header section ─────────────────────────────────────────── */
+.goals-hero-section {
+  position: relative;
+  overflow: visible;
+  margin: -1.5rem -1.5rem 0;
+  padding: 0 1.5rem 3.25rem;
+  background: linear-gradient(
+    160deg,
+    #e8f5ef 0%,
+    #e0eef9 40%,
+    #ede8f8 56%,
+    rgba(241, 245, 243, 0.7) 70%,
+    rgba(241, 245, 243, 0.2) 86%,
+    rgba(241, 245, 243, 0) 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 58%,
+    rgba(0, 0, 0, 0.82) 72%,
+    rgba(0, 0, 0, 0.45) 86%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 58%,
+    rgba(0, 0, 0, 0.82) 72%,
+    rgba(0, 0, 0, 0.45) 86%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+@media (min-width: 768px) {
+  .goals-hero-section {
+    margin: -2rem -2rem 0;
+    padding: 0 2rem 3.8rem;
+  }
+}
+
+.goals-hero-inner {
+  position: relative;
+  z-index: 3;
+  padding-top: 2rem;
+}
+
+.goals-hero-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.goals-hero-title-wrap {
+  min-width: 0;
+}
+
+.goals-hero-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.goals-hero-title h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  letter-spacing: -0.02em;
+}
+
+.goals-hero-subtitle {
+  margin-top: 0.35rem;
+  font-size: 0.92rem;
+  color: #64748b;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.goals-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.goals-total-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.58);
+  color: #0f172a;
+  font-size: 0.75rem;
+  font-weight: 700;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 14px -10px rgba(15, 23, 42, 0.35);
+}
+
+.goals-total-pill-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+}
+
 /* ── Status pills with gooey effect ───────────────────────────────── */
 /*
  * Neutral (slate) colors so they don't compete with goal progress.

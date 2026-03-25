@@ -5,6 +5,7 @@ import type {
   WidgetDraft,
   WidgetTemplate,
 } from "./types";
+import i18n from "@/i18n";
 
 const defaultConfig = {
   dateRange: "90d" as DateRangePreset,
@@ -22,67 +23,82 @@ const defaultConfig = {
 export const widgetTemplates: WidgetTemplate[] = [
   {
     id: "tpl-kpi-balance",
-    label: "KPI: Net balance",
-    description: "Income - expenses in the selected period.",
+    label: i18n.t("analysis.templates.tpl-kpi-balance.label"),
+    description: i18n.t("analysis.templates.tpl-kpi-balance.description"),
     type: "kpi",
     size: "sm",
     config: { ...defaultConfig, metric: "balance" },
   },
   {
     id: "tpl-table-category",
-    label: "Table by category",
-    description: "Top categories by amount.",
+    label: i18n.t("analysis.templates.tpl-table-category.label"),
+    description: i18n.t("analysis.templates.tpl-table-category.description"),
     type: "table",
     size: "md",
     config: { ...defaultConfig, groupBy: "category", limit: 6, valueMode: "amount" },
   },
   {
     id: "tpl-bar-expenses",
-    label: "Expense bars",
-    description: "Distribution of expenses by category.",
+    label: i18n.t("analysis.templates.tpl-bar-expenses.label"),
+    description: i18n.t("analysis.templates.tpl-bar-expenses.description"),
     type: "bar",
     size: "md",
     config: { ...defaultConfig, mode: "expensesByCategory", valueMode: "amount", seriesColors: {} },
   },
   {
     id: "tpl-line-trend",
-    label: "Balance line",
-    description: "Evolution of accumulated balance.",
+    label: i18n.t("analysis.templates.tpl-line-trend.label"),
+    description: i18n.t("analysis.templates.tpl-line-trend.description"),
     type: "line",
     size: "lg",
-    config: { ...defaultConfig, mode: "balanceTrend", valueMode: "amount" },
+    config: {
+      ...defaultConfig,
+      mode: "balanceTrend",
+      valueMode: "amount",
+      visualization: "area",
+      splitBy: "none",
+      seriesKeys: [],
+      seriesColors: {},
+    },
   },
   {
     id: "tpl-donut",
-    label: "Expenses donut",
-    description: "Weight of each category in your expenses.",
+    label: i18n.t("analysis.templates.tpl-donut.label"),
+    description: i18n.t("analysis.templates.tpl-donut.description"),
     type: "donut",
     size: "md",
     config: { ...defaultConfig, mode: "expensesByCategory", valueMode: "amount", seriesColors: {} },
   },
   {
     id: "tpl-stacked",
-    label: "Stacked bars",
-    description: "Income and expense by account and month.",
+    label: i18n.t("analysis.templates.tpl-stacked.label"),
+    description: i18n.t("analysis.templates.tpl-stacked.description"),
     type: "stackedBar",
     size: "lg",
-    config: { ...defaultConfig, mode: "monthlyIncomeExpenseByAccount", stackBy: "type" },
+    config: {
+      ...defaultConfig,
+      mode: "monthlyIncomeExpenseByAccount",
+      stackBy: "type",
+      valueMode: "amount",
+      seriesKeys: [],
+      seriesColors: {},
+    },
   },
   {
     id: "tpl-heatmap",
-    label: "Heatmap",
-    description: "Concentration of daily expenses.",
+    label: i18n.t("analysis.templates.tpl-heatmap.label"),
+    description: i18n.t("analysis.templates.tpl-heatmap.description"),
     type: "heatmap",
     size: "md",
     config: { ...defaultConfig, mode: "dailyExpenses" },
   },
   {
     id: "tpl-comparison",
-    label: "Period comparison",
-    description: "Current period vs previous.",
+    label: i18n.t("analysis.templates.tpl-comparison.label"),
+    description: i18n.t("analysis.templates.tpl-comparison.description"),
     type: "comparison",
     size: "sm",
-    config: { ...defaultConfig, compare: "monthVsPrevious" },
+    config: { ...defaultConfig, compare: "monthVsPrevious", seriesColors: {} },
   },
 ];
 
@@ -122,7 +138,8 @@ export function draftFromTemplate(template: WidgetTemplate): WidgetDraft {
 }
 
 export function emptyDraftFromType(type: AnalysisWidget["type"]): WidgetDraft {
-  const match = widgetTemplates.find((tpl) => tpl.type === type) ?? widgetTemplates[0];
+  const fallback = widgetTemplates.find((tpl) => tpl.type === "table") ?? widgetTemplates[0];
+  const match = widgetTemplates.find((tpl) => tpl.type === type) ?? fallback;
   return draftFromTemplate(match);
 }
 
@@ -139,7 +156,8 @@ export function buildConfigForType(
   type: AnalysisWidget["type"],
   previousConfig?: WidgetConfig,
 ): WidgetConfig {
-  const template = widgetTemplates.find((tpl) => tpl.type === type) ?? widgetTemplates[0];
+  const fallback = widgetTemplates.find((tpl) => tpl.type === "table") ?? widgetTemplates[0];
+  const template = widgetTemplates.find((tpl) => tpl.type === type) ?? fallback;
   const base = structuredClone(template.config);
 
   if (!previousConfig) return base;

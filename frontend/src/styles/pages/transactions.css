@@ -395,20 +395,34 @@
   }
 }
 
-/* ── Transactions hero header — bento style ─────────────────────────── */
+/* ── Transactions hero — full-width background ─────────────────────── */
 
 .tx-hero-section {
   position: relative;
-  border-radius: 1.25rem;
-  overflow: hidden;
-  margin-bottom: 0.25rem;
-  background: #0f2e22;
+  overflow: visible;
+  margin: -1.5rem -1.5rem 0;
+  padding: 0 1.5rem 1.5rem;
+  background: linear-gradient(
+    180deg,
+    #eef5f0 0%,
+    #e8f0ec 50%,
+    #f1f5f3 85%,
+    transparent 100%
+  );
+}
+
+@media (min-width: 768px) {
+  .tx-hero-section {
+    margin: -2rem -2rem 0;
+    padding: 0 2rem 1.5rem;
+  }
 }
 
 .tx-hero-inner {
   position: relative;
-  z-index: 1;
-  padding: 1.75rem 2rem 2rem;
+  z-index: 3;
+  padding: 2rem 1.5rem 0;
+  max-width: 100%;
 }
 
 .tx-hero-title {
@@ -421,38 +435,85 @@
 .tx-hero-title h1 {
   font-size: 1.75rem;
   font-weight: 800;
-  color: #ffffff;
+  color: #1a1a1a;
   letter-spacing: -0.02em;
+}
+
+/* Sync icon button (small, near title) */
+.tx-sync-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.5);
+  color: #64748b;
+  cursor: pointer;
+  margin-left: auto;
+  transition: background 200ms, color 200ms, transform 160ms;
+}
+
+.tx-sync-btn:hover {
+  background: #ffffff;
+  color: #0284c7;
+  transform: rotate(90deg);
+}
+
+.tx-sync-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Hero content row: cards + actions ── */
+.tx-hero-row {
+  display: flex;
+  align-items: stretch;
+  gap: 2rem;
 }
 
 /* bento grid: expense + income side by side */
 .tx-bento-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   gap: 1rem;
-  align-items: stretch;
+  flex-shrink: 0;
 }
 
-/* base card */
+/* base card — horizontal layout */
 .tx-bento-card {
   border-radius: 1.125rem;
-  padding: 1.5rem 1.75rem;
+  padding: 1.1rem 1.5rem;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
   position: relative;
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  width: 300px;
+  min-height: 90px;
+  cursor: pointer;
+  border: none;
+  text-align: left;
+}
+
+.tx-bento-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
 }
 
 .tx-bento-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 32px -10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 14px 32px -10px rgba(0, 0, 0, 0.15);
 }
 
-/* Expense card — white glass */
+/* Expense card — white */
 .tx-bento-expense {
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: #ffffff;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.08);
 }
 
 /* Glow decoration */
@@ -463,20 +524,19 @@
   right: -10%;
   width: 120px;
   height: 120px;
-  background: radial-gradient(circle, rgba(239, 68, 68, 0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.06) 0%, transparent 70%);
   pointer-events: none;
 }
 
-/* Income card — brand gradient + screen.png background */
+/* Income card — green-blue gradient */
 .tx-bento-income {
   background: linear-gradient(
     134deg,
-    rgba(112, 215, 255, 0.95) 0%,
-    rgba(103, 245, 214, 0.95) 55%,
-    rgba(42, 247, 128, 0.95) 100%
+    #0d9488 0%,
+    #0891b2 50%,
+    #2563eb 100%
   );
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 24px -8px rgba(42, 247, 128, 0.4);
+  box-shadow: 0 8px 24px -8px rgba(13, 148, 136, 0.4);
 }
 
 /* screen.png image only inside income card */
@@ -486,7 +546,7 @@
   background-image: url("../../assets/screen.png");
   background-size: cover;
   background-position: center;
-  opacity: 0.15;
+  opacity: 0.1;
   pointer-events: none;
   mix-blend-mode: overlay;
 }
@@ -499,7 +559,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1rem;
   flex-shrink: 0;
 }
 
@@ -508,15 +567,31 @@
 }
 
 .tx-bento-income .tx-bento-icon {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(4px);
+}
+
+/* Card label (small upper text) */
+.tx-bento-card-label {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.tx-bento-expense .tx-bento-card-label {
+  color: #94a3b8;
+}
+
+.tx-bento-income .tx-bento-card-label {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 /* Card title */
 .tx-bento-card-title {
-  font-size: 1.25rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  margin-bottom: 0.5rem;
+  line-height: 1.2;
 }
 
 .tx-bento-expense .tx-bento-card-title {
@@ -524,93 +599,51 @@
 }
 
 .tx-bento-income .tx-bento-card-title {
-  color: #0b3b2c;
+  color: #ffffff;
 }
 
 .tx-bento-card-desc {
-  font-size: 0.85rem;
-  margin-bottom: 1.25rem;
-  flex: 1;
+  display: none;
 }
 
-.tx-bento-expense .tx-bento-card-desc {
-  color: #64748b;
-}
-
-.tx-bento-income .tx-bento-card-desc {
-  color: rgba(15, 60, 40, 0.7);
-}
-
-/* CTA buttons inside bento cards */
+/* CTA buttons inside bento cards — hidden, whole card is clickable */
 .tx-bento-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.375rem;
-  padding: 0.6rem 1.25rem;
-  border-radius: 0.75rem;
-  font-size: 0.85rem;
-  font-weight: 700;
-  border: none;
-  cursor: pointer;
-  transition: transform 160ms ease, box-shadow 200ms ease, opacity 200ms ease;
-  margin-top: auto;
+  display: none;
 }
 
-.tx-bento-btn:hover {
-  transform: translateY(-1px);
-}
-
-.tx-bento-btn-dark {
-  background: #0f172a;
-  color: #ffffff;
-  box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.35);
-}
-
-.tx-bento-btn-dark:hover {
-  box-shadow: 0 6px 16px -4px rgba(15, 23, 42, 0.45);
-}
-
-.tx-bento-btn-light {
-  background: #ffffff;
-  color: #0b3b2c;
-  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.18);
-}
-
-.tx-bento-btn-light:hover {
-  box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.25);
-  opacity: 0.95;
-}
-
-/* ── Action buttons row — standalone, bigger, below bento cards ────── */
+/* ── Action buttons — grid on the right side ────────────────────────── */
 .tx-hero-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
-  margin-top: 1.25rem;
+  margin-left: auto;
+  align-items: center;
+  align-content: center;
+  max-width: 460px;
 }
 
 .tx-action-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.5rem 1rem;
-  border-radius: 0.625rem;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.1);
+  padding: 0.6rem 1.1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(4px);
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
+  color: #475569;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 200ms, color 200ms, border-color 200ms, transform 160ms;
+  transition: background 200ms, color 200ms, border-color 200ms, transform 160ms, box-shadow 200ms;
 }
 
 .tx-action-pill:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.35);
+  background: #ffffff;
+  color: #0f172a;
+  border-color: rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.1);
   transform: translateY(-1px);
 }
 
@@ -618,6 +651,166 @@
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
+}
+
+/* ── Filter underline tabs (like screen.png All Items / Incoming / Outgoing) ── */
+.tx-filter-tabs {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 1.75rem;
+}
+
+.tx-filter-tab {
+  position: relative;
+  padding: 0.5rem 0;
+  border: none;
+  background: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: color 200ms;
+}
+
+.tx-filter-tab::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: transparent;
+  border-radius: 1px;
+  transition: background 200ms;
+}
+
+.tx-filter-tab:hover {
+  color: #475569;
+}
+
+.tx-filter-tab--active {
+  color: #0284c7;
+}
+
+.tx-filter-tab--active::after {
+  background: #0284c7;
+}
+
+/* ── Toolbar row: tabs on left, search + filter dropdown on right ── */
+.tx-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.75rem;
+  flex-wrap: wrap;
+}
+
+.tx-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tx-search-input {
+  height: 2.25rem;
+  padding: 0 0.75rem 0 2.25rem;
+  border-radius: 2rem;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 0.82rem;
+  color: #1e293b;
+  width: 14rem;
+  transition: border-color 200ms, background 200ms, box-shadow 200ms;
+}
+
+.tx-search-input::placeholder {
+  color: #94a3b8;
+}
+
+.tx-search-input:focus {
+  outline: none;
+  border-color: #0284c7;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+}
+
+.tx-search-wrapper {
+  position: relative;
+}
+
+.tx-search-wrapper > svg {
+  position: absolute;
+  left: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+/* Filter dropdown trigger (tune icon like screen.png) */
+.tx-filter-dropdown-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.625rem;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.8);
+  color: #64748b;
+  cursor: pointer;
+  transition: background 200ms, color 200ms, border-color 200ms;
+}
+
+.tx-filter-dropdown-btn:hover {
+  background: #ffffff;
+  color: #0284c7;
+  border-color: #0284c7;
+}
+
+/* Filter dropdown menu */
+.tx-filter-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  z-index: 50;
+  width: 14rem;
+  max-height: 16rem;
+  overflow-y: auto;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.15);
+  padding: 0.375rem;
+}
+
+.tx-filter-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: none;
+  border-radius: 0.5rem;
+  text-align: left;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: background 150ms, color 150ms;
+}
+
+.tx-filter-dropdown-item:hover {
+  background: #f0f9ff;
+  color: #0284c7;
+}
+
+.tx-filter-dropdown-empty {
+  padding: 0.75rem;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  text-align: center;
 }
 
 /* category icon pill in transaction row */
@@ -633,16 +826,43 @@
   flex-shrink: 0;
 }
 
+/* pull table up into the hero background bleed area */
+.tx-table-wrapper {
+  position: relative;
+  z-index: 2;
+  margin-top: -0.5rem;
+}
+
+/* Filter button active state */
+.tx-filter-dropdown-btn--active {
+  background: #ffffff;
+  color: #0284c7;
+  border-color: #0284c7;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
+}
+
 /* responsive: stack on small screens */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+  .tx-hero-row {
+    flex-direction: column;
+  }
   .tx-bento-grid {
-    grid-template-columns: 1fr;
+    width: 100%;
+  }
+  .tx-bento-card {
+    flex: 1;
+    width: auto;
+    min-height: 110px;
   }
   .tx-hero-actions {
-    gap: 0.5rem;
+    margin-left: 0;
+    max-width: none;
   }
   .tx-action-pill {
-    font-size: 0.75rem;
-    padding: 0.4rem 0.75rem;
+    font-size: 0.78rem;
+    padding: 0.5rem 0.85rem;
+  }
+  .tx-search-input {
+    width: 10rem;
   }
 }

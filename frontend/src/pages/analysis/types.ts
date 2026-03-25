@@ -42,8 +42,12 @@ export interface BarWidgetConfig extends WidgetCommonConfig {
 }
 
 export interface LineWidgetConfig extends WidgetCommonConfig {
-  mode: "balanceTrend" | "incomeVsExpense";
+  mode: "balanceTrend" | "incomeVsExpense" | "byCategory" | "byAccount";
   valueMode: "amount" | "count";
+  visualization: "line" | "area";
+  splitBy: "none" | "category" | "account";
+  seriesKeys?: string[];
+  seriesColors?: Record<string, string>;
 }
 
 export interface DonutWidgetConfig extends WidgetCommonConfig {
@@ -54,7 +58,10 @@ export interface DonutWidgetConfig extends WidgetCommonConfig {
 
 export interface StackedBarWidgetConfig extends WidgetCommonConfig {
   mode: "monthlyIncomeExpenseByAccount";
-  stackBy: "type" | "account";
+  stackBy: "type" | "account" | "category";
+  valueMode: "amount" | "count";
+  seriesKeys?: string[];
+  seriesColors?: Record<string, string>;
 }
 
 export interface HeatmapWidgetConfig extends WidgetCommonConfig {
@@ -63,6 +70,7 @@ export interface HeatmapWidgetConfig extends WidgetCommonConfig {
 
 export interface ComparisonWidgetConfig extends WidgetCommonConfig {
   compare: "weekVsPrevious" | "monthVsPrevious" | "quarterVsPrevious" | "yearVsPrevious";
+  seriesColors?: Record<string, string>;
 }
 
 export type WidgetConfig =

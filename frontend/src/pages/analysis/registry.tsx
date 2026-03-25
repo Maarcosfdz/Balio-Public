@@ -6,7 +6,6 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  Legend,
   Line,
   LineChart,
   Pie,
@@ -28,6 +27,7 @@ import type {
   WidgetConfig,
   WidgetType,
 } from "./types";
+import i18n from "@/i18n";
 
 interface RendererInput {
   widget: AnalysisWidget;
@@ -49,7 +49,7 @@ function chartH(size: AnalysisWidget["size"]): number {
 }
 
 function toMoney(value: number, currency = "EUR"): string {
-  return new Intl.NumberFormat("es-ES", {
+  return new Intl.NumberFormat(i18n.resolvedLanguage, {
     style: "currency",
     currency,
     maximumFractionDigits: 0,
@@ -64,7 +64,13 @@ function formatTooltipValue(value: number | string | undefined): string {
 
 function formatTooltipByMode(value: number | string | undefined, mode: "amount" | "count"): string {
   if (typeof value !== "number") return formatTooltipValue(value);
-  return mode === "count" ? `${Math.round(value)} transactions` : toMoney(value);
+  return mode === "count"
+    ? i18n.t("analysis.registry.transactionsCount", { count: Math.round(value) })
+    : toMoney(value);
+}
+
+function tA(key: string, options?: Record<string, unknown>): string {
+  return i18n.t(`analysis.registry.${key}`, options);
 }
 
 interface ChartDataset {
@@ -95,7 +101,7 @@ function toChartPreview(data: unknown): ChartPreview | null {
       const row = toRecord(item);
       if (!row || !Array.isArray(row.data)) return null;
       return {
-        label: typeof row.label === "string" ? row.label : "Series",
+        label: typeof row.label === "string" ? row.label : tA("series"),
         data: row.data.map((n) => Number(n ?? 0)),
       };
     })
@@ -169,7 +175,7 @@ function applyCommonFilters(
 
 function getMonthLabel(isoDate: string): string {
   const d = new Date(isoDate);
-  return d.toLocaleDateString("es-ES", { month: "short" });
+  return d.toLocaleDateString(i18n.resolvedLanguage, { month: "short" });
 }
 
 function groupByCategory(transactions: AnalysisTransaction[], txType?: "INCOME" | "EXPENSE") {
@@ -248,53 +254,65 @@ function monthlyIncomeExpense(transactions: AnalysisTransaction[]) {
     }));
 }
 
-function stackedByAccountAndMonth(transactions: AnalysisTransaction[]) {
-  const months = monthlyIncomeExpense(transactions);
-  const accounts = Array.from(new Set(transactions.map((tx) => tx.accountName)));
-  const result = months.map((month) => ({ month: month.month } as Record<string, string | number>));
-
-  for (const monthRow of result) {
-    for (const account of accounts) {
-      monthRow[`${account} ingreso`] = 0;
-      monthRow[`${account} gasto`] = 0;
-    }
-  }
-
-  const monthKeyOrder = monthlyIncomeExpense(transactions).map((m) => m.month);
+function monthlyByDimension(
+  transactions: AnalysisTransaction[],
+  dimension: "account" | "category",
+  valueMode: "amount" | "count",
+  selectedKeys?: string[],
+) {
+  const monthRows = new Map<string, Record<string, string | number>>();
+  const allKeys = new Set<string>();
+  const selected = selectedKeys && selectedKeys.length > 0 ? new Set(selectedKeys) : null;
 
   for (const tx of transactions) {
+    const monthKey = tx.date.slice(0, 7);
     const monthLabel = getMonthLabel(tx.date);
-    const idx = monthKeyOrder.indexOf(monthLabel);
-    if (idx < 0) continue;
-    const row = result[idx];
-    const key = `${tx.accountName} ${tx.type === "INCOME" ? "ingreso" : "gasto"}`;
-    row[key] = Number(((row[key] as number) + tx.amount).toFixed(2));
+    const seriesKey =
+      dimension === "account"
+        ? tx.accountName
+        : (tx.categoryName || tA("uncategorized"));
+    if (selected && !selected.has(seriesKey)) continue;
+
+    allKeys.add(seriesKey);
+    const row = monthRows.get(monthKey) ?? { month: monthLabel };
+    const current = Number(row[seriesKey] ?? 0);
+    const nextValue = current + (valueMode === "count" ? 1 : tx.amount);
+    row[seriesKey] = Number(nextValue.toFixed(2));
+    monthRows.set(monthKey, row);
   }
 
-  return { rows: result, accounts };
+  const keys = Array.from(allKeys).sort((a, b) => a.localeCompare(b));
+  const rows = Array.from(monthRows.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([, row]) => {
+      const completed = { ...row };
+      for (const key of keys) {
+        if (typeof completed[key] !== "number") completed[key] = 0;
+      }
+      return completed;
+    });
+
+  return { rows, keys };
 }
 
-function stackByAccountAndMonth(transactions: AnalysisTransaction[]) {
-  const months = monthlyIncomeExpense(transactions);
-  const accounts = Array.from(new Set(transactions.map((tx) => tx.accountName)));
-  const result = months.map((month) => ({ month: month.month } as Record<string, string | number>));
-
-  for (const monthRow of result) {
-    for (const account of accounts) {
-      monthRow[account] = 0;
-    }
+function stackedByMode(
+  transactions: AnalysisTransaction[],
+  cfg: StackedBarWidgetConfig,
+) {
+  if (cfg.stackBy === "type") {
+    const monthly = monthlyIncomeExpense(transactions).map((row) => ({
+      month: row.month,
+      income: cfg.valueMode === "count" ? row.incomeCount : row.income,
+      expense: cfg.valueMode === "count" ? row.expenseCount : row.expense,
+    }));
+    return { rows: monthly, keys: ["income", "expense"] };
   }
 
-  const monthKeyOrder = months.map((m) => m.month);
-  for (const tx of transactions) {
-    const monthLabel = getMonthLabel(tx.date);
-    const idx = monthKeyOrder.indexOf(monthLabel);
-    if (idx < 0) continue;
-    const row = result[idx];
-    row[tx.accountName] = Number(((row[tx.accountName] as number) + tx.amount).toFixed(2));
+  if (cfg.stackBy === "account") {
+    return monthlyByDimension(transactions, "account", cfg.valueMode, cfg.seriesKeys);
   }
 
-  return { rows: result, accounts };
+  return monthlyByDimension(transactions, "category", cfg.valueMode, cfg.seriesKeys);
 }
 
 function heatmapDailyExpenses(transactions: AnalysisTransaction[]) {
@@ -323,7 +341,7 @@ function heatmapDailyExpenses(transactions: AnalysisTransaction[]) {
       day: isoDay,
       value: Number(value.toFixed(2)),
       intensity: value === 0 ? 0 : Math.min(1, value / max),
-      dayLabel: new Date(isoDay).toLocaleDateString("es-ES", { day: "2-digit", month: "short" }),
+      dayLabel: new Date(isoDay).toLocaleDateString(i18n.resolvedLanguage, { day: "2-digit", month: "short" }),
     });
     cursor.setDate(cursor.getDate() + 1);
   }
@@ -339,6 +357,17 @@ function heatmapDailyExpenses(transactions: AnalysisTransaction[]) {
 function getSeriesColor(seriesColors: Record<string, string> | undefined, key: string, index: number): string {
   return seriesColors?.[key] ?? CHART_COLORS[index % CHART_COLORS.length];
 }
+
+const chartTooltipStyle = {
+  borderRadius: 12,
+  border: "1px solid rgba(148, 163, 184, 0.35)",
+  background: "rgba(255, 255, 255, 0.74)",
+  backdropFilter: "blur(8px)",
+  WebkitBackdropFilter: "blur(8px)",
+  boxShadow: "0 8px 24px rgba(15, 23, 42, 0.12)",
+  padding: "8px 10px",
+  fontSize: 12,
+};
 
 interface DonutDatum {
   name: string;
@@ -362,7 +391,7 @@ interface HeatmapCell {
 
 function monthLabelFromKey(monthKey: string): string {
   const [year, month] = monthKey.split("-").map(Number);
-  return new Date(year, (month || 1) - 1, 1).toLocaleDateString("es-ES", {
+  return new Date(year, (month || 1) - 1, 1).toLocaleDateString(i18n.resolvedLanguage, {
     month: "long",
     year: "numeric",
   });
@@ -377,43 +406,52 @@ function DonutWithAdaptiveLegend({
   widget: AnalysisWidget;
   config: DonutWidgetConfig;
 }) {
-  const [legendOpen, setLegendOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const total = Math.max(1, data.reduce((sum, row) => sum + row.value, 0));
+  const average = data.length > 0 ? total / data.length : 0;
 
   const isLarge = widget.size === "lg";
-  const isPreview = widget.id === "preview";
-  // Use right-side recharts legend only for lg non-preview with few items
-  const useSideLegend = isLarge && !isPreview && data.length <= 6;
-  // All other cases: hover legend button (never inline recharts Legend)
-  const useHoverLegend = !useSideLegend;
+  const isMedium = widget.size === "md";
 
-  const donutInner = isLarge ? 50 : widget.size === "md" ? 38 : 28;
-  const donutOuter = isLarge ? 100 : widget.size === "md" ? 68 : 50;
-  const chartHeight = isLarge ? 420 : 170;
+  const chartHeight = isLarge ? 320 : isMedium ? 220 : 170;
+  const minPctLabel = isLarge ? 0.06 : isMedium ? 0.1 : 0.14;
+  const innerRadius = widget.size === "lg" ? "47%" : widget.size === "md" ? "42%" : "36%";
+  const outerRadius = widget.size === "lg" ? "79%" : widget.size === "md" ? "74%" : "68%";
+  const activeItem = activeIndex !== null ? data[activeIndex] : null;
+  const activeValue = activeItem?.value ?? total;
+  const deltaVsAverage = average > 0 ? ((activeValue - average) / average) * 100 : 0;
+  const deltaPositive = deltaVsAverage >= 0;
 
-  return (
+  const chartNode = (
     <div className="relative h-full w-full">
       <ResponsiveContainer width="100%" height={chartHeight}>
-        <PieChart
-          margin={useSideLegend
-            ? { top: 8, right: 140, left: 8, bottom: 8 }
-            : { top: 8, right: 8, left: 8, bottom: 8 }}
-        >
+        <PieChart margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
           <Pie
             data={data}
             dataKey="value"
             nameKey="name"
             cx="50%"
             cy="50%"
-            innerRadius={donutInner}
-            outerRadius={donutOuter}
-            isAnimationActive={false}
-            label={useSideLegend && data.length <= 5 ? ({ percent }) => (percent && percent > 0.08 ? `${(percent * 100).toFixed(0)}%` : "") : undefined}
-            labelLine={false}
+            innerRadius={innerRadius}
+            outerRadius={outerRadius}
+            isAnimationActive
+            animationDuration={420}
+            animationEasing="ease-out"
+            label={({ percent }) => (percent && percent >= minPctLabel ? `${(percent * 100).toFixed(0)}%` : "")}
+            labelLine={{ stroke: "#94a3b8", strokeWidth: 1 }}
+            onMouseLeave={() => setActiveIndex(null)}
+            onMouseEnter={(_, index) => setActiveIndex(index)}
           >
-            {data.map((entry, index) => (
-              <Cell key={`${entry.name}-${index}`} fill={getSeriesColor(config.seriesColors, entry.name, index)} />
-            ))}
+            {data.map((entry, index) => {
+              const isActive = activeIndex === null ? true : index === activeIndex;
+              return (
+                <Cell
+                  key={`${entry.name}-${index}`}
+                  fill={getSeriesColor(config.seriesColors, entry.name, index)}
+                  fillOpacity={isActive ? 1 : 0.42}
+                />
+              );
+            })}
           </Pie>
           <Tooltip
             formatter={(value) => {
@@ -422,47 +460,30 @@ function DonutWithAdaptiveLegend({
               const valueText = formatTooltipByMode(numericValue, config.valueMode);
               return `${valueText} (${percent.toFixed(1)}%)`;
             }}
+            contentStyle={chartTooltipStyle}
           />
-          {useSideLegend && (
-            <Legend
-              layout="vertical"
-              verticalAlign="middle"
-              align="right"
-              wrapperStyle={{ fontSize: 12 }}
-            />
-          )}
         </PieChart>
       </ResponsiveContainer>
+    </div>
+  );
 
-      {useHoverLegend && (
-        <div className="group absolute right-2 top-2 z-20">
-          <button
-            type="button"
-            className="cursor-pointer rounded-md border border-slate-200 bg-white/95 px-2 py-1 text-xs font-semibold text-slate-600 shadow-sm"
-            onClick={() => setLegendOpen((prev) => !prev)}
-            aria-expanded={legendOpen}
-            aria-label="Mostrar leyenda"
-          >
-            Leyenda
-          </button>
-          <div
-            className={`absolute right-0 mt-1 max-h-44 min-w-[180px] overflow-auto rounded-lg border border-slate-200 bg-white p-2 text-xs shadow-lg transition ${
-              legendOpen ? "visible opacity-100" : "invisible opacity-0 group-hover:visible group-hover:opacity-100"
-            }`}
-          >
-            {data.map((entry, idx) => {
-              const color = getSeriesColor(config.seriesColors, entry.name, idx);
-              const pct = ((entry.value / total) * 100).toFixed(1);
-              return (
-                <div key={entry.name} className="mb-1 flex items-center justify-between gap-2 last:mb-0">
-                  <div className="flex min-w-0 items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: color }} />
-                    <span className="truncate text-slate-700">{entry.name}</span>
-                  </div>
-                  <span className="font-semibold text-slate-500">{pct}%</span>
-                </div>
-              );
-            })}
+  return (
+    <div className="h-full w-full">
+      {chartNode}
+
+      {activeItem && (
+        <div className={`mt-1 flex ${isMedium ? "justify-start" : "justify-center"}`}>
+          <div className="rounded-xl border border-slate-200/70 bg-white/70 px-3 py-2 text-center shadow-sm backdrop-blur transition-all duration-200 ease-out">
+            <p className="text-[11px] font-medium text-slate-500">{activeItem.name}</p>
+            <p className="text-sm font-semibold text-slate-800">
+              {formatTooltipByMode(activeValue, config.valueMode)}
+            </p>
+            <p className="text-[11px] text-slate-500">{((activeItem.value / total) * 100).toFixed(1)}%</p>
+            {data.length > 1 && (
+              <p className={`text-[11px] font-medium ${deltaPositive ? "text-emerald-600" : "text-rose-600"}`}>
+                {deltaPositive ? "+" : ""}{deltaVsAverage.toFixed(1)}% vs media
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -470,9 +491,17 @@ function DonutWithAdaptiveLegend({
   );
 }
 
-const WEEKDAY_LABELS = ["L", "M", "X", "J", "V", "S", "D"];
+const WEEKDAY_LABELS = [
+  tA("weekdays.mon"),
+  tA("weekdays.tue"),
+  tA("weekdays.wed"),
+  tA("weekdays.thu"),
+  tA("weekdays.fri"),
+  tA("weekdays.sat"),
+  tA("weekdays.sun"),
+];
 
-function HeatmapNavigator({ data }: { data: HeatmapDatum[] }) {
+function HeatmapNavigator({ data, size }: { data: HeatmapDatum[]; size: AnalysisWidget["size"] }) {
   const months = useMemo(
     () => Array.from(new Set(data.map((row) => row.day.slice(0, 7)))).sort((a, b) => a.localeCompare(b)),
     [data],
@@ -533,6 +562,10 @@ function HeatmapNavigator({ data }: { data: HeatmapDatum[] }) {
   }, [selectedYear, selectedMonth, monthsInYear]);
 
   const monthLabel = currentMonth ? monthLabelFromKey(currentMonth) : "";
+  const isLarge = size === "lg";
+  const isMedium = size === "md";
+  const cellHeightClass = isLarge ? "h-14" : isMedium ? "h-10" : "h-8";
+  const showAmountLabel = isLarge;
 
   return (
     <div className="space-y-2">
@@ -600,17 +633,17 @@ function HeatmapNavigator({ data }: { data: HeatmapDatum[] }) {
                     : "bg-cyan-600 border-cyan-700 text-white";
 
           const amountLabel = item.inRange && item.value > 0
-            ? new Intl.NumberFormat("es-ES", { notation: "compact", maximumFractionDigits: 0 }).format(item.value)
+            ? new Intl.NumberFormat(i18n.resolvedLanguage, { notation: "compact", maximumFractionDigits: 0 }).format(item.value)
             : "";
 
           return (
             <div
               key={item.day}
-              className={`aspect-square rounded-md border p-0.5 text-center flex flex-col items-center justify-center overflow-hidden ${bg}`}
-              title={`${item.day}: ${item.inRange ? toMoney(item.value) : "Fuera de rango"}`}
+              className={`${cellHeightClass} rounded-md border p-0.5 text-center flex flex-col items-center justify-center overflow-hidden ${bg}`}
+              title={`${item.day}: ${item.inRange ? toMoney(item.value) : tA("outOfRange")}`}
             >
               <span className="text-[10px] font-semibold leading-none">{item.dayNumber}</span>
-              {amountLabel && (
+              {showAmountLabel && amountLabel && (
                 <span className="mt-0.5 text-[8px] leading-none opacity-80">{amountLabel}</span>
               )}
             </div>
@@ -669,27 +702,37 @@ function comparePeriods(
   }
 
   return [
-    { period: "Actual", income: currentIncome, expense: currentExpense },
-    { period: "Anterior", income: previousIncome, expense: previousExpense },
+    { period: tA("period.current"), income: currentIncome, expense: currentExpense },
+    { period: tA("period.previous"), income: previousIncome, expense: previousExpense },
   ];
 }
 
 const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
   kpi: {
-    label: "KPI",
+    label: "analysis.widgetTypes.kpi.label",
     render: ({ widget, transactions, previewData }) => {
       const preview = toRecord(previewData);
       if (preview && typeof preview.value === "number") {
         const kpiType = typeof preview.kpiType === "string" ? preview.kpiType : "KPI";
+        const kpiTypeLabel = kpiType === "TOTAL_INCOME"
+          ? tA("kpiType.income")
+          : kpiType === "TOTAL_EXPENSE"
+            ? tA("kpiType.expense")
+            : kpiType === "NET_BALANCE"
+              ? tA("kpiType.balance")
+              : kpiType === "SAVINGS_RATE"
+                ? tA("kpiType.savingsRate")
+                : kpiType;
         const isPercent = kpiType === "SAVINGS_RATE";
+        const safeValue = Number(preview.value);
         return (
           <div className="h-full rounded-xl bg-slate-50 p-4">
-            <p className="text-sm text-slate-500">{kpiType}</p>
+            <p className="text-sm text-slate-500">{kpiTypeLabel}</p>
             <p className="mt-2 text-4xl font-semibold text-slate-800">
-              {isPercent ? `${Number(preview.value).toFixed(1)}%` : toMoney(Number(preview.value))}
+              {isPercent ? `${safeValue.toFixed(1)}%` : toMoney(safeValue)}
             </p>
             <p className="mt-3 text-xs text-slate-500">
-              Basado en {Number(preview.transactionCount ?? 0)} movimientos
+              {tA("basedOnTransactions", { count: Number(preview.transactionCount ?? 0) })}
             </p>
           </div>
         );
@@ -703,11 +746,11 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
       if (!("metric" in config)) return null;
 
       const metricMap = {
-        income: { label: "Ingresos", value: income },
-        expense: { label: "Gastos", value: expense },
-        balance: { label: "Balance", value: income - expense },
+        income: { label: tA("kpiType.income"), value: income },
+        expense: { label: tA("kpiType.expense"), value: expense },
+        balance: { label: tA("kpiType.balance"), value: income - expense },
         savingsRate: {
-          label: "Tasa de ahorro",
+          label: tA("kpiType.savingsRate"),
           value: income <= 0 ? 0 : ((income - expense) / income) * 100,
         },
       };
@@ -721,13 +764,13 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
           <p className="mt-2 text-4xl font-semibold text-slate-800">
             {isPercent ? `${metric.value.toFixed(1)}%` : toMoney(metric.value)}
           </p>
-          <p className="mt-3 text-xs text-slate-500">Basado en {filtered.length} movimientos</p>
+          <p className="mt-3 text-xs text-slate-500">{tA("basedOnTransactions", { count: filtered.length })}</p>
         </div>
       );
     },
   },
   table: {
-    label: "Tabla",
+    label: "analysis.widgetTypes.table.label",
     render: ({ widget, transactions, previewData }) => {
       const config = widget.config as TableWidgetConfig;
 
@@ -742,8 +785,8 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
             <table className="w-full text-sm">
               <thead className="bg-slate-100 text-left text-xs uppercase text-slate-500">
                 <tr>
-                  <th className="px-3 py-2">Nombre</th>
-                  <th className="px-3 py-2 text-right">Importe</th>
+                  <th className="px-3 py-2">{tA("table.name")}</th>
+                  <th className="px-3 py-2 text-right">{tA("table.amount")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -773,8 +816,8 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
           <table className="w-full text-sm">
             <thead className="bg-slate-100 text-left text-xs uppercase text-slate-500">
               <tr>
-                <th className="px-3 py-2">{config.groupBy === "category" ? "Categoria" : "Cuenta"}</th>
-                <th className="px-3 py-2 text-right">{config.valueMode === "count" ? "Transacciones" : "Importe"}</th>
+                <th className="px-3 py-2">{config.groupBy === "category" ? tA("table.category") : tA("table.account")}</th>
+                <th className="px-3 py-2 text-right">{config.valueMode === "count" ? tA("table.transactions") : tA("table.amount")}</th>
               </tr>
             </thead>
             <tbody>
@@ -793,7 +836,7 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
     },
   },
   bar: {
-    label: "Barras",
+    label: "analysis.widgetTypes.bar.label",
     render: ({ widget, transactions, previewData }) => {
       const config = widget.config as BarWidgetConfig;
 
@@ -807,7 +850,7 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
-              <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} />
+              <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} />
               <Bar dataKey="value" radius={6} isAnimationActive={false}>
                 {data.map((entry, idx) => (
                   <Cell key={`${entry.name}-${idx}`} fill={getSeriesColor(config.seriesColors, String(entry.name), idx)} />
@@ -839,7 +882,7 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis dataKey="name" />
             <YAxis />
-            <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} />
+            <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} />
             <Bar dataKey="value" radius={6} isAnimationActive={false}>
               {data.map((entry, idx) => (
                 <Cell key={`${entry.name}-${idx}`} fill={getSeriesColor(config.seriesColors, String(entry.name), idx)} />
@@ -851,7 +894,7 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
     },
   },
   line: {
-    label: "Linea",
+    label: "analysis.widgetTypes.line.label",
     render: ({ widget, transactions, previewData }) => {
       const config = widget.config as LineWidgetConfig;
 
@@ -868,66 +911,152 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
         if (preview.datasets.length === 1) {
           return (
             <ResponsiveContainer width="100%" height={chartH(widget.size)}>
+              {config.visualization === "area" ? (
               <AreaChart data={data}>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
-                <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} />
-                <Area type="monotone" dataKey={preview.datasets[0].label} stroke="#0284c7" fill="#bae6fd" isAnimationActive={false} />
+                <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} />
+                <Area
+                  type="monotone"
+                  dataKey={preview.datasets[0].label}
+                  stroke={getSeriesColor(config.seriesColors, preview.datasets[0].label, 0)}
+                  fill={getSeriesColor(config.seriesColors, preview.datasets[0].label, 0)}
+                  fillOpacity={0.2}
+                  isAnimationActive={false}
+                />
               </AreaChart>
+              ) : (
+              <LineChart data={data}>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} />
+                <Line
+                  type="monotone"
+                  dataKey={preview.datasets[0].label}
+                  stroke={getSeriesColor(config.seriesColors, preview.datasets[0].label, 0)}
+                  strokeWidth={2}
+                  isAnimationActive={false}
+                />
+              </LineChart>
+              )}
             </ResponsiveContainer>
           );
         }
 
         return (
           <ResponsiveContainer width="100%" height={chartH(widget.size)}>
+            {config.visualization === "area" ? (
+            <AreaChart data={data}>
+              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} />
+              {preview.datasets.map((dataset, idx) => (
+                <Area
+                  key={dataset.label}
+                  type="monotone"
+                  dataKey={dataset.label}
+                  stroke={getSeriesColor(config.seriesColors, dataset.label, idx)}
+                  fill={getSeriesColor(config.seriesColors, dataset.label, idx)}
+                  fillOpacity={0.2}
+                  isAnimationActive={false}
+                />
+              ))}
+            </AreaChart>
+            ) : (
             <LineChart data={data}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
-              <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} />
+              <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} />
               {preview.datasets.map((dataset, idx) => (
                 <Line
                   key={dataset.label}
                   type="monotone"
                   dataKey={dataset.label}
-                  stroke={CHART_COLORS[idx % CHART_COLORS.length]}
+                  stroke={getSeriesColor(config.seriesColors, dataset.label, idx)}
                   strokeWidth={2}
-                    isAnimationActive={false}
+                  isAnimationActive={false}
                 />
               ))}
             </LineChart>
+            )}
           </ResponsiveContainer>
         );
       }
 
       const filtered = applyCommonFilters(transactions, widget.config);
       const monthlyBase = monthlyIncomeExpense(filtered);
-      const monthly = monthlyBase.map((row) => ({
-        month: row.month,
-        income: config.valueMode === "count" ? row.incomeCount : row.income,
-        expense: config.valueMode === "count" ? row.expenseCount : row.expense,
-        balance: config.valueMode === "count" ? row.balanceCount : row.balance,
-      }));
+
+      let data: Array<Record<string, string | number>> = [];
+      let seriesKeys: string[] = [];
+
+      if (config.mode === "balanceTrend") {
+        data = monthlyBase.map((row) => ({
+          month: row.month,
+          balance: config.valueMode === "count" ? row.balanceCount : row.balance,
+        }));
+        seriesKeys = ["balance"];
+      } else if (config.mode === "incomeVsExpense") {
+        data = monthlyBase.map((row) => ({
+          month: row.month,
+          income: config.valueMode === "count" ? row.incomeCount : row.income,
+          expense: config.valueMode === "count" ? row.expenseCount : row.expense,
+        }));
+        seriesKeys = ["income", "expense"];
+      } else if (config.mode === "byAccount") {
+        const grouped = monthlyByDimension(filtered, "account", config.valueMode, config.seriesKeys);
+        data = grouped.rows;
+        seriesKeys = grouped.keys;
+      } else {
+        const grouped = monthlyByDimension(filtered, "category", config.valueMode, config.seriesKeys);
+        data = grouped.rows;
+        seriesKeys = grouped.keys;
+      }
+
+      const renderSeries = (asArea: boolean) =>
+        seriesKeys.map((seriesKey, idx) =>
+          asArea ? (
+            <Area
+              key={seriesKey}
+              type="monotone"
+              dataKey={seriesKey}
+              stroke={getSeriesColor(config.seriesColors, seriesKey, idx)}
+              fill={getSeriesColor(config.seriesColors, seriesKey, idx)}
+              fillOpacity={0.2}
+              isAnimationActive={false}
+            />
+          ) : (
+            <Line
+              key={seriesKey}
+              type="monotone"
+              dataKey={seriesKey}
+              stroke={getSeriesColor(config.seriesColors, seriesKey, idx)}
+              strokeWidth={2}
+              isAnimationActive={false}
+            />
+          ),
+        );
 
       return (
         <ResponsiveContainer width="100%" height={chartH(widget.size)}>
-          {config.mode === "balanceTrend" ? (
-            <AreaChart data={monthly}>
+          {config.visualization === "area" ? (
+            <AreaChart data={data}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
-              <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} />
-              <Area type="monotone" dataKey="balance" stroke="#0284c7" fill="#bae6fd" isAnimationActive={false} />
+              <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} />
+              {renderSeries(true)}
             </AreaChart>
           ) : (
-            <LineChart data={monthly}>
+            <LineChart data={data}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
-              <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} />
-              <Line type="monotone" dataKey="income" stroke="#0f766e" strokeWidth={2} isAnimationActive={false} />
-              <Line type="monotone" dataKey="expense" stroke="#dc2626" strokeWidth={2} isAnimationActive={false} />
+              <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} />
+              {renderSeries(false)}
             </LineChart>
           )}
         </ResponsiveContainer>
@@ -935,7 +1064,7 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
     },
   },
   donut: {
-    label: "Donut",
+    label: "analysis.widgetTypes.donut.label",
     render: ({ widget, transactions, previewData }) => {
       const config = widget.config as DonutWidgetConfig;
 
@@ -963,8 +1092,9 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
     },
   },
   stackedBar: {
-    label: "Barras apiladas",
+    label: "analysis.widgetTypes.stackedBar.label",
     render: ({ widget, transactions, previewData }) => {
+      const cfg = widget.config as StackedBarWidgetConfig;
       const preview = toChartPreview(previewData);
       if (preview) {
         const data = preview.labels.map((label, idx) => {
@@ -981,13 +1111,14 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
-              <Tooltip formatter={formatTooltipValue} />
+              <Tooltip formatter={(value) => formatTooltipByMode(value as number, cfg.valueMode)} contentStyle={chartTooltipStyle} />
               {preview.datasets.map((dataset, idx) => (
                 <Bar
                   key={dataset.label}
                   dataKey={dataset.label}
-                  stackId={idx % 2 === 0 ? "in" : "out"}
-                  fill={CHART_COLORS[idx % CHART_COLORS.length]}
+                  stackId="stack"
+                  fill={getSeriesColor(cfg.seriesColors, dataset.label, idx)}
+                  isAnimationActive={false}
                 />
               ))}
             </BarChart>
@@ -996,10 +1127,7 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
       }
 
       const filtered = applyCommonFilters(transactions, widget.config);
-      const cfg = widget.config as StackedBarWidgetConfig;
-      const stack = cfg.stackBy === "account"
-        ? stackByAccountAndMonth(filtered)
-        : stackedByAccountAndMonth(filtered);
+      const stack = stackedByMode(filtered, cfg);
 
       return (
         <ResponsiveContainer width="100%" height={chartH(widget.size)}>
@@ -1007,74 +1135,49 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis dataKey="month" />
             <YAxis />
-            <Tooltip formatter={formatTooltipValue} />
-            {cfg.stackBy === "account"
-              ? stack.accounts.map((account, idx) => (
-                  <Bar
-                    key={account}
-                    dataKey={account}
-                    stackId="account"
-                    fill={CHART_COLORS[idx % CHART_COLORS.length]}
-                    isAnimationActive={false}
-                  />
-                ))
-              : (
-                <>
-                  {stack.accounts.map((account) => (
-                    <Bar key={`${account}-in`} dataKey={`${account} ingreso`} stackId="income" fill="#0f766e" isAnimationActive={false} />
-                  ))}
-                  {stack.accounts.map((account) => (
-                    <Bar key={`${account}-out`} dataKey={`${account} gasto`} stackId="expense" fill="#dc2626" isAnimationActive={false} />
-                  ))}
-                </>
-              )}
+            <Tooltip formatter={(value) => formatTooltipByMode(value as number, cfg.valueMode)} contentStyle={chartTooltipStyle} />
+            {stack.keys.map((seriesKey, idx) => (
+              <Bar
+                key={seriesKey}
+                dataKey={seriesKey}
+                stackId="stack"
+                fill={getSeriesColor(cfg.seriesColors, seriesKey, idx)}
+                isAnimationActive={false}
+              />
+            ))}
           </BarChart>
         </ResponsiveContainer>
       );
     },
   },
   heatmap: {
-    label: "Heatmap",
+    label: "analysis.widgetTypes.heatmap.label",
     render: ({ widget, transactions, previewData }) => {
       const preview = toChartPreview(previewData);
       if (preview) {
         const values = preview.datasets[0]?.data ?? [];
         const max = Math.max(1, ...values);
-        const data = preview.labels.map((label, idx) => ({
-          label,
-          value: Number(values[idx] ?? 0),
-          intensity: Number(values[idx] ?? 0) === 0 ? 0 : Math.min(1, Number(values[idx] ?? 0) / max),
-        }));
+        const normalized = preview.labels
+          .map((label, idx) => {
+            const maybeDate = new Date(label);
+            const isIso = /^\d{4}-\d{2}-\d{2}$/.test(label);
+            const day = isIso
+              ? label
+              : Number.isNaN(maybeDate.getTime())
+                ? toIsoDay(new Date())
+                : toIsoDay(maybeDate);
+            return {
+              day,
+              dayLabel: day,
+              value: Number(values[idx] ?? 0),
+              intensity: Number(values[idx] ?? 0) === 0 ? 0 : Math.min(1, Number(values[idx] ?? 0) / max),
+            };
+          })
+          .sort((a, b) => a.day.localeCompare(b.day));
 
         return (
-          <div className="grid grid-cols-7 gap-1">
-            {data.map((item) => {
-              const bg =
-                item.intensity === 0
-                  ? "bg-slate-50 border-slate-200 text-slate-600"
-                  : item.intensity < 0.3
-                    ? "bg-cyan-100 border-cyan-200 text-cyan-800"
-                    : item.intensity < 0.6
-                      ? "bg-cyan-300 border-cyan-400 text-cyan-900"
-                      : "bg-cyan-600 border-cyan-700 text-white";
-
-              const amountLabel = item.value > 0
-                ? new Intl.NumberFormat("es-ES", { notation: "compact", maximumFractionDigits: 0 }).format(item.value)
-                : "";
-
-              return (
-                <div
-                  key={item.label}
-                  className={`aspect-square rounded-md border flex flex-col items-center justify-center overflow-hidden p-0.5 text-center ${bg}`}
-                  title={`${item.label}: ${toMoney(item.value)}`}
-                >
-                  <div className="text-[10px] font-semibold leading-none truncate w-full text-center">{item.label}</div>
-                  {amountLabel && (
-                    <div className="mt-0.5 text-[8px] leading-none opacity-80">{amountLabel}</div>
-                  )}
-                </div>
-              );
-            })}
+          <div className="w-full max-w-full overflow-hidden">
+            <HeatmapNavigator data={normalized} size={widget.size} />
           </div>
         );
       }
@@ -1082,12 +1185,17 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
       const filtered = applyCommonFilters(transactions, widget.config);
       const data = heatmapDailyExpenses(filtered);
 
-      return <HeatmapNavigator data={data} />;
+      return (
+        <div className="w-full max-w-full overflow-hidden">
+            <HeatmapNavigator data={data} size={widget.size} />
+        </div>
+      );
     },
   },
   comparison: {
-    label: "Comparacion",
+    label: "analysis.widgetTypes.comparison.label",
     render: ({ widget, transactions, previewData }) => {
+      const cfg = widget.config as ComparisonWidgetConfig;
       const preview = toChartPreview(previewData);
       if (preview) {
         const data = preview.labels.map((label, idx) => {
@@ -1104,9 +1212,15 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
               <XAxis dataKey="period" />
               <YAxis />
-              <Tooltip formatter={formatTooltipValue} />
+              <Tooltip formatter={formatTooltipValue} contentStyle={chartTooltipStyle} />
               {preview.datasets.map((dataset, idx) => (
-                <Bar key={dataset.label} dataKey={dataset.label} fill={CHART_COLORS[idx % CHART_COLORS.length]} radius={6} isAnimationActive={false} />
+                <Bar
+                  key={dataset.label}
+                  dataKey={dataset.label}
+                  fill={getSeriesColor(cfg.seriesColors, dataset.label, idx)}
+                  radius={6}
+                  isAnimationActive={false}
+                />
               ))}
             </BarChart>
           </ResponsiveContainer>
@@ -1123,9 +1237,9 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis dataKey="period" />
             <YAxis />
-            <Tooltip formatter={formatTooltipValue} />
-            <Bar dataKey="income" fill="#0f766e" radius={6} isAnimationActive={false} />
-            <Bar dataKey="expense" fill="#dc2626" radius={6} isAnimationActive={false} />
+            <Tooltip formatter={formatTooltipValue} contentStyle={chartTooltipStyle} />
+            <Bar dataKey="income" fill={getSeriesColor(cfg.seriesColors, "income", 0)} radius={6} isAnimationActive={false} />
+            <Bar dataKey="expense" fill={getSeriesColor(cfg.seriesColors, "expense", 1)} radius={6} isAnimationActive={false} />
           </BarChart>
         </ResponsiveContainer>
       );
@@ -1134,7 +1248,11 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
 };
 
 export function getWidgetRenderer(type: WidgetType): WidgetRendererDefinition {
-  return widgetRegistry[type];
+  const renderer = widgetRegistry[type];
+  return {
+    ...renderer,
+    label: i18n.t(renderer.label),
+  };
 }
 
 export function renderWidget(widget: AnalysisWidget, transactions: AnalysisTransaction[], previewData?: unknown): ReactNode {

@@ -1,0 +1,70 @@
+/* ── Accounts page hero ──────────────────────────────────────────── */
+
+.accounts-hero-section {
+  position: relative;
+  overflow: visible;
+  margin: -1.5rem -1.5rem 0;
+  padding: 0 1.5rem 2rem;
+  background: linear-gradient(
+    180deg,
+    #f0f4f8 0%,
+    #e8edf4 45%,
+    #f2f5f8 80%,
+    transparent 100%
+  );
+}
+
+@media (min-width: 768px) {
+  .accounts-hero-section {
+    margin: -2rem -2rem 0;
+    padding: 0 2rem 2rem;
+  }
+}
+
+.accounts-hero-inner {
+  position: relative;
+  z-index: 3;
+  padding: 2rem 0 0;
+}
+
+/* ── Glass-style action buttons ─────────────────────────────────── */
+.accounts-glass-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 0.75rem;
+  padding: 0.55rem 1.1rem;
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: #334155;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(203, 213, 225, 0.7);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+
+.accounts-glass-btn:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(148, 163, 184, 0.8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+}
+
+.accounts-glass-btn:active {
+  transform: translateY(0);
+}
+
+.accounts-glass-btn--primary {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%);
+  border-color: rgba(14, 165, 233, 0.35);
+  color: #0369a1;
+}
+
+.accounts-glass-btn--primary:hover {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.25) 0%, rgba(16, 185, 129, 0.25) 100%);
+  border-color: rgba(14, 165, 233, 0.5);
+  color: #0284c7;
+}

@@ -11,6 +11,8 @@ import {
   Pencil,
   Plus,
   RefreshCw,
+  Search,
+  SlidersHorizontal,
   Tag,
   Trash2,
   X,
@@ -29,6 +31,7 @@ import { bankService } from "@/backend/bankService";
 import { filterService } from "@/backend/filterService";
 import { categoryService } from "@/backend/categoryService";
 import "@/styles/pages/transactions.css";
+import { ToastBanner } from "@/components/ui/toast-banner";
 import AddTransactionModal from "@/components/transactions/AddTransactionModal";
 import ApplyRulesModal from "@/components/transactions/ApplyRulesModal";
 import Pagination from "@/components/ui/Pagination";
@@ -93,6 +96,7 @@ export default function TransactionsPage() {
   const [allSavedFilters, setAllSavedFilters] = useState<FilterSummaryDto[]>([]);
   const [showAddPicker, setShowAddPicker] = useState(false);
   const addPickerRef = useRef<HTMLDivElement>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch all saved filters for the add-to-tabs picker
   useEffect(() => {
@@ -113,6 +117,7 @@ export default function TransactionsPage() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [showAddPicker]);
+
 
   // Persist pinned filters
   useEffect(() => {
@@ -263,8 +268,10 @@ export default function TransactionsPage() {
   const displayedTransactions = useMemo(() => {
     let list = [...transactions];
 
-    if (filters.nameQuery) {
-      const q = normalize(filters.nameQuery);
+    // Search bar query (toolbar) takes priority, then filter panel's nameQuery
+    const query = searchQuery || filters.nameQuery;
+    if (query) {
+      const q = normalize(query);
       list = list.filter((tx) => normalize(tx.name).includes(q));
     }
     if (filters.amountMin != null) {
@@ -288,6 +295,7 @@ export default function TransactionsPage() {
     return list;
   }, [
     transactions,
+    searchQuery,
     filters.nameQuery,
     filters.amountMin,
     filters.amountMax,
@@ -431,192 +439,207 @@ export default function TransactionsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       {syncSummary && (
-        <div className="rounded-xl border border-sky-200 bg-sky-50 px-5 py-3 text-sm font-semibold text-sky-700">
-          {syncSummary}
-        </div>
+        <ToastBanner
+          tone="info"
+          message={syncSummary}
+          onClose={() => setSyncSummary(null)}
+        />
       )}
 
-      {/* ── Hero Header ── */}
+      {/* ── Hero Header — full-width background ── */}
       <div className="tx-hero-section">
         <div className="tx-hero-inner">
           <div className="tx-hero-title">
-            <ArrowLeftRight className="h-7 w-7 text-white/80" />
+            <ArrowLeftRight className="h-7 w-7 text-teal-600" />
             <h1>{t("transactions.title")}</h1>
-          </div>
-
-          <div className="tx-bento-grid">
-            {/* Expense card */}
-            <div className="tx-bento-card tx-bento-expense">
-              <div className="tx-bento-icon">
-                <ArrowDownCircle className="h-5 w-5 text-rose-500" />
-              </div>
-              <p className="tx-bento-card-title">{t("txPage.addExpense")}</p>
-              <p className="tx-bento-card-desc">Registra tus gastos al instante.</p>
-              <button
-                className="tx-bento-btn tx-bento-btn-dark"
-                onClick={() => setExpenseOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-                {t("txPage.addExpense")}
-              </button>
-            </div>
-
-            {/* Income card */}
-            <div className="tx-bento-card tx-bento-income">
-              <div className="tx-bento-income-bg" />
-              <div className="tx-bento-icon" style={{ position: "relative", zIndex: 1 }}>
-                <ArrowUpCircle className="h-5 w-5 text-emerald-800" />
-              </div>
-              <p className="tx-bento-card-title" style={{ position: "relative", zIndex: 1 }}>{t("txPage.addIncome")}</p>
-              <p className="tx-bento-card-desc" style={{ position: "relative", zIndex: 1 }}>Registra tus ingresos fácilmente.</p>
-              <button
-                className="tx-bento-btn tx-bento-btn-light"
-                style={{ position: "relative", zIndex: 1 }}
-                onClick={() => setIncomeOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-                {t("txPage.addIncome")}
-              </button>
-            </div>
-          </div>
-
-          {/* Action buttons — standalone pills, no card wrapper */}
-          <div className="tx-hero-actions">
             <button
-              className="tx-action-pill"
-              onClick={() => navigate(ROUTES.CATEGORIES)}
-            >
-              <Tag className="h-4 w-4" />
-              {t("nav.categories")}
-            </button>
-            <button
-              className="tx-action-pill"
-              onClick={() => navigate(ROUTES.SCHEDULED_TRANSACTIONS)}
-            >
-              <CalendarClock className="h-4 w-4" />
-              {t("scheduled.title")}
-            </button>
-            <button
-              className="tx-action-pill"
+              className="tx-sync-btn"
               onClick={handleSyncAll}
               disabled={syncingAll}
+              title="Sync bancos"
             >
               {syncingAll ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <RefreshCw className="h-4 w-4" />
               )}
-              Sync bancos
-            </button>
-            <button
-              className="tx-action-pill"
-              onClick={() => setRulesOpen(true)}
-            >
-              <ListChecks className="h-4 w-4" />
-              {t("rules.title")}
             </button>
           </div>
+
+          <div className="tx-hero-row">
+            <div className="tx-bento-grid">
+              {/* Expense card */}
+              <button
+                className="tx-bento-card tx-bento-expense"
+                onClick={() => setExpenseOpen(true)}
+              >
+                <div className="tx-bento-icon">
+                  <ArrowDownCircle className="h-6 w-6 text-rose-500" />
+                </div>
+                <div className="tx-bento-text">
+                  <p className="tx-bento-card-label">Add Entry</p>
+                  <p className="tx-bento-card-title">{t("txPage.addExpense")}</p>
+                </div>
+              </button>
+
+              {/* Income card */}
+              <button
+                className="tx-bento-card tx-bento-income"
+                onClick={() => setIncomeOpen(true)}
+              >
+                <div className="tx-bento-income-bg" />
+                <div className="tx-bento-icon" style={{ position: "relative", zIndex: 1 }}>
+                  <ArrowUpCircle className="h-6 w-6 text-white" />
+                </div>
+                <div className="tx-bento-text" style={{ position: "relative", zIndex: 1 }}>
+                  <p className="tx-bento-card-label">Log Growth</p>
+                  <p className="tx-bento-card-title">{t("txPage.addIncome")}</p>
+                </div>
+              </button>
+            </div>
+
+            {/* Action buttons — on the right */}
+            <div className="tx-hero-actions">
+              <button
+                className="tx-action-pill"
+                onClick={() => navigate(ROUTES.CATEGORIES)}
+              >
+                <Tag className="h-4 w-4" />
+                {t("nav.categories")}
+              </button>
+              <button
+                className="tx-action-pill"
+                onClick={() => navigate(ROUTES.SCHEDULED_TRANSACTIONS)}
+              >
+                <CalendarClock className="h-4 w-4" />
+                {t("scheduled.title")}
+              </button>
+              <button
+                className="tx-action-pill"
+                onClick={() => setRulesOpen(true)}
+              >
+                <ListChecks className="h-4 w-4" />
+                {t("rules.title")}
+              </button>
+              <button
+                className="tx-action-pill"
+                onClick={() => navigate(ROUTES.FILTERS)}
+              >
+                <ListChecks className="h-4 w-4" />
+                Filtros guardados
+              </button>
+            </div>
+          </div>
+
+          {/* ── Toolbar: underlined filter tabs + search + filter dropdown ── */}
+          <div className="tx-toolbar">
+            <div className="tx-filter-tabs">
+              {/* Base tab — always present */}
+              <button
+                className={`tx-filter-tab ${activeTabId === null ? "tx-filter-tab--active" : ""}`}
+                onClick={() => { setActiveTabId(null); setFilters({}); fetchTransactions({}, true, 0); }}
+              >
+                {t("txPage.baseTab", "Base")}
+              </button>
+
+              {pinnedFilters.map((pf) => (
+                <div key={pf.id} className="group relative flex items-center gap-1">
+                  <button
+                    className={`tx-filter-tab ${activeTabId === pf.id ? "tx-filter-tab--active" : ""}`}
+                    onClick={() => handleApplySavedFilter(pf.id)}
+                  >
+                    {pf.name}
+                  </button>
+                  <button
+                    onClick={() => handleRemoveTab(pf.id)}
+                    className="text-slate-300 opacity-0 transition group-hover:opacity-100 hover:text-slate-500"
+                    aria-label={`Quitar ${pf.name}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+
+              {/* Add tab button */}
+              <div ref={addPickerRef} className="relative">
+                <button
+                  onClick={() => setShowAddPicker((v) => !v)}
+                  className="flex h-5 w-5 items-center justify-center rounded-md text-slate-400 transition hover:text-sky-500"
+                  title={t("txPage.addFilterTab", "Añadir filtro a tabs")}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+                {showAddPicker && (
+                  <div className="tx-filter-dropdown" style={{ left: 0, right: "auto" }}>
+                    {allSavedFilters.filter((sf) => !pinnedFilters.some((pf) => pf.id === sf.id)).length === 0 ? (
+                      <p className="tx-filter-dropdown-empty">{t("txPage.noMoreFilters", "No hay más filtros")}</p>
+                    ) : (
+                      allSavedFilters
+                        .filter((sf) => !pinnedFilters.some((pf) => pf.id === sf.id))
+                        .map((sf) => (
+                          <button
+                            key={sf.id}
+                            className="tx-filter-dropdown-item"
+                            onClick={() => {
+                              setPinnedFilters((prev) => [...prev, sf]);
+                              setShowAddPicker(false);
+                            }}
+                          >
+                            {sf.name}
+                          </button>
+                        ))
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="tx-toolbar-right">
+              <div className="tx-search-wrapper">
+                <Search className="h-4 w-4" />
+                <input
+                  type="text"
+                  className="tx-search-input"
+                  placeholder={t("txPage.searchPlaceholder", "Search transactions...")}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              {/* Filter toggle button — opens/closes the filter panel */}
+              <button
+                className={`tx-filter-dropdown-btn ${filtersOpen ? "tx-filter-dropdown-btn--active" : ""}`}
+                onClick={() => setFiltersOpen((v) => !v)}
+                title="Filtrar transacciones"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
         </div>
+
+          {/* Filters — inside hero so gradient covers it */}
+          <FilterPanel
+            key={stateEditFilterId ?? "default"}
+            open={filtersOpen}
+            onToggle={() => setFiltersOpen((v) => !v)}
+            hideToggleButton
+            onApply={handleApplyFilters}
+            defaultAccountId={stateAccountId}
+            maxTransactionAmount={maxTxAmount || undefined}
+            initialFilters={editInitialFilters}
+            editFilterId={stateEditFilterId}
+            editFilterName={stateFilterName}
+            onUpdated={() => navigate(ROUTES.FILTERS)}
+          />
       </div>
 
-      {/* Filters */}
-      <FilterPanel
-        key={stateEditFilterId ?? "default"}
-        open={filtersOpen}
-        onToggle={() => setFiltersOpen((v) => !v)}
-        onApply={handleApplyFilters}
-        defaultAccountId={stateAccountId}
-        maxTransactionAmount={maxTxAmount || undefined}
-        initialFilters={editInitialFilters}
-        editFilterId={stateEditFilterId}
-        editFilterName={stateFilterName}
-        onUpdated={() => navigate(ROUTES.FILTERS)}
-      />
-
-      {/* Transaction list — browser-chrome card (tabs built in) */}
+      {/* Transaction list — pulled up into background gradient */}
+      <div className="tx-table-wrapper">
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-
-      {/* Quick Access Tab bar — sempre visible, with permanent Base tab */}
-      <div className="flex items-end border-b border-slate-200 bg-slate-200 px-3 pt-2">
-        {/* Scrollable tabs — scrollbar hidden via tx-tab-scroll */}
-        <div className="tx-tab-scroll flex flex-1 items-end gap-0 overflow-x-auto">
-          {/* Base tab — permanent, cannot be removed */}
-          <button
-            onClick={() => { setActiveTabId(null); setFilters({}); fetchTransactions({}, true, 0); }}
-            className={`flex shrink-0 items-center rounded-t-lg border-l border-r border-t px-3 py-2 text-xs font-semibold transition-all duration-200 ${
-              activeTabId === null
-                ? "border-slate-200 bg-white text-sky-600 -mb-[1px] z-10"
-                : "border-slate-200 bg-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700"
-            }`}
-          >
-            {t("txPage.baseTab", "Base")}
-          </button>
-
-          {pinnedFilters.map((pf) => (
-            <div
-              key={pf.id}
-              className={`group relative flex shrink-0 items-center gap-1.5 rounded-t-lg border-l border-r border-t px-3 py-2 text-xs font-medium transition-all duration-200 ${
-                activeTabId === pf.id
-                  ? "border-slate-200 bg-white text-sky-600 -mb-[1px] z-10"
-                  : "border-slate-200 bg-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700"
-              }`}
-            >
-              <button
-                onClick={() => handleApplySavedFilter(pf.id)}
-                className="truncate max-w-[120px]"
-              >
-                {pf.name}
-              </button>
-              <button
-                onClick={() => handleRemoveTab(pf.id)}
-                className="text-slate-300 transition hover:text-slate-500"
-                aria-label={`Quitar ${pf.name}`}
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
-        </div>
-
-        {/* Add filter to tabs button */}
-        <div ref={addPickerRef} className="relative ml-1 shrink-0 pb-1.5">
-          <button
-            onClick={() => setShowAddPicker((v) => !v)}
-            className="flex h-6 w-6 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-400 transition hover:border-sky-400 hover:text-sky-500"
-            title={t("txPage.addFilterTab", "Añadir filtro a tabs")}
-          >
-            <Plus className="h-3.5 w-3.5" />
-          </button>
-          {showAddPicker && (
-            <div className="absolute right-0 top-8 z-50 w-48 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
-              {allSavedFilters.filter((sf) => !pinnedFilters.some((pf) => pf.id === sf.id)).length === 0 ? (
-                <p className="px-3 py-2 text-xs text-slate-400">{t("txPage.noMoreFilters", "No hay más filtros")}</p>
-              ) : (
-                <ul>
-                  {allSavedFilters
-                    .filter((sf) => !pinnedFilters.some((pf) => pf.id === sf.id))
-                    .map((sf) => (
-                      <li key={sf.id}>
-                        <button
-                          className="w-full px-3 py-2 text-left text-xs text-slate-700 hover:bg-sky-50 hover:text-sky-600"
-                          onClick={() => {
-                            setPinnedFilters((prev) => [...prev, sf]);
-                            setShowAddPicker(false);
-                          }}
-                        >
-                          {sf.name}
-                        </button>
-                      </li>
-                    ))}
-                </ul>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-        {/* Table header — 7 columns: tipo, concepto, fecha, cuenta, categoría, importe, acciones */}
+        {/* Table header */}
         <div className="hidden grid-cols-12 gap-2 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 sm:grid">
           <div className="col-span-1">{t("transactions.type")}</div>
           <div className="col-span-2">{t("txPage.name")}</div>
@@ -737,6 +760,7 @@ export default function TransactionsPage() {
           </ul>
         )}
       </div>
+      </div>{/* /tx-table-wrapper */}
 
       {/* Pagination */}
       <Pagination

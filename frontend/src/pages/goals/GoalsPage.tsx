@@ -18,7 +18,6 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import PageHeader from "@/components/layout/PageHeader";
 import type { GoalSummaryDto } from "@/types";
 import { goalService } from "@/backend/goalService";
 import { FieldError } from "@/components/ui/field-error";
@@ -598,53 +597,55 @@ export default function GoalsPage() {
       </svg>
 
       <div className="space-y-6">
-        {/* ── Cabecera ── */}
-        <div className="rounded-xl bg-white px-5 py-4">
-          <PageHeader
-            left={<Target className="h-8 w-8 text-sky-500" />}
-            title={t("goals.title")}
-            subtitle={(
-              <div className="flex flex-wrap items-center gap-x-2">
-                <p className="text-sm text-slate-400">{t("goals.subtitle")}</p>
-                {goals.length > 0 && (
-                  <>
-                    <span className="text-slate-300" aria-hidden>·</span>
-                    <span className="inline-flex items-center gap-2 rounded-2xl bg-slate-800 px-3 py-1 text-sm font-semibold text-white shadow-sm">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{t("goals.totalSaved")}</span>
-                      <span className="tabular-nums">{fmtAmt(totalSaved)}</span>
-                    </span>
-                    <span className="text-slate-300" aria-hidden>·</span>
-                    <span className="text-xs text-slate-400">{goals.length}/{MAX_GOALS} {t("goals.goalsCount")}</span>
-                  </>
-                )}
-              </div>
-            )}
-            actions={(
-              <div className="flex items-center gap-3 page-header-actions">
-              {/* Pills con efecto gooey */}
-              <div style={{ filter: "url('#goal-goo')", display: "flex", gap: "0.5rem" }}>
-                <div className="goal-pill goal-pill-active">
-                  <span>{t("goals.tabActive")}</span>
-                  <span className="goal-pill-badge">{activeGoals.length}</span>
+        {/* ── Cabecera hero ── */}
+        <div className="goals-hero-section">
+          <div className="goals-hero-inner">
+            <div className="goals-hero-header">
+              <div className="goals-hero-title-wrap">
+                <div className="goals-hero-title">
+                  <Target className="h-8 w-8 text-sky-500" />
+                  <h1>{t("goals.title")}</h1>
                 </div>
-                <div className="goal-pill goal-pill-completed">
-                  <span>{t("goals.tabCompleted")}</span>
-                  <span className="goal-pill-badge">{completedGoals.length}</span>
+                <div className="goals-hero-subtitle">
+                  <span>{t("goals.subtitle")}</span>
+                  {goals.length > 0 && (
+                    <>
+                      <span className="mx-2 text-slate-300" aria-hidden>·</span>
+                      <span className="goals-total-pill">
+                        <span className="goals-total-pill-label">{t("goals.totalSaved")}</span>
+                        <span className="tabular-nums">{fmtAmt(totalSaved)}</span>
+                      </span>
+                      <span className="mx-2 text-slate-300" aria-hidden>·</span>
+                      <span className="text-xs text-slate-400">{goals.length}/{MAX_GOALS} {t("goals.goalsCount")}</span>
+                    </>
+                  )}
                 </div>
               </div>
+              <div className="goals-hero-actions">
+                {/* Pills con efecto gooey */}
+                <div style={{ filter: "url('#goal-goo')", display: "flex", gap: "0.5rem" }}>
+                  <div className="goal-pill goal-pill-active">
+                    <span>{t("goals.tabActive")}</span>
+                    <span className="goal-pill-badge">{activeGoals.length}</span>
+                  </div>
+                  <div className="goal-pill goal-pill-completed">
+                    <span>{t("goals.tabCompleted")}</span>
+                    <span className="goal-pill-badge">{completedGoals.length}</span>
+                  </div>
+                </div>
 
-              {/* Botón nueva meta */}
-              <button
-                onClick={() => { setEditTarget(null); setFormOpen(true); }}
-                disabled={!canAdd}
-                className="goal-new-btn"
-              >
-                <Plus className="goal-new-icon h-4 w-4" />
-                {t("goals.create")}
-              </button>
+                {/* Botón nueva meta */}
+                <button
+                  onClick={() => { setEditTarget(null); setFormOpen(true); }}
+                  disabled={!canAdd}
+                  className="goal-new-btn"
+                >
+                  <Plus className="goal-new-icon h-4 w-4" />
+                  {t("goals.create")}
+                </button>
+              </div>
             </div>
-            )}
-          />
+          </div>
         </div>
 
         {/* ── Grid de metas ── */}
