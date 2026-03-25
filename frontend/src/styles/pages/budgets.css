@@ -1,5 +1,22 @@
 /* ── Budgets page ───────────────────────────────────────────────────── */
 
+.budgets-page-shell {
+  position: relative;
+  isolation: isolate;
+}
+
+.budgets-page-shell::before {
+  content: "";
+  position: absolute;
+  inset: -2rem -2rem -1rem;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(55rem 24rem at 10% -10%, rgba(16, 185, 129, 0.16) 0%, rgba(16, 185, 129, 0) 70%),
+    radial-gradient(45rem 22rem at 90% 0%, rgba(14, 165, 233, 0.14) 0%, rgba(14, 165, 233, 0) 72%),
+    linear-gradient(180deg, rgba(241, 248, 245, 0.7) 0%, rgba(248, 251, 250, 0.2) 60%, rgba(255, 255, 255, 0) 100%);
+}
+
 /* ── "New Budget" button — squishy-tech style with budget gradient ── */
 .budget-new-btn {
   position: relative;
@@ -53,107 +70,244 @@
   50%       { transform: translateY(-3px); }
 }
 
-/* ── Budget details tab — seamless part of the card, slides on hover ── */
+/* ── Hero header section ─────────────────────────────────────────── */
+.budgets-hero-section {
+  position: relative;
+  overflow: visible;
+  margin: -1.5rem -1.5rem 0;
+  padding: 0 1.5rem 3.25rem;
+  background: linear-gradient(
+    160deg,
+    #e8f5ef 0%,
+    #e0eef9 40%,
+    #ede8f8 56%,
+    rgba(241, 245, 243, 0.7) 70%,
+    rgba(241, 245, 243, 0.2) 86%,
+    rgba(241, 245, 243, 0) 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 58%,
+    rgba(0, 0, 0, 0.82) 72%,
+    rgba(0, 0, 0, 0.45) 86%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 58%,
+    rgba(0, 0, 0, 0.82) 72%,
+    rgba(0, 0, 0, 0.45) 86%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+.budgets-hero-section::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4.8rem;
+  height: 10rem;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(232, 245, 239, 0.8) 0%,
+    rgba(231, 241, 246, 0.58) 28%,
+    rgba(241, 245, 243, 0.22) 62%,
+    rgba(241, 245, 243, 0) 100%
+  );
+  filter: blur(38px);
+}
+
+@media (min-width: 768px) {
+  .budgets-hero-section {
+    margin: -2rem -2rem 0;
+    padding: 0 2rem 3.8rem;
+  }
+}
+
+.budgets-hero-inner {
+  position: relative;
+  z-index: 3;
+  padding-top: 2rem;
+}
+
+.budgets-hero-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.budgets-hero-title-wrap {
+  min-width: 0;
+}
+
+.budgets-hero-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.budgets-hero-title h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  letter-spacing: -0.02em;
+}
+
+.budgets-hero-subtitle {
+  margin-top: 0.35rem;
+  font-size: 0.92rem;
+  color: #64748b;
+}
+
+.budgets-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.budgets-total-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.58);
+  color: #0f172a;
+  font-size: 0.75rem;
+  font-weight: 700;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 14px -10px rgba(15, 23, 42, 0.35);
+}
+
+.budget-detail-hero-card {
+  box-shadow:
+    0 0 0 1px rgba(16, 185, 129, 0.14),
+    0 0 26px -10px rgba(16, 185, 129, 0.58),
+    0 0 34px -14px rgba(14, 165, 233, 0.48);
+}
+
+.budget-detail-summary-card {
+  border: 1px solid rgba(125, 211, 252, 0.35);
+  background:
+    linear-gradient(135deg, rgba(236, 253, 245, 0.72) 0%, rgba(224, 242, 254, 0.66) 46%, rgba(239, 246, 255, 0.72) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 16px 34px -26px rgba(16, 185, 129, 0.7);
+}
+
+.budget-detail-summary-eyebrow {
+  color: #0f766e;
+}
+
+.budget-detail-summary-sub {
+  color: #475569;
+}
+
+.budget-detail-summary-stat {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(255, 255, 255, 0.48);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.budget-detail-summary-stat-label {
+  color: #64748b;
+}
+
+/* ── "View Deep Analysis" button ──────────────────────────────────── */
 /*
- * At rest: blends into the card bottom, shows only a small chevron.
- * On hover: gradient fills in and text reveals with a slide-up effect.
- * No border/shadow — it feels like part of the card, not a separate button.
+ * Same gradient as the old budget-details-tab hover effect.
+ * Used on both primary (full width) and secondary (smaller) cards.
  */
-.budget-details-tab {
+.budget-deep-analysis-btn {
   position: relative;
   width: 100%;
-  height: 2.25rem;
-  border-radius: 0 0 0.75rem 0.75rem;
+  height: 2.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   border: none;
-  background: transparent;
+  border-radius: 0.75rem;
   overflow: hidden;
   cursor: pointer;
-  margin-top: auto;
-  transition: background 240ms ease;
-}
-
-/* subtle top separator */
-.budget-details-tab::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 10%;
-  right: 10%;
-  height: 1px;
-  background: #e2e8f0;
-  transition: opacity 240ms ease;
-}
-
-.budget-card:hover .budget-details-tab::after {
-  opacity: 0;
-}
-
-/* Icon layer — visible at rest, centered */
-.budget-details-slot-icon {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #cbd5e1;
-  transform: translateY(0);
-  transition: transform 380ms ease, opacity 260ms ease;
-}
-
-/* Text layer — hidden below at rest */
-.budget-details-slot-text {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  font-size: 0.8rem;
+  font-size: 0.825rem;
   font-weight: 700;
   color: #0f172a;
-  transform: translateY(100%);
-  transition: transform 380ms ease 60ms;
+  background: transparent;
+  transition: color 200ms ease;
 }
 
-/* gradient fill sweeps in on hover */
-.budget-details-tab::before {
+/* Resting state: subtle background */
+.budget-deep-analysis-btn::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(134deg, rgba(112, 215, 255, 1) 0%, rgba(148, 225, 255, 1) 38%, rgba(103, 245, 214, 1) 65%, rgba(96, 247, 159, 1) 85%, rgba(42, 247, 128, 1) 97%);
-  transform: translateY(100%);
-  transform-origin: bottom;
-  transition: transform 380ms ease;
-  pointer-events: none;
-  border-radius: 0 0 0.75rem 0.75rem;
+  background: #f1f5f9;
+  border-radius: 0.75rem;
+  transition: opacity 300ms ease;
 }
 
-.budget-card:hover .budget-details-tab::before,
-.budget-details-tab:hover::before {
-  transform: translateY(0);
+/* Gradient fill — sits on top of the solid bg */
+.budget-deep-analysis-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    134deg,
+    rgba(112, 215, 255, 1) 0%,
+    rgba(148, 225, 255, 1) 38%,
+    rgba(103, 245, 214, 1) 65%,
+    rgba(96, 247, 159, 1) 85%,
+    rgba(42, 247, 128, 1) 97%
+  );
+  border-radius: 0.75rem;
+  opacity: 0;
+  transition: opacity 320ms ease;
 }
 
-/* icon slides up out of view */
-.budget-card:hover .budget-details-slot-icon,
-.budget-details-tab:hover .budget-details-slot-icon {
-  transform: translateY(-120%);
+.budget-deep-analysis-btn:hover::before {
   opacity: 0;
 }
 
-/* text slides up into view */
-.budget-card:hover .budget-details-slot-text,
-.budget-details-tab:hover .budget-details-slot-text {
-  transform: translateY(0);
+.budget-deep-analysis-btn:hover::after {
+  opacity: 1;
 }
 
-.budget-card-wide {
-  min-height: 0;
-  height: 100%;
+.budget-deep-analysis-icon,
+.budget-deep-analysis-text {
+  position: relative;
+  z-index: 1;
 }
 
-.budget-card-compact {
-  min-height: 17rem;
+/* Smaller variant for secondary cards */
+.budget-deep-analysis-btn-sm {
+  height: 2rem;
+  font-size: 0.75rem;
+  border-radius: 0.625rem;
 }
+
+.budget-deep-analysis-btn-sm::before,
+.budget-deep-analysis-btn-sm::after {
+  border-radius: 0.625rem;
+}
+
+/* ── Card tint variants ───────────────────────────────────────────── */
+.budget-card-tint-sky     { background-color: #f0f9ff !important; }
+.budget-card-tint-violet  { background-color: #f5f3ff !important; }
+.budget-card-tint-emerald { background-color: #f0fdf4 !important; }
+.budget-card-tint-amber   { background-color: #fffbeb !important; }
+.budget-card-tint-rose    { background-color: #fff1f2 !important; }
 
 /* ── Usage color helpers (reusable) ────────────────────────────────── */
 
@@ -233,4 +387,38 @@
   border-color: #7dd3fc;
   background: rgba(14, 165, 233, 0.04);
   color: #0ea5e9;
+}
+
+/* ── Delete confirm button in overlay ─────────────────────────────── */
+.budget-delete-confirm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.375rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  background: #ef4444;
+  border: none;
+  cursor: pointer;
+  transition: background 180ms ease, transform 160ms ease;
+}
+.budget-delete-confirm-btn:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+.budget-delete-confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Page enter animation for BudgetDetailPage ─────────────────────── */
+@keyframes budget-detail-enter {
+  from { opacity: 0; transform: translateY(10px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.budget-detail-page-enter {
+  animation: budget-detail-enter 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
 }

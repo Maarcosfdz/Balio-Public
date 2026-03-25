@@ -147,7 +147,8 @@ public class BudgetServiceImpl implements BudgetService {
 
     @Override
     public BudgetCategory createBudgetCategory(UUID userId, UUID budgetId, String name,
-                                                BigDecimal maxAmount, List<UUID> linkedCategoryIds)
+                                                BigDecimal maxAmount, List<UUID> linkedCategoryIds,
+                                                String iconName, String iconBgColor)
             throws InstanceNotFoundException {
         Budget budget = budgetDao.findByIdAndUserId(budgetId, userId)
                 .orElseThrow(() -> new InstanceNotFoundException("Budget", budgetId));
@@ -160,7 +161,7 @@ public class BudgetServiceImpl implements BudgetService {
         }
 
         int order = budget.getCategories().size();
-        BudgetCategory bc = new BudgetCategory(name.trim(), maxAmount, order, budget);
+        BudgetCategory bc = new BudgetCategory(name.trim(), maxAmount, order, budget, iconName, iconBgColor);
 
         if (linkedCategoryIds != null && !linkedCategoryIds.isEmpty()) {
             Set<Category> categories = new HashSet<>(
@@ -175,7 +176,8 @@ public class BudgetServiceImpl implements BudgetService {
     @Override
     public BudgetCategory modifyBudgetCategory(UUID userId, UUID budgetId, UUID categoryId,
                                                 String name, BigDecimal maxAmount,
-                                                List<UUID> linkedCategoryIds)
+                                                List<UUID> linkedCategoryIds,
+                                                String iconName, String iconBgColor)
             throws InstanceNotFoundException {
         budgetDao.findByIdAndUserId(budgetId, userId)
                 .orElseThrow(() -> new InstanceNotFoundException("Budget", budgetId));
@@ -202,6 +204,12 @@ public class BudgetServiceImpl implements BudgetService {
                         categoryDao.findAllById(linkedCategoryIds));
                 bc.getLinkedCategories().addAll(categories);
             }
+        }
+        if (iconName != null) {
+            bc.setIconName(iconName);
+        }
+        if (iconBgColor != null) {
+            bc.setIconBgColor(iconBgColor);
         }
 
         budgetCategoryDao.save(bc);

@@ -276,6 +276,19 @@ a:hover .btn-edit-icon {
   60%      { transform: rotate(-8deg) translate(-0.5px, 0); }
   80%      { transform: rotate(4deg) translate(0, 0); }
 }
+
+/* ── Trash icon — shake animation on button hover ── */
+button:hover .btn-delete-icon,
+a:hover .btn-delete-icon {
+  animation: trash-shake 0.45s ease-in-out;
+}
+
+@keyframes trash-shake {
+  0%, 100% { transform: rotate(0deg); }
+  20%      { transform: rotate(-12deg); }
+  50%      { transform: rotate(10deg); }
+  75%      { transform: rotate(-6deg); }
+}
 .ring-anim {
   /* ── Animated ring for default account badge ───────────────── */
 }
