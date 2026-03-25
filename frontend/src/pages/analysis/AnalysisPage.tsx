@@ -27,13 +27,14 @@ import {
   emptyDraftFromType,
   widgetTemplates,
 } from "./mocks";
-import type { AnalysisTransaction, AnalysisWidget, WidgetDraft, WidgetSize, WidgetType } from "./types";
+import type { AnalysisTransaction, AnalysisWidget, LineWidgetConfig, WidgetDraft, WidgetSize, WidgetType } from "./types";
 import type {
   BackendChartType,
   BackendWidgetType,
   ChartWidgetResponseDto,
   ChartWidgetSummaryDto,
 } from "@/backend/chartService";
+import { useTranslation } from "react-i18next";
 
 interface FilterDefinitionLike {
   type?: "INCOME" | "EXPENSE";
@@ -151,8 +152,12 @@ function mapFrontendToBackend(widget: AnalysisWidget | WidgetDraft): {
   if (widget.type === "donut") return { widgetType: "CHART", chartType: "DONUT" };
   if (widget.type === "stackedBar") return { widgetType: "CHART", chartType: "STACKED_BAR" };
   if (widget.type === "line") {
-    if ("mode" in widget.config && widget.config.mode === "balanceTrend") {
-      return { widgetType: "CHART", chartType: "AREA" };
+    const visualization = (widget.config as LineWidgetConfig).visualization;
+    if (visualization) {
+      return {
+        widgetType: "CHART",
+        chartType: visualization === "area" ? "AREA" : "LINE",
+      };
     }
     return { widgetType: "CHART", chartType: "LINE" };
   }
@@ -414,6 +419,7 @@ function isLocalWidgetId(widgetId: string): boolean {
 }
 
 export default function AnalysisPage() {
+  const { t } = useTranslation();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [widgets, setWidgets] = useState<AnalysisWidget[]>([]);
   const [transactions, setTransactions] = useState<AnalysisTransaction[]>([]);
@@ -491,7 +497,7 @@ export default function AnalysisPage() {
   const toggleEditMode = () => {
     if (editMode) {
       void saveEditChanges().then(() => {
-        setToastMessage("Dashboard changes saved.");
+        setToastMessage(t("analysis.toasts.dashboardSaved"));
       });
       setEditMode(false);
     } else {
@@ -577,9 +583,9 @@ export default function AnalysisPage() {
       await chartService.synchronizeCache();
       await loadAnalysisData();
       setDraftPreviewData(undefined);
-      setToastMessage("Dashboard synchronized. Widgets have been recalculated.");
+      setToastMessage(t("analysis.toasts.dashboardSynced"));
     } catch {
-      setToastMessage("Could not synchronize now. Please try again.");
+      setToastMessage(t("analysis.toasts.syncError"));
     } finally {
       setSyncing(false);
     }
@@ -606,11 +612,11 @@ export default function AnalysisPage() {
       setDraftPreviewData(response.data);
     } catch {
       setDraftPreviewData(undefined);
-      setToastMessage("Could not refresh the preview.");
+      setToastMessage(t("analysis.toasts.previewRefreshError"));
     } finally {
       setRefreshingDraftPreview(false);
     }
-  }, [draft, categoryIdsByName]);
+  }, [draft, categoryIdsByName, t]);
 
   useEffect(() => {
     setDraftPreviewData(undefined);
@@ -643,7 +649,7 @@ export default function AnalysisPage() {
     // Otherwise use template id
     const template = typeOrTemplateId
       ? widgetTemplates.find((tpl) => tpl.id === typeOrTemplateId)
-      : widgetTemplates[0];
+      : widgetTemplates.find((tpl) => tpl.type === "table") ?? widgetTemplates[0];
 
     if (!template) {
       setDraft(emptyDraftFromType("kpi"));
@@ -688,13 +694,13 @@ export default function AnalysisPage() {
     try {
       filterDetails = await filterService.getById(filterId);
     } catch {
-      setToastMessage("Could not load the selected filter.");
+      setToastMessage(t("analysis.toasts.filterLoadError"));
       return;
     }
 
     const definition = parseFilterDefinition(filterDetails.definition);
     if (!definition) {
-      setToastMessage("Saved filter has an incompatible format.");
+      setToastMessage(t("analysis.toasts.filterIncompatible"));
       return;
     }
 
@@ -706,7 +712,7 @@ export default function AnalysisPage() {
         config: mergeFilterIntoConfig(prev.config, definition),
       };
     });
-    setToastMessage(`Filter "${filterDetails.name}" imported to the widget.`);
+    setToastMessage(t("analysis.toasts.filterImported", { name: filterDetails.name }));
   };
 
   const saveDraft = async () => {
@@ -742,7 +748,7 @@ export default function AnalysisPage() {
           // No bloqueamos guardado si falla preview.
         }
       } catch {
-        setToastMessage("Could not save the widget.");
+        setToastMessage(t("analysis.toasts.widgetSaveError"));
         return;
       }
     } else {
@@ -762,7 +768,7 @@ export default function AnalysisPage() {
           // No bloqueamos guardado si falla preview.
         }
       } catch {
-        setToastMessage("Could not update the widget.");
+        setToastMessage(t("analysis.toasts.widgetUpdateError"));
         return;
       }
     }
@@ -780,7 +786,7 @@ export default function AnalysisPage() {
     }
 
     if (!removedRemotely && !isLocalWidgetId(widgetId)) {
-      setToastMessage("Could not delete the widget.");
+      setToastMessage(t("analysis.toasts.widgetDeleteError"));
       return;
     }
 
@@ -797,7 +803,7 @@ export default function AnalysisPage() {
   };
 
   if (loading) {
-    return <div className="py-8 text-sm text-slate-500">Loading analysis...</div>;
+    return <div className="py-8 text-sm text-slate-500">{t("analysis.loading")}</div>;
   }
 
   return (
@@ -805,8 +811,8 @@ export default function AnalysisPage() {
       <div className="space-y-5">
         <PageHeader
           left={<ChartNoAxesCombined className="h-6 w-6 text-sky-600" />}
-          title="Analysis"
-          subtitle="Create, preview and arrange your widgets using the same filters you use in transactions."
+          title={t("analysis.title")}
+          subtitle={t("analysis.subtitle")}
           actions={(
             <div className="flex gap-2">
                 <Button
@@ -818,7 +824,7 @@ export default function AnalysisPage() {
                 disabled={syncing || loading}
               >
                 <RefreshCw className={`mr-2 h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
-                {syncing ? "Syncing..." : "Sync"}
+                {syncing ? t("analysis.actions.syncing") : t("analysis.actions.sync")}
               </Button>
 
               <Button
@@ -826,7 +832,7 @@ export default function AnalysisPage() {
                 onClick={toggleEditMode}
               >
                 <LayoutDashboard className="mr-2 h-4 w-4" />
-                {editMode ? "Exit edit" : "Edit dashboard"}
+                {editMode ? t("analysis.actions.exitEdit") : t("analysis.actions.editDashboard")}
               </Button>
             </div>
           )}

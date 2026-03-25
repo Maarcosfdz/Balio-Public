@@ -25,11 +25,16 @@ import DateRangePicker from "../../transactions/components/DateRangePicker";
 import { HexColorInput, HexColorPicker } from "react-colorful";
 import { renderWidget } from "../registry";
 import { buildConfigForType } from "../mocks";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import type {
   AnalysisTransaction,
   AnalysisWidget,
   BarWidgetConfig,
+  ComparisonWidgetConfig,
   DateRangePreset,
+  LineWidgetConfig,
+  StackedBarWidgetConfig,
   DonutWidgetConfig,
   WidgetDraft,
   WidgetConfig,
@@ -63,12 +68,7 @@ interface SelectOption {
   label: string;
 }
 
-const dateRangeOptions: Array<{ value: DateRangePreset; label: string }> = [
-  { value: "30d", label: "Last 30 days" },
-  { value: "90d", label: "Last 90 days" },
-  { value: "365d", label: "Last 12 months" },
-  { value: "ytd", label: "Year to date (YTD)" },
-];
+const dateRangeOptions: DateRangePreset[] = ["30d", "90d", "365d", "ytd"];
 
 const typeOptions: WidgetType[] = [
   "kpi",
@@ -81,32 +81,32 @@ const typeOptions: WidgetType[] = [
   "comparison",
 ];
 
-function getTypeLabel(type: WidgetType): string {
-  const labels: Record<WidgetType, string> = {
-    kpi: "KPI",
-    table: "Table",
-    bar: "Bars",
-    line: "Line/Area",
-    donut: "Donut",
-    stackedBar: "Stacked Bars",
-    heatmap: "Heatmap",
-    comparison: "Comparison",
+function getTypeLabel(t: TFunction, type: WidgetType): string {
+  const keys: Record<WidgetType, string> = {
+    kpi: "analysis.widgetTypes.kpi.label",
+    table: "analysis.widgetTypes.table.label",
+    bar: "analysis.widgetTypes.bar.label",
+    line: "analysis.widgetTypes.line.label",
+    donut: "analysis.widgetTypes.donut.label",
+    stackedBar: "analysis.widgetTypes.stackedBar.label",
+    heatmap: "analysis.widgetTypes.heatmap.label",
+    comparison: "analysis.widgetTypes.comparison.label",
   };
-  return labels[type];
+  return t(keys[type]);
 }
 
-function getTypeDescription(type: WidgetType): string {
-  const descriptions: Record<WidgetType, string> = {
-    kpi: "Quick summary of a metric.",
-    table: "Aggregated list by category or account.",
-    bar: "Compare amounts by category.",
-    line: "Time evolution of incomes and expenses.",
-    donut: "Relative weight of each category.",
-    stackedBar: "Compare segments across periods.",
-    heatmap: "Detect concentration by days.",
-    comparison: "Current period vs previous.",
+function getTypeDescription(t: TFunction, type: WidgetType): string {
+  const keys: Record<WidgetType, string> = {
+    kpi: "analysis.widgetTypes.kpi.description",
+    table: "analysis.widgetTypes.table.description",
+    bar: "analysis.widgetTypes.bar.description",
+    line: "analysis.widgetTypes.line.description",
+    donut: "analysis.widgetTypes.donut.description",
+    stackedBar: "analysis.widgetTypes.stackedBar.description",
+    heatmap: "analysis.widgetTypes.heatmap.description",
+    comparison: "analysis.widgetTypes.comparison.description",
   };
-  return descriptions[type];
+  return t(keys[type]);
 }
 
 function getTypeIcon(type: WidgetType): LucideIcon {
@@ -206,13 +206,22 @@ function MultiSelectDropdown({
   options,
   selected,
   onChange,
+  allLabel,
+  noOptionsLabel,
+  selectedManyLabel,
+  pageSize,
 }: {
   label: string;
   options: Array<{ id: string; name: string }>;
   selected: string[];
   onChange: (ids: string[]) => void;
+  allLabel: string;
+  noOptionsLabel: string;
+  selectedManyLabel: string;
+  pageSize?: number;
 }) {
   const [open, setOpen] = useState(false);
+  const [page, setPage] = useState(1);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -231,10 +240,15 @@ function MultiSelectDropdown({
 
   const displayLabel =
     selected.length === 0
-      ? "Todas"
+      ? allLabel
       : selected.length === 1
         ? options.find((opt) => opt.id === selected[0])?.name ?? label
-        : `${selected.length} categorias`;
+        : `${selected.length} ${selectedManyLabel}`;
+
+  const effectivePageSize = pageSize ?? options.length;
+  const totalPages = Math.max(1, Math.ceil(options.length / effectivePageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedOptions = options.slice((safePage - 1) * effectivePageSize, safePage * effectivePageSize);
 
   return (
     <div className="space-y-1" ref={ref}>
@@ -242,7 +256,13 @@ function MultiSelectDropdown({
       <div className="relative">
         <button
           type="button"
-          onClick={() => setOpen((prev) => !prev)}
+          onClick={() => {
+            setOpen((prev) => {
+              const next = !prev;
+              if (next) setPage(1);
+              return next;
+            });
+          }}
           className="flex h-10 w-full cursor-pointer items-center justify-between rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 shadow-xs transition hover:border-sky-300 hover:bg-sky-50/40 focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
         >
           <span className={`truncate ${selected.length === 0 ? "text-slate-400" : "text-slate-700"}`}>{displayLabel}</span>
@@ -252,22 +272,46 @@ function MultiSelectDropdown({
         {open && (
           <div className="absolute left-0 top-full z-20 mt-1 max-h-52 w-full overflow-auto rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
             {options.length === 0 ? (
-              <p className="px-3 py-2 text-xs text-slate-400">No hay categorias</p>
+              <p className="px-3 py-2 text-xs text-slate-400">{noOptionsLabel}</p>
             ) : (
-              options.map((option) => (
-                <label
-                  key={option.id}
-                  className="flex cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-sm text-slate-600 transition hover:bg-sky-50 hover:text-slate-800"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selected.includes(option.id)}
-                    onChange={() => toggle(option.id)}
-                    className="h-3.5 w-3.5 rounded accent-sky-500"
-                  />
-                  {option.name}
-                </label>
-              ))
+              <>
+                {pagedOptions.map((option) => (
+                  <label
+                    key={option.id}
+                    className="flex cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-sm text-slate-600 transition hover:bg-sky-50 hover:text-slate-800"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(option.id)}
+                      onChange={() => toggle(option.id)}
+                      className="h-3.5 w-3.5 rounded accent-sky-500"
+                    />
+                    {option.name}
+                  </label>
+                ))}
+
+                {totalPages > 1 && (
+                  <div className="mt-1 flex items-center justify-between border-t border-slate-100 px-2 pt-2 text-xs text-slate-500">
+                    <button
+                      type="button"
+                      className="rounded border border-slate-200 px-2 py-1 hover:bg-slate-50 disabled:opacity-40"
+                      onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                      disabled={safePage <= 1}
+                    >
+                      ‹
+                    </button>
+                    <span>{safePage} / {totalPages}</span>
+                    <button
+                      type="button"
+                      className="rounded border border-slate-200 px-2 py-1 hover:bg-slate-50 disabled:opacity-40"
+                      onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                      disabled={safePage >= totalPages}
+                    >
+                      ›
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
@@ -350,6 +394,7 @@ export default function AnalysisConfigurator({
   onRefreshPreview,
   refreshingPreview,
 }: AnalysisConfiguratorProps) {
+  const { t, i18n } = useTranslation();
   const [activeColorEditor, setActiveColorEditor] = useState<string | null>(null);
   const [previewExpanded, setPreviewExpanded] = useState(false);
   const draftRef = useRef<WidgetDraft | null>(draft);
@@ -370,24 +415,24 @@ export default function AnalysisConfigurator({
   );
 
   const widgetTypeOptions = useMemo(
-    () => typeOptions.map((type) => ({ value: type, label: getTypeLabel(type) })),
-    [],
+    () => typeOptions.map((type) => ({ value: type, label: getTypeLabel(t, type) })),
+    [t],
   );
 
   const widgetSizeOptions: SelectOption[] = [
-    { value: "sm", label: "Small" },
-    { value: "md", label: "Medium" },
-    { value: "lg", label: "Large" },
+    { value: "sm", label: t("analysis.configurator.sizes.small") },
+    { value: "md", label: t("analysis.configurator.sizes.medium") },
+    { value: "lg", label: t("analysis.configurator.sizes.large") },
   ];
 
   const dateRangeSelectOptions = dateRangeOptions.map((option) => ({
-    value: option.value,
-    label: option.label,
+    value: option,
+    label: t(`analysis.configurator.dateRanges.${option}`),
   }));
 
   const movementTypeOptions: SelectOption[] = [
-    { value: "INCOME", label: "Income" },
-    { value: "EXPENSE", label: "Expenses" },
+    { value: "INCOME", label: t("analysis.configurator.transactionTypeOptions.income") },
+    { value: "EXPENSE", label: t("analysis.configurator.transactionTypeOptions.expense") },
   ];
 
   const accountSelectOptions = accountOptions.map((account) => ({ value: account.id, label: account.name }));
@@ -433,7 +478,7 @@ export default function AnalysisConfigurator({
       const keys = new Set<string>();
       for (const tx of filteredDraftTransactions) {
         if (tx.type === "INCOME") {
-          keys.add(new Date(tx.date).toLocaleDateString("es-ES", { month: "short" }));
+          keys.add(new Date(tx.date).toLocaleDateString(i18n.resolvedLanguage, { month: "short" }));
         }
       }
       return Array.from(keys);
@@ -449,8 +494,94 @@ export default function AnalysisConfigurator({
       return Array.from(keys).sort((a, b) => a.localeCompare(b));
     }
 
+    if (draft.type === "line") {
+      const lineConfig = draft.config as LineWidgetConfig;
+
+      if (lineConfig.mode === "incomeVsExpense") {
+        return ["income", "expense"];
+      }
+
+      if (lineConfig.mode === "balanceTrend") {
+        return ["balance"];
+      }
+
+      const keySet = new Set<string>();
+      const source = filteredDraftTransactions;
+      const keyFromTx = (tx: AnalysisTransaction) =>
+        lineConfig.mode === "byAccount"
+          ? tx.accountName
+          : (tx.categoryName || t("analysis.configurator.uncategorized"));
+
+      for (const tx of source) keySet.add(keyFromTx(tx));
+      const allKeys = Array.from(keySet).sort((a, b) => a.localeCompare(b));
+      if (!lineConfig.seriesKeys || lineConfig.seriesKeys.length === 0) return allKeys;
+      const selectedSet = new Set(lineConfig.seriesKeys);
+      return allKeys.filter((key) => selectedSet.has(key));
+    }
+
+    if (draft.type === "stackedBar") {
+      const stackedConfig = draft.config as StackedBarWidgetConfig;
+      if (stackedConfig.stackBy === "type") {
+        return ["income", "expense"];
+      }
+
+      const keySet = new Set<string>();
+      for (const tx of filteredDraftTransactions) {
+        if (stackedConfig.stackBy === "account") keySet.add(tx.accountName);
+        if (stackedConfig.stackBy === "category") keySet.add(tx.categoryName || t("analysis.configurator.uncategorized"));
+      }
+      const allKeys = Array.from(keySet).sort((a, b) => a.localeCompare(b));
+      if (!stackedConfig.seriesKeys || stackedConfig.seriesKeys.length === 0) return allKeys;
+      const selectedSet = new Set(stackedConfig.seriesKeys);
+      return allKeys.filter((key) => selectedSet.has(key));
+    }
+
+    if (draft.type === "comparison") {
+      return ["income", "expense"];
+    }
+
     return [] as string[];
-  }, [draft, filteredDraftTransactions]);
+  }, [draft, filteredDraftTransactions, i18n.resolvedLanguage, t]);
+
+  const lineSeriesOptions = useMemo(() => {
+    if (!draft || draft.type !== "line") return [] as Array<{ id: string; name: string }>;
+    const lineConfig = draft.config as LineWidgetConfig;
+    if (lineConfig.mode === "byAccount") {
+      return accountOptions.map((account) => ({ id: account.name, name: account.name }));
+    }
+    if (lineConfig.mode === "byCategory") {
+      const options = categoryOptions.map((category) => ({ id: category.name, name: category.name }));
+      const hasUncategorized = filteredDraftTransactions.some((tx) => !tx.categoryName);
+      if (hasUncategorized) {
+        options.push({
+          id: t("analysis.configurator.uncategorized"),
+          name: t("analysis.configurator.uncategorized"),
+        });
+      }
+      return options;
+    }
+    return [] as Array<{ id: string; name: string }>;
+  }, [accountOptions, categoryOptions, draft, filteredDraftTransactions, t]);
+
+  const stackedSeriesOptions = useMemo(() => {
+    if (!draft || draft.type !== "stackedBar") return [] as Array<{ id: string; name: string }>;
+    const stackedConfig = draft.config as StackedBarWidgetConfig;
+    if (stackedConfig.stackBy === "account") {
+      return accountOptions.map((account) => ({ id: account.name, name: account.name }));
+    }
+    if (stackedConfig.stackBy === "category") {
+      const options = categoryOptions.map((category) => ({ id: category.name, name: category.name }));
+      const hasUncategorized = filteredDraftTransactions.some((tx) => !tx.categoryName);
+      if (hasUncategorized) {
+        options.push({
+          id: t("analysis.configurator.uncategorized"),
+          name: t("analysis.configurator.uncategorized"),
+        });
+      }
+      return options;
+    }
+    return [] as Array<{ id: string; name: string }>;
+  }, [accountOptions, categoryOptions, draft, filteredDraftTransactions, t]);
 
   const previewWidget: AnalysisWidget | null = useMemo(() => {
     if (!draft) return null;
@@ -492,9 +623,9 @@ export default function AnalysisConfigurator({
   const [visiblePage, setVisiblePage] = useState(1);
   const [hiddenPage, setHiddenPage] = useState(1);
 
-  useEffect(() => { setVisiblePage(1); setHiddenPage(1); }, [editMode]);
-
-  const cardTitle = editMode && !draft ? "Edit dashboard" : "Widget configurator";
+  const cardTitle = editMode && !draft
+    ? t("analysis.actions.editDashboard")
+    : t("analysis.configurator.title");
   const visibleWidgets = widgets.filter((widget) => widget.visible);
   const hiddenWidgets = widgets.filter((widget) => !widget.visible);
 
@@ -518,18 +649,18 @@ export default function AnalysisConfigurator({
           {editMode && !draft && (
             <div className="space-y-3">
               <p className="text-sm text-slate-500">
-                Click a chart to edit it. Use <strong>S / M / L</strong> for size.
+                {t("analysis.configurator.editHintPrefix")} <strong>S / M / L</strong> {t("analysis.configurator.editHintSuffix")}
               </p>
 
               {widgets.length === 0 ? (
                 <p className="py-4 text-center text-sm text-slate-400">
-                  No hay gráficos todavía.
+                  {t("analysis.configurator.noCharts")}
                 </p>
               ) : (
                 <div className="space-y-3">
                   <div className="space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      En dashboard
+                      {t("analysis.configurator.inDashboard")}
                     </p>
                     {pagedVisibleWidgets.map((widget) => (
                     <div
@@ -566,12 +697,12 @@ export default function AnalysisConfigurator({
                             e.stopPropagation();
                             onToggleWidgetVisibility(widget.id);
                           }}
-                          title="Quitar del dashboard"
-                          aria-label="Quitar del dashboard"
+                          title={t("analysis.configurator.removeFromDashboard")}
+                          aria-label={t("analysis.configurator.removeFromDashboard")}
                         >
                           <span className="analysis-dashboard-toggle__fill" />
                           <Check className="analysis-dashboard-toggle__check h-3 w-3" />
-                          <span className="analysis-dashboard-toggle__tooltip">Quitar</span>
+                          <span className="analysis-dashboard-toggle__tooltip">{t("analysis.configurator.remove")}</span>
                         </button>
 
                         <div className="analysis-size-toggle">
@@ -584,7 +715,11 @@ export default function AnalysisConfigurator({
                                 e.stopPropagation();
                                 onResizeWidget(widget.id, s);
                               }}
-                              title={s === "sm" ? "Pequeño" : s === "md" ? "Mediano" : "Grande"}
+                              title={s === "sm"
+                                ? t("analysis.configurator.sizes.small")
+                                : s === "md"
+                                  ? t("analysis.configurator.sizes.medium")
+                                  : t("analysis.configurator.sizes.large")}
                             >
                               {s.toUpperCase()}
                             </button>
@@ -598,8 +733,8 @@ export default function AnalysisConfigurator({
                             e.stopPropagation();
                             onDeleteWidget(widget.id);
                           }}
-                          title="Borrar"
-                          aria-label="Borrar"
+                          title={t("analysis.configurator.delete")}
+                          aria-label={t("analysis.configurator.delete")}
                         >
                           <Trash2 className="btn-delete-icon__icon h-4 w-4" />
                         </button>
@@ -608,7 +743,7 @@ export default function AnalysisConfigurator({
                     ))}
                     {visibleWidgets.length === 0 && (
                       <p className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
-                        No hay gráficos activos en el dashboard.
+                        {t("analysis.configurator.noActiveCharts")}
                       </p>
                     )}
                     <Pagination
@@ -620,7 +755,7 @@ export default function AnalysisConfigurator({
 
                   <div className="space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Fuera del dashboard (abajo)
+                      {t("analysis.configurator.outDashboard")}
                     </p>
                     {pagedHiddenWidgets.map((widget) => (
                       <div
@@ -656,12 +791,12 @@ export default function AnalysisConfigurator({
                               e.stopPropagation();
                               onToggleWidgetVisibility(widget.id);
                             }}
-                            title="Añadir al dashboard"
-                            aria-label="Añadir al dashboard"
+                            title={t("analysis.configurator.addToDashboard")}
+                            aria-label={t("analysis.configurator.addToDashboard")}
                           >
                             <span className="analysis-dashboard-toggle__fill" />
                             <Check className="analysis-dashboard-toggle__check h-3 w-3" />
-                            <span className="analysis-dashboard-toggle__tooltip">Añadir</span>
+                            <span className="analysis-dashboard-toggle__tooltip">{t("analysis.configurator.add")}</span>
                           </button>
 
                           <button
@@ -671,8 +806,8 @@ export default function AnalysisConfigurator({
                               e.stopPropagation();
                               onDeleteWidget(widget.id);
                             }}
-                            title="Borrar"
-                            aria-label="Borrar"
+                            title={t("analysis.configurator.delete")}
+                            aria-label={t("analysis.configurator.delete")}
                           >
                             <Trash2 className="btn-delete-icon__icon h-4 w-4" />
                           </button>
@@ -681,7 +816,7 @@ export default function AnalysisConfigurator({
                     ))}
                     {hiddenWidgets.length === 0 && (
                       <p className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
-                        Todos los gráficos están activos.
+                        {t("analysis.configurator.allChartsActive")}
                       </p>
                     )}
                     <Pagination
@@ -699,7 +834,7 @@ export default function AnalysisConfigurator({
                 className="analysis-add-btn"
               >
                 <Plus className="h-4 w-4" />
-                Add widget
+                {t("analysis.actions.addWidget")}
               </button>
             </div>
           )}
@@ -708,7 +843,7 @@ export default function AnalysisConfigurator({
           {!editMode && !draft && (
             <div className="space-y-3">
               <p className="text-sm text-slate-600">
-                Elige el tipo de grafico para empezar. Despues podras afinar filtros, fechas y formato.
+                {t("analysis.configurator.startHint")}
               </p>
               <div className="grid grid-cols-2 gap-2">
                 {typeOptions.map((type) => {
@@ -725,8 +860,8 @@ export default function AnalysisConfigurator({
                           <Icon className="h-4 w-4" />
                         </span>
                         <span>
-                          <p className="text-sm font-semibold text-slate-800">{getTypeLabel(type)}</p>
-                          <p className="text-xs text-slate-500">{getTypeDescription(type)}</p>
+                          <p className="text-sm font-semibold text-slate-800">{getTypeLabel(t, type)}</p>
+                          <p className="text-xs text-slate-500">{getTypeDescription(t, type)}</p>
                         </span>
                       </div>
                     </button>
@@ -741,14 +876,14 @@ export default function AnalysisConfigurator({
             <>
               <div className="rounded-lg border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-3">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-                  Import saved filter
+                  {t("analysis.configurator.importSavedFilter")}
                 </p>
                 <div className="mt-2 flex gap-2">
                   <SingleSelectDropdown
                     label=""
                     value={draft.importedFilterId ?? ""}
                     options={savedFilterOptions}
-                    placeholder="Select a filter"
+                    placeholder={t("analysis.configurator.selectFilter")}
                     onChange={(nextFilterId) => {
                       if (!nextFilterId) {
                         onDraftChange({ ...draft, importedFilterId: undefined });
@@ -762,20 +897,20 @@ export default function AnalysisConfigurator({
 
               <div className="grid grid-cols-1 gap-3">
                 <label className="text-sm font-medium text-slate-700">
-                  Title
+                  {t("analysis.configurator.fields.title")}
                   <input
                     className={controlClassName}
                     value={draft.title}
-                    placeholder="Ej. Gastos por categoria"
+                    placeholder={t("analysis.configurator.fields.titlePlaceholder")}
                     onChange={(event) => onDraftChange({ ...draft, title: event.target.value })}
                   />
                 </label>
                 <label className="text-sm font-medium text-slate-700">
-                  Description
+                  {t("analysis.configurator.fields.description")}
                   <input
                     className={controlClassName}
                     value={draft.description}
-                    placeholder="Ej. Comparativa mensual de tus gastos"
+                    placeholder={t("analysis.configurator.fields.descriptionPlaceholder")}
                     onChange={(event) => onDraftChange({ ...draft, description: event.target.value })}
                   />
                 </label>
@@ -783,10 +918,10 @@ export default function AnalysisConfigurator({
 
               <div className="grid grid-cols-2 gap-3">
                 <SingleSelectDropdown
-                  label="Tipo"
+                  label={t("analysis.configurator.fields.type")}
                   value={draft.type}
                   options={widgetTypeOptions}
-                  placeholder="Selecciona tipo"
+                  placeholder={t("analysis.configurator.selectType")}
                   onChange={(value) => {
                     const newType = value as WidgetType;
                     if (newType === draft.type) return;
@@ -794,26 +929,26 @@ export default function AnalysisConfigurator({
                     onDraftChange({
                       ...draft,
                       type: newType,
-                      title: draft.title || getTypeLabel(newType),
+                      title: draft.title || getTypeLabel(t, newType),
                       config: newConfig,
                     });
                   }}
                 />
                 <SingleSelectDropdown
-                  label="Tamano"
+                  label={t("analysis.configurator.fields.size")}
                   value={draft.size}
                   options={widgetSizeOptions}
-                  placeholder="Selecciona tamano"
+                  placeholder={t("analysis.configurator.selectSize")}
                   onChange={(value) => onDraftChange({ ...draft, size: value as AnalysisWidget["size"] })}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <SingleSelectDropdown
-                  label="Rango rapido"
+                  label={t("analysis.configurator.fields.quickRange")}
                   value={draft.config.dateRange === "custom" ? "" : draft.config.dateRange}
                   options={dateRangeSelectOptions}
-                  placeholder="Sin rango rapido"
+                  placeholder={t("analysis.configurator.noQuickRange")}
                   onChange={(value) =>
                     changeDraftConfig({
                       dateRange: value ? (value as DateRangePreset) : "custom",
@@ -823,10 +958,10 @@ export default function AnalysisConfigurator({
                     })}
                 />
                 <SingleSelectDropdown
-                  label="Tipo movimiento"
+                  label={t("analysis.configurator.fields.transactionType")}
                   value={draft.config.transactionType ?? ""}
                   options={movementTypeOptions}
-                  placeholder="Todos"
+                  placeholder={t("analysis.configurator.all")}
                   onChange={(value) =>
                     changeDraftConfig({
                       transactionType: value === "INCOME" || value === "EXPENSE" ? value : undefined,
@@ -861,26 +996,26 @@ export default function AnalysisConfigurator({
 
               <div className="grid grid-cols-2 gap-3">
                 <SingleSelectDropdown
-                  label="Cuenta"
+                  label={t("analysis.configurator.fields.account")}
                   value={draft.config.accountId ?? ""}
                   options={accountSelectOptions}
-                  placeholder="Todas"
+                  placeholder={t("analysis.configurator.all")}
                   onChange={(value) => changeDraftConfig({ accountId: value || undefined })}
                 />
                 <label className="text-sm font-medium text-slate-700">
-                  Buscar nombre
+                  {t("analysis.configurator.fields.searchName")}
                   <input
                     className={controlClassName}
                     value={draft.config.nameQuery}
                     onChange={(event) => changeDraftConfig({ nameQuery: event.target.value })}
-                    placeholder="Ej. alquiler, nomina..."
+                    placeholder={t("analysis.configurator.fields.searchNamePlaceholder")}
                   />
                 </label>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <label className="text-sm font-medium text-slate-700">
-                  Importe minimo
+                  {t("analysis.configurator.fields.amountMin")}
                   <input
                     type="number"
                     min={0}
@@ -894,7 +1029,7 @@ export default function AnalysisConfigurator({
                   />
                 </label>
                 <label className="text-sm font-medium text-slate-700">
-                  Importe maximo
+                  {t("analysis.configurator.fields.amountMax")}
                   <input
                     type="number"
                     min={0}
@@ -910,22 +1045,25 @@ export default function AnalysisConfigurator({
               </div>
 
               <MultiSelectDropdown
-                label="Categorias"
+                label={t("analysis.configurator.fields.categories")}
                 options={categoryOptions}
                 selected={draft.config.categoryIds}
                 onChange={(ids) => changeDraftConfig({ categoryIds: ids })}
+                allLabel={t("analysis.configurator.all")}
+                noOptionsLabel={t("analysis.configurator.noCategories")}
+                selectedManyLabel={t("analysis.configurator.categoriesCount")}
               />
 
               {"metric" in draft.config && (
                 <SingleSelectDropdown
-                  label="Metrica KPI"
+                  label={t("analysis.configurator.fields.kpiMetric")}
                   value={draft.config.metric}
-                  placeholder="Selecciona metrica"
+                  placeholder={t("analysis.configurator.selectMetric")}
                   options={[
-                    { value: "income", label: "Ingresos" },
-                    { value: "expense", label: "Gastos" },
-                    { value: "balance", label: "Balance" },
-                    { value: "savingsRate", label: "Tasa de ahorro" },
+                    { value: "income", label: t("analysis.configurator.kpiOptions.income") },
+                    { value: "expense", label: t("analysis.configurator.kpiOptions.expense") },
+                    { value: "balance", label: t("analysis.configurator.kpiOptions.balance") },
+                    { value: "savingsRate", label: t("analysis.configurator.kpiOptions.savingsRate") },
                   ]}
                   onChange={(value) =>
                     changeDraftConfig({
@@ -937,23 +1075,23 @@ export default function AnalysisConfigurator({
               {"groupBy" in draft.config && (
                 <div className="grid grid-cols-2 gap-3">
                   <SingleSelectDropdown
-                    label="Agrupar por"
+                    label={t("analysis.configurator.fields.groupBy")}
                     value={draft.config.groupBy}
-                    placeholder="Selecciona grupo"
+                    placeholder={t("analysis.configurator.selectGroup")}
                     options={[
-                      { value: "category", label: "Categoria" },
-                      { value: "account", label: "Cuenta" },
+                      { value: "category", label: t("analysis.configurator.groupByOptions.category") },
+                      { value: "account", label: t("analysis.configurator.groupByOptions.account") },
                     ]}
                     onChange={(value) => changeDraftConfig({ groupBy: value as "category" | "account" })}
                   />
                   {"valueMode" in draft.config && (
                     <SingleSelectDropdown
-                      label="Valor"
+                      label={t("analysis.configurator.fields.value")}
                       value={draft.config.valueMode}
-                      placeholder="Selecciona valor"
+                      placeholder={t("analysis.configurator.selectValue")}
                       options={[
-                        { value: "amount", label: "Importe" },
-                        { value: "count", label: "Count transacciones" },
+                        { value: "amount", label: t("analysis.configurator.valueOptions.amount") },
+                        { value: "count", label: t("analysis.configurator.valueOptions.count") },
                       ]}
                       onChange={(value) => changeDraftConfig({ valueMode: value as "amount" | "count" })}
                     />
@@ -965,12 +1103,12 @@ export default function AnalysisConfigurator({
                 <>
                   <div className="grid grid-cols-2 gap-3">
                     <SingleSelectDropdown
-                      label="Modo barras"
+                      label={t("analysis.configurator.fields.barMode")}
                       value={draft.config.mode}
-                      placeholder="Selecciona modo"
+                      placeholder={t("analysis.configurator.selectMode")}
                       options={[
-                        { value: "expensesByCategory", label: "Por categoría" },
-                        { value: "incomeByMonth", label: "Por mes" },
+                        { value: "expensesByCategory", label: t("analysis.configurator.barModeOptions.expensesByCategory") },
+                        { value: "incomeByMonth", label: t("analysis.configurator.barModeOptions.incomeByMonth") },
                       ]}
                       onChange={(value) =>
                         changeDraftConfig({
@@ -978,12 +1116,12 @@ export default function AnalysisConfigurator({
                         })}
                     />
                     <SingleSelectDropdown
-                      label="Eje Y"
+                      label={t("analysis.configurator.fields.yAxis")}
                       value={draft.config.valueMode}
-                      placeholder="Selecciona valor"
+                      placeholder={t("analysis.configurator.selectValue")}
                       options={[
-                        { value: "amount", label: "Importe" },
-                        { value: "count", label: "Count transacciones" },
+                        { value: "amount", label: t("analysis.configurator.valueOptions.amount") },
+                        { value: "count", label: t("analysis.configurator.valueOptions.count") },
                       ]}
                       onChange={(value) => changeDraftConfig({ valueMode: value as "amount" | "count" })}
                     />
@@ -992,12 +1130,12 @@ export default function AnalysisConfigurator({
                   {editableSeriesKeys.length > 0 && (
                     <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-                        Color por barra
+                        {t("analysis.configurator.colorPerBar")}
                       </p>
                       <div className="space-y-2">
                         {editableSeriesKeys.map((key) => {
                           const editorId = `bar:${key}`;
-                          const currentColor = (draft.config as BarWidgetConfig).seriesColors?.[key] ?? "#0f766e";
+                          const currentColor = (draft.config as BarWidgetConfig).seriesColors?.[key] ?? "#0284c7";
                           const isOpen = activeColorEditor === editorId;
 
                           return (
@@ -1050,43 +1188,143 @@ export default function AnalysisConfigurator({
               )}
 
               {draft.type === "line" && "mode" in draft.config && "valueMode" in draft.config && (
-                <div className="grid grid-cols-2 gap-3">
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <SingleSelectDropdown
+                      label={t("analysis.configurator.fields.lineMode")}
+                      value={draft.config.mode}
+                      placeholder={t("analysis.configurator.selectMode")}
+                      options={[
+                        { value: "balanceTrend", label: t("analysis.configurator.lineModeOptions.balanceTrend") },
+                        { value: "incomeVsExpense", label: t("analysis.configurator.lineModeOptions.incomeVsExpense") },
+                        { value: "byCategory", label: t("analysis.configurator.lineModeOptions.byCategory") },
+                        { value: "byAccount", label: t("analysis.configurator.lineModeOptions.byAccount") },
+                      ]}
+                      onChange={(value) =>
+                        changeDraftConfig({
+                          mode: value as LineWidgetConfig["mode"],
+                          splitBy:
+                            value === "byCategory"
+                              ? "category"
+                              : value === "byAccount"
+                                ? "account"
+                                : "none",
+                          seriesKeys: [],
+                        })}
+                    />
+                    <SingleSelectDropdown
+                      label={t("analysis.configurator.fields.value")}
+                      value={draft.config.valueMode}
+                      placeholder={t("analysis.configurator.selectValue")}
+                      options={[
+                        { value: "amount", label: t("analysis.configurator.valueOptions.amount") },
+                        { value: "count", label: t("analysis.configurator.valueOptions.count") },
+                      ]}
+                      onChange={(value) => changeDraftConfig({ valueMode: value as "amount" | "count" })}
+                    />
+                  </div>
+
                   <SingleSelectDropdown
-                    label="Modo línea"
-                    value={draft.config.mode}
-                    placeholder="Selecciona modo"
+                    label={t("analysis.configurator.fields.lineVisualization")}
+                    value={(draft.config as LineWidgetConfig).visualization ?? "line"}
+                    placeholder={t("analysis.configurator.selectMode")}
                     options={[
-                      { value: "balanceTrend", label: "Tendencia de balance" },
-                      { value: "incomeVsExpense", label: "Ingresos vs gastos" },
+                      { value: "line", label: t("analysis.configurator.lineVisualizationOptions.line") },
+                      { value: "area", label: t("analysis.configurator.lineVisualizationOptions.area") },
                     ]}
                     onChange={(value) =>
                       changeDraftConfig({
-                        mode: value as "balanceTrend" | "incomeVsExpense",
+                        visualization: value as "line" | "area",
                       })}
                   />
-                  <SingleSelectDropdown
-                    label="Valor"
-                    value={draft.config.valueMode}
-                    placeholder="Selecciona valor"
-                    options={[
-                      { value: "amount", label: "Importe" },
-                      { value: "count", label: "Count transacciones" },
-                    ]}
-                    onChange={(value) => changeDraftConfig({ valueMode: value as "amount" | "count" })}
-                  />
-                </div>
+
+                  {((draft.config as LineWidgetConfig).mode === "byCategory" || (draft.config as LineWidgetConfig).mode === "byAccount") && (
+                    <MultiSelectDropdown
+                      label={t("analysis.configurator.fields.lineSeries")}
+                      options={lineSeriesOptions}
+                      selected={(draft.config as LineWidgetConfig).seriesKeys ?? []}
+                      onChange={(ids) => changeDraftConfig({ seriesKeys: ids })}
+                      allLabel={t("analysis.configurator.all")}
+                      noOptionsLabel={
+                        (draft.config as LineWidgetConfig).mode === "byCategory"
+                          ? t("analysis.configurator.noCategories")
+                          : t("analysis.configurator.noAccounts")
+                      }
+                      selectedManyLabel={t("analysis.configurator.categoriesCount")}
+                      pageSize={50}
+                    />
+                  )}
+
+                  {editableSeriesKeys.length > 0 && (
+                    <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                        {t("analysis.configurator.colorsAndLegend")}
+                      </p>
+                      <div className="space-y-2">
+                        {editableSeriesKeys.map((key) => {
+                          const editorId = `line:${key}`;
+                          const currentColor = (draft.config as LineWidgetConfig).seriesColors?.[key] ?? "#0284c7";
+                          const isOpen = activeColorEditor === editorId;
+
+                          return (
+                            <div key={key} className="rounded-md border border-slate-200 bg-white p-2">
+                              <div className="flex items-center justify-between gap-3 text-sm text-slate-700">
+                                <span className="truncate">{key}</span>
+                                <button
+                                  type="button"
+                                  className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                                  onClick={() => setActiveColorEditor(isOpen ? null : editorId)}
+                                >
+                                  <span className="h-4 w-4 rounded-sm border border-slate-300" style={{ backgroundColor: currentColor }} />
+                                  {currentColor.toUpperCase()}
+                                </button>
+                              </div>
+
+                              {isOpen && (
+                                <div className="mt-2 space-y-2">
+                                  <HexColorPicker
+                                    color={currentColor}
+                                    onChange={(color) =>
+                                      changeDraftConfig({
+                                        seriesColors: {
+                                          ...((draft.config as LineWidgetConfig).seriesColors ?? {}),
+                                          [key]: color,
+                                        },
+                                      })}
+                                  />
+                                  <HexColorInput
+                                    color={currentColor}
+                                    onChange={(color) =>
+                                      changeDraftConfig({
+                                        seriesColors: {
+                                          ...((draft.config as LineWidgetConfig).seriesColors ?? {}),
+                                          [key]: color,
+                                        },
+                                      })}
+                                    prefixed
+                                    className="h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-sm uppercase"
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
               {draft.type === "donut" && "mode" in draft.config && "valueMode" in draft.config && (
                 <>
                   <div className="grid grid-cols-2 gap-3">
                     <SingleSelectDropdown
-                      label="Modo donut"
+                      label={t("analysis.configurator.fields.donutMode")}
                       value={draft.config.mode}
-                      placeholder="Selecciona modo"
+                      placeholder={t("analysis.configurator.selectMode")}
                       options={[
-                        { value: "expensesByCategory", label: "Por categoría" },
-                        { value: "expensesByAccount", label: "Por cuenta" },
+                        { value: "expensesByCategory", label: t("analysis.configurator.donutModeOptions.expensesByCategory") },
+                        { value: "expensesByAccount", label: t("analysis.configurator.donutModeOptions.expensesByAccount") },
                       ]}
                       onChange={(value) =>
                         changeDraftConfig({
@@ -1094,12 +1332,12 @@ export default function AnalysisConfigurator({
                         })}
                     />
                     <SingleSelectDropdown
-                      label="Valor"
+                      label={t("analysis.configurator.fields.value")}
                       value={draft.config.valueMode}
-                      placeholder="Selecciona valor"
+                      placeholder={t("analysis.configurator.selectValue")}
                       options={[
-                        { value: "amount", label: "Importe" },
-                        { value: "count", label: "Count transacciones" },
+                        { value: "amount", label: t("analysis.configurator.valueOptions.amount") },
+                        { value: "count", label: t("analysis.configurator.valueOptions.count") },
                       ]}
                       onChange={(value) => changeDraftConfig({ valueMode: value as "amount" | "count" })}
                     />
@@ -1108,7 +1346,7 @@ export default function AnalysisConfigurator({
                   {editableSeriesKeys.length > 0 && (
                     <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-                        Colores y leyenda
+                        {t("analysis.configurator.colorsAndLegend")}
                       </p>
                       <div className="space-y-2">
                         {editableSeriesKeys.map((key) => {
@@ -1166,46 +1404,200 @@ export default function AnalysisConfigurator({
               )}
 
               {draft.type === "stackedBar" && "stackBy" in draft.config && (
-                <SingleSelectDropdown
-                  label="Apilar por"
-                  value={draft.config.stackBy}
-                  placeholder="Selecciona criterio"
-                  options={[
-                    { value: "type", label: "Tipo (ingreso/gasto)" },
-                    { value: "account", label: "Cuenta" },
-                  ]}
-                  onChange={(value) =>
-                    changeDraftConfig({
-                      stackBy: value as "type" | "account",
-                    })}
-                />
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <SingleSelectDropdown
+                      label={t("analysis.configurator.fields.stackBy")}
+                      value={draft.config.stackBy}
+                      placeholder={t("analysis.configurator.selectCriteria")}
+                      options={[
+                        { value: "type", label: t("analysis.configurator.stackByOptions.type") },
+                        { value: "account", label: t("analysis.configurator.stackByOptions.account") },
+                        { value: "category", label: t("analysis.configurator.stackByOptions.category") },
+                      ]}
+                      onChange={(value) =>
+                        changeDraftConfig({
+                          stackBy: value as StackedBarWidgetConfig["stackBy"],
+                          seriesKeys: [],
+                        })}
+                    />
+                    <SingleSelectDropdown
+                      label={t("analysis.configurator.fields.value")}
+                      value={(draft.config as StackedBarWidgetConfig).valueMode ?? "amount"}
+                      placeholder={t("analysis.configurator.selectValue")}
+                      options={[
+                        { value: "amount", label: t("analysis.configurator.valueOptions.amount") },
+                        { value: "count", label: t("analysis.configurator.valueOptions.count") },
+                      ]}
+                      onChange={(value) => changeDraftConfig({ valueMode: value as "amount" | "count" })}
+                    />
+                  </div>
+
+                  {((draft.config as StackedBarWidgetConfig).stackBy === "category" || (draft.config as StackedBarWidgetConfig).stackBy === "account") && (
+                    <MultiSelectDropdown
+                      label={t("analysis.configurator.fields.lineSeries")}
+                      options={stackedSeriesOptions}
+                      selected={(draft.config as StackedBarWidgetConfig).seriesKeys ?? []}
+                      onChange={(ids) => changeDraftConfig({ seriesKeys: ids })}
+                      allLabel={t("analysis.configurator.all")}
+                      noOptionsLabel={
+                        (draft.config as StackedBarWidgetConfig).stackBy === "category"
+                          ? t("analysis.configurator.noCategories")
+                          : t("analysis.configurator.noAccounts")
+                      }
+                      selectedManyLabel={t("analysis.configurator.categoriesCount")}
+                      pageSize={50}
+                    />
+                  )}
+
+                  {editableSeriesKeys.length > 0 && (
+                    <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                        {t("analysis.configurator.colorsAndLegend")}
+                      </p>
+                      <div className="space-y-2">
+                        {editableSeriesKeys.map((key) => {
+                          const editorId = `stacked:${key}`;
+                          const currentColor = (draft.config as StackedBarWidgetConfig).seriesColors?.[key] ?? "#0284c7";
+                          const isOpen = activeColorEditor === editorId;
+
+                          return (
+                            <div key={key} className="rounded-md border border-slate-200 bg-white p-2">
+                              <div className="flex items-center justify-between gap-3 text-sm text-slate-700">
+                                <span className="truncate">{key}</span>
+                                <button
+                                  type="button"
+                                  className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                                  onClick={() => setActiveColorEditor(isOpen ? null : editorId)}
+                                >
+                                  <span className="h-4 w-4 rounded-sm border border-slate-300" style={{ backgroundColor: currentColor }} />
+                                  {currentColor.toUpperCase()}
+                                </button>
+                              </div>
+
+                              {isOpen && (
+                                <div className="mt-2 space-y-2">
+                                  <HexColorPicker
+                                    color={currentColor}
+                                    onChange={(color) =>
+                                      changeDraftConfig({
+                                        seriesColors: {
+                                          ...((draft.config as StackedBarWidgetConfig).seriesColors ?? {}),
+                                          [key]: color,
+                                        },
+                                      })}
+                                  />
+                                  <HexColorInput
+                                    color={currentColor}
+                                    onChange={(color) =>
+                                      changeDraftConfig({
+                                        seriesColors: {
+                                          ...((draft.config as StackedBarWidgetConfig).seriesColors ?? {}),
+                                          [key]: color,
+                                        },
+                                      })}
+                                    prefixed
+                                    className="h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-sm uppercase"
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
               {"compare" in draft.config && (
-                <SingleSelectDropdown
-                  label="Comparacion"
-                  value={draft.config.compare}
-                  placeholder="Selecciona comparacion"
-                  options={[
-                    { value: "weekVsPrevious", label: "Semana actual vs anterior" },
-                    { value: "monthVsPrevious", label: "Mes actual vs anterior" },
-                    { value: "quarterVsPrevious", label: "Trimestre actual vs anterior" },
-                    { value: "yearVsPrevious", label: "Año actual vs anterior" },
-                  ]}
-                  onChange={(value) =>
-                    changeDraftConfig({
-                      compare: value as "weekVsPrevious" | "monthVsPrevious" | "quarterVsPrevious" | "yearVsPrevious",
+                <>
+                  <SingleSelectDropdown
+                    label={t("analysis.configurator.fields.comparison")}
+                    value={draft.config.compare}
+                    placeholder={t("analysis.configurator.selectComparison")}
+                    options={[
+                      { value: "weekVsPrevious", label: t("analysis.configurator.comparisonOptions.weekVsPrevious") },
+                      { value: "monthVsPrevious", label: t("analysis.configurator.comparisonOptions.monthVsPrevious") },
+                      { value: "quarterVsPrevious", label: t("analysis.configurator.comparisonOptions.quarterVsPrevious") },
+                      { value: "yearVsPrevious", label: t("analysis.configurator.comparisonOptions.yearVsPrevious") },
+                    ]}
+                    onChange={(value) =>
+                      changeDraftConfig({
+                        compare: value as "weekVsPrevious" | "monthVsPrevious" | "quarterVsPrevious" | "yearVsPrevious",
+                      })}
+                  />
+
+                  <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                      {t("analysis.configurator.colorsAndLegend")}
+                    </p>
+                    {(["income", "expense"] as const).map((key) => {
+                      const editorId = `comparison:${key}`;
+                      const currentColor = (draft.config as ComparisonWidgetConfig).seriesColors?.[key]
+                        ?? (key === "income" ? "#0f766e" : "#dc2626");
+                      const isOpen = activeColorEditor === editorId;
+
+                      return (
+                        <div key={key} className="rounded-md border border-slate-200 bg-white p-2">
+                          <div className="flex items-center justify-between gap-3 text-sm text-slate-700">
+                            <span className="truncate">
+                              {key === "income"
+                                ? t("analysis.configurator.kpiOptions.income")
+                                : t("analysis.configurator.kpiOptions.expense")}
+                            </span>
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                              onClick={() => setActiveColorEditor(isOpen ? null : editorId)}
+                            >
+                              <span className="h-4 w-4 rounded-sm border border-slate-300" style={{ backgroundColor: currentColor }} />
+                              {currentColor.toUpperCase()}
+                            </button>
+                          </div>
+
+                          {isOpen && (
+                            <div className="mt-2 space-y-2">
+                              <HexColorPicker
+                                color={currentColor}
+                                onChange={(color) =>
+                                  changeDraftConfig({
+                                    seriesColors: {
+                                      ...((draft.config as ComparisonWidgetConfig).seriesColors ?? {}),
+                                      [key]: color,
+                                    },
+                                  })}
+                              />
+                              <HexColorInput
+                                color={currentColor}
+                                onChange={(color) =>
+                                  changeDraftConfig({
+                                    seriesColors: {
+                                      ...((draft.config as ComparisonWidgetConfig).seriesColors ?? {}),
+                                      [key]: color,
+                                    },
+                                  })}
+                                prefixed
+                                className="h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-sm uppercase"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      );
                     })}
-                />
+                  </div>
+                </>
               )}
 
               <div className="flex items-center gap-2 pt-2">
                 <Button className="tx-apply-pastel-btn flex-1" onClick={onSave}>
                   <Save className="mr-1 h-4 w-4" />
-                  {draft.mode === "create" ? "Guardar gráfico" : "Actualizar gráfico"}
+                  {draft.mode === "create"
+                    ? t("analysis.configurator.saveChart")
+                    : t("analysis.configurator.updateChart")}
                 </Button>
                 <Button variant="outline" className="tx-cancel-draw-btn" onClick={onCancel}>
-                  Cancelar
+                  {t("common.cancel")}
                 </Button>
               </div>
             </>
@@ -1220,7 +1612,7 @@ export default function AnalysisConfigurator({
               <CardTitle className="flex items-center gap-2 text-base">
                 <Eye className="h-4 w-4 text-sky-600" />
                 <span className="bg-gradient-to-r from-sky-600 to-emerald-500 bg-clip-text text-transparent">
-                  Previsualizacion
+                  {t("analysis.configurator.preview")}
                 </span>
               </CardTitle>
               <Button
@@ -1232,13 +1624,13 @@ export default function AnalysisConfigurator({
                 className="h-8"
               >
                 <RefreshCw className={`mr-1 h-3.5 w-3.5 ${refreshingPreview ? "animate-spin" : ""}`} />
-                Recargar
+                {t("analysis.configurator.reload")}
               </Button>
               <button
                 type="button"
                 className="analysis-expand-btn"
                 onClick={() => setPreviewExpanded(true)}
-                title="Expandir"
+                title={t("analysis.board.expand")}
               >
                 <Maximize2 className="h-3.5 w-3.5" />
               </button>
@@ -1255,9 +1647,9 @@ export default function AnalysisConfigurator({
           {previewWidget && (
             <>
               <DialogHeader>
-                <DialogTitle className="text-lg text-slate-800">Previsualizacion ampliada</DialogTitle>
+                <DialogTitle className="text-lg text-slate-800">{t("analysis.configurator.expandedPreview")}</DialogTitle>
                 <DialogDescription className="sr-only">
-                  Vista ampliada de la previsualización del gráfico en edición.
+                  {t("analysis.configurator.expandedPreviewDescription")}
                 </DialogDescription>
               </DialogHeader>
               <div className="analysis-lightbox-chart flex-1 overflow-auto">

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { getWidgetRenderer, renderWidget } from "../registry";
 import type { AnalysisTransaction, AnalysisWidget, WidgetSize } from "../types";
+import { useTranslation } from "react-i18next";
 
 const COLS = 4;
 const ROW_HEIGHT = 260;
@@ -107,6 +108,7 @@ export default function AnalysisBoard({
   onDelete,
   onLayoutChange,
 }: AnalysisBoardProps) {
+  const { t } = useTranslation();
   const [lightboxWidget, setLightboxWidget] = useState<AnalysisWidget | null>(null);
   const { width, containerRef, mounted } = useContainerWidth();
 
@@ -140,7 +142,7 @@ export default function AnalysisBoard({
       {editMode && (
         <div className="analysis-edit-banner">
           <span>
-            Edit mode: <strong>drag</strong> to reorder, <strong>corners</strong> to resize
+            {t("analysis.board.editModeHintPrefix")} <strong>{t("analysis.board.drag")}</strong> {t("analysis.board.editModeHintMiddle")} <strong>{t("analysis.board.corners")}</strong> {t("analysis.board.editModeHintSuffix")}
           </span>
         </div>
       )}
@@ -194,7 +196,7 @@ export default function AnalysisBoard({
                               type="button"
                               className="analysis-expand-btn"
                               onClick={() => setLightboxWidget(widget)}
-                              title="Expand"
+                              title={t("analysis.board.expand")}
                             >
                               <Maximize2 className="h-3.5 w-3.5" />
                             </button>
@@ -206,7 +208,7 @@ export default function AnalysisBoard({
                                   size="icon"
                                   className="analysis-edit-icon-btn h-7 w-7"
                                   onClick={() => onEdit(widget.id)}
-                                  title="Edit"
+                                  title={t("analysis.board.edit")}
                                 >
                                   <Pencil className="btn-edit-icon h-3.5 w-3.5" />
                                 </Button>
@@ -215,8 +217,8 @@ export default function AnalysisBoard({
                                   type="button"
                                   className="btn-delete-icon"
                                   onClick={() => onDelete(widget.id)}
-                                  title="Delete"
-                                  aria-label="Delete"
+                                  title={t("analysis.board.delete")}
+                                  aria-label={t("analysis.board.delete")}
                                 >
                                   <Trash2 className="btn-delete-icon__icon h-4 w-4" />
                                 </button>
@@ -240,7 +242,7 @@ export default function AnalysisBoard({
       {/* Add chart — dashed empty style */}
       <button type="button" onClick={onCreate} className="analysis-add-btn">
         <Plus className="h-4 w-4" />
-        Add widget
+        {t("analysis.actions.addWidget")}
       </button>
 
       {/* Lightbox dialog */}
@@ -258,7 +260,7 @@ export default function AnalysisBoard({
                   {lightboxWidget.title}
                 </DialogTitle>
                 <DialogDescription className="sr-only">
-                  Expanded view of the selected widget.
+                  {t("analysis.board.expandedDialogDescription")}
                 </DialogDescription>
                 <p className="text-sm text-slate-500">
                   {lightboxWidget.description || getWidgetRenderer(lightboxWidget.type).label}
