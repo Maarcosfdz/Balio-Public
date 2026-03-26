@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChartNoAxesCombined, LayoutDashboard, RefreshCw } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
-import { ToastBanner } from "@/components/ui/toast-banner";
+import { ToastBanner, type ToastBannerTone } from "@/components/ui/toast-banner";
 import {
   accountService,
   categoryService,
@@ -27,6 +27,8 @@ import {
   emptyDraftFromType,
   widgetTemplates,
 } from "./mocks";
+import { setChartCurrency } from "./registry";
+import { useAuth } from "@/contexts/AuthContext";
 import type { AnalysisTransaction, AnalysisWidget, LineWidgetConfig, WidgetDraft, WidgetSize, WidgetType } from "./types";
 import type {
   BackendChartType,
@@ -420,7 +422,12 @@ function isLocalWidgetId(widgetId: string): boolean {
 
 export default function AnalysisPage() {
   const { t } = useTranslation();
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    setChartCurrency(user?.preferredCurrency ?? "EUR");
+  }, [user?.preferredCurrency]);
+  const [toast, setToast] = useState<{ message: string; tone: ToastBannerTone } | null>(null);
   const [widgets, setWidgets] = useState<AnalysisWidget[]>([]);
   const [transactions, setTransactions] = useState<AnalysisTransaction[]>([]);
   const [savedFilters, setSavedFilters] = useState<FilterSummaryDto[]>([]);
@@ -497,7 +504,7 @@ export default function AnalysisPage() {
   const toggleEditMode = () => {
     if (editMode) {
       void saveEditChanges().then(() => {
-        setToastMessage(t("analysis.toasts.dashboardSaved"));
+        setToast({ message: t("analysis.toasts.dashboardSaved"), tone: "success" });
       });
       setEditMode(false);
     } else {
@@ -505,8 +512,8 @@ export default function AnalysisPage() {
     }
   };
 
-  const loadAnalysisData = useCallback(async () => {
-    setLoading(true);
+  const loadAnalysisData = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const [txPage, backendWidgets, categories, accounts, filters] = await Promise.all([
         transactionService.getAll({}, 0, 10000),
@@ -581,21 +588,21 @@ export default function AnalysisPage() {
     setSyncing(true);
     try {
       await chartService.synchronizeCache();
-      await loadAnalysisData();
+      await loadAnalysisData(true); // silent: don't show loading overlay, keep open forms intact
       setDraftPreviewData(undefined);
-      setToastMessage(t("analysis.toasts.dashboardSynced"));
+      setToast({ message: t("analysis.toasts.dashboardSynced"), tone: "success" });
     } catch {
-      setToastMessage(t("analysis.toasts.syncError"));
+      setToast({ message: t("analysis.toasts.syncError"), tone: "error" });
     } finally {
       setSyncing(false);
     }
   };
 
   useEffect(() => {
-    if (!toastMessage) return;
-    const timer = setTimeout(() => setToastMessage(null), 4000);
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 4000);
     return () => clearTimeout(timer);
-  }, [toastMessage]);
+  }, [toast]);
 
   const refreshDraftPreview = useCallback(async () => {
     if (!draft) return;
@@ -612,7 +619,7 @@ export default function AnalysisPage() {
       setDraftPreviewData(response.data);
     } catch {
       setDraftPreviewData(undefined);
-      setToastMessage(t("analysis.toasts.previewRefreshError"));
+      setToast({ message: t("analysis.toasts.previewRefreshError"), tone: "error" });
     } finally {
       setRefreshingDraftPreview(false);
     }
@@ -694,13 +701,13 @@ export default function AnalysisPage() {
     try {
       filterDetails = await filterService.getById(filterId);
     } catch {
-      setToastMessage(t("analysis.toasts.filterLoadError"));
+      setToast({ message: t("analysis.toasts.filterLoadError"), tone: "error" });
       return;
     }
 
     const definition = parseFilterDefinition(filterDetails.definition);
     if (!definition) {
-      setToastMessage(t("analysis.toasts.filterIncompatible"));
+      setToast({ message: t("analysis.toasts.filterIncompatible"), tone: "warning" });
       return;
     }
 
@@ -712,11 +719,16 @@ export default function AnalysisPage() {
         config: mergeFilterIntoConfig(prev.config, definition),
       };
     });
-    setToastMessage(t("analysis.toasts.filterImported", { name: filterDetails.name }));
+    setToast({ message: t("analysis.toasts.filterImported", { name: filterDetails.name }), tone: "success" });
   };
 
   const saveDraft = async () => {
     if (!draft) return;
+
+    if (!draft.title.trim()) {
+      setToast({ message: t("analysis.toasts.widgetTitleRequired"), tone: "error" });
+      return;
+    }
 
     const baseWidget = draft.mode === "edit"
       ? widgets.find((widget) => widget.id === draft.baseId)
@@ -748,7 +760,7 @@ export default function AnalysisPage() {
           // No bloqueamos guardado si falla preview.
         }
       } catch {
-        setToastMessage(t("analysis.toasts.widgetSaveError"));
+        setToast({ message: t("analysis.toasts.widgetSaveError"), tone: "error" });
         return;
       }
     } else {
@@ -768,7 +780,7 @@ export default function AnalysisPage() {
           // No bloqueamos guardado si falla preview.
         }
       } catch {
-        setToastMessage(t("analysis.toasts.widgetUpdateError"));
+        setToast({ message: t("analysis.toasts.widgetUpdateError"), tone: "error" });
         return;
       }
     }
@@ -786,7 +798,7 @@ export default function AnalysisPage() {
     }
 
     if (!removedRemotely && !isLocalWidgetId(widgetId)) {
-      setToastMessage(t("analysis.toasts.widgetDeleteError"));
+      setToast({ message: t("analysis.toasts.widgetDeleteError"), tone: "error" });
       return;
     }
 
@@ -882,11 +894,11 @@ export default function AnalysisPage() {
         </div>
       </div>
 
-      {toastMessage ? (
+      {toast ? (
         <ToastBanner
-          tone="info"
-          message={toastMessage}
-          onClose={() => setToastMessage(null)}
+          tone={toast.tone}
+          message={toast.message}
+          onClose={() => setToast(null)}
         />
       ) : null}
     </>

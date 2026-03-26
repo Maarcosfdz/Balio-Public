@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { ArrowDownCircle, ArrowUpCircle, Check, Download, Pencil, SlidersHorizontal, Trash2, Loader2 } from "lucide-react";
 import type { AccountSummaryDto, TransactionSummaryDto } from "@/types";
 import { transactionService } from "@/backend/transactionService";
-import { accountService } from "@/backend/accountService";
 import { ROUTES } from "@/config/routes";
 import { typeIcon, typeHeaderBg, fmtAmount } from "../utils";
 import BankConnectionPanel from "./BankConnectionPanel";
@@ -238,6 +237,7 @@ export default function AccountCard({
               setTxLoading(true);
               setTxRefresh((v) => v + 1);
               onSynced?.();
+              onBalanceAdjusted?.();
             }}
           />
           <BankRulesPanel
@@ -247,6 +247,7 @@ export default function AccountCard({
             onRulesChanged={() => {
               setTxLoading(true);
               setTxRefresh((v) => v + 1);
+              onBalanceAdjusted?.();
             }}
           />
         </>

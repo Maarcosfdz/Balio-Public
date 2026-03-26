@@ -666,7 +666,7 @@ export default function GoalsPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => setDeleteConfirm(null)}
-                        className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
+                        className="btn-cancel-draw px-4 py-1.5 text-sm"
                       >
                         {t("common.cancel")}
                       </button>

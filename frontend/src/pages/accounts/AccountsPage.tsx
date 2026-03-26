@@ -308,7 +308,7 @@ export default function AccountsPage() {
                 type="button"
                 onClick={closeDeleteDialog}
                 disabled={deleteState.submitting}
-                className="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+                className="btn-cancel-draw flex-1 justify-center disabled:opacity-60"
               >
                 {t("common.cancel")}
               </button>

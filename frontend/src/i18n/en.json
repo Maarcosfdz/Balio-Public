@@ -626,6 +626,7 @@
       "filterLoadError": "Could not load the selected filter.",
       "filterIncompatible": "Saved filter has an incompatible format.",
       "filterImported": "Filter \"{{name}}\" imported to the widget.",
+      "widgetTitleRequired": "The widget must have a name.",
       "widgetSaveError": "Could not save the widget.",
       "widgetUpdateError": "Could not update the widget.",
       "widgetDeleteError": "Could not delete the widget."
@@ -683,6 +684,11 @@
       "uncategorized": "Uncategorized",
       "colorPerBar": "Color per bar",
       "colorsAndLegend": "Colors and legend",
+      "gradientFill": "Gradient fill",
+      "blurFill": "Gradient fill area",
+      "neonGlow": "Neon glow",
+      "heatmapColor": "Heatmap color",
+      "heatmapBaseColor": "Base color",
       "saveChart": "Save chart",
       "updateChart": "Update chart",
       "preview": "Preview",
@@ -747,6 +753,7 @@
       },
       "barModeOptions": {
         "expensesByCategory": "By category",
+        "expensesByAccount": "By account",
         "incomeByMonth": "By month"
       },
       "lineModeOptions": {
@@ -813,6 +820,7 @@
       "transactionsCount": "{{count}} transactions",
       "series": "Series",
       "showLegend": "Show legend",
+      "hideLegend": "Hide legend",
       "legend": "Legend",
       "outOfRange": "Out of range",
       "uncategorized": "Uncategorized",

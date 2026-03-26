@@ -493,7 +493,7 @@ export default function BankRulesPanel({ account, open, onClose, onRulesChanged 
                 </button>
               ) : (
                 <button type="button" onClick={onClose} className="btn-cancel-draw flex-1 justify-center">
-                  Cerrar
+                  Cancelar
                 </button>
               )}
               <button

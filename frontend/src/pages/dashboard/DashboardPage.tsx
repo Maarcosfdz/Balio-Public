@@ -42,15 +42,7 @@ import type {
 } from "@/types";
 import AddTransactionModal from "@/components/transactions/AddTransactionModal";
 import { ROUTES } from "@/config/routes";
-import {
-  APP_ICON_REGISTRY,
-  isAssetIconName,
-  normalizeIconBgColor,
-  readEmojiFromIconName,
-  resolveEntityIconName,
-  type AppIconName,
-} from "@/components/icons/iconRegistry";
-import { getAssetIconUrl } from "@/components/icons/assetIconRegistry";
+import { IconAvatar } from "@/components/icons/IconAvatar";
 import "@/styles/pages/dashboard.css";
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -103,6 +95,57 @@ function formatCurrency(amount: number, currency = "EUR"): string {
   }).format(amount);
 }
 
+function formatCompactCurrency(amount: number, currency = "EUR"): string {
+  try {
+    return new Intl.NumberFormat("es-ES", {
+      style: "currency",
+      currency,
+      notation: "compact",
+      maximumFractionDigits: 1,
+      currencyDisplay: "narrowSymbol",
+    }).format(amount);
+  } catch {
+    return formatCurrency(amount, currency);
+  }
+}
+
+function renderDonutPercentageLabel({
+  cx = 0,
+  cy = 0,
+  midAngle = 0,
+  innerRadius = 0,
+  outerRadius = 0,
+  percent = 0,
+}: {
+  cx?: number;
+  cy?: number;
+  midAngle?: number;
+  innerRadius?: number;
+  outerRadius?: number;
+  percent?: number;
+}) {
+  if (percent < 0.07) return null;
+
+  const RADIAN = Math.PI / 180;
+  const labelRadius = innerRadius + (outerRadius - innerRadius) * 0.58;
+  const x = cx + labelRadius * Math.cos(-midAngle * RADIAN);
+  const y = cy + labelRadius * Math.sin(-midAngle * RADIAN);
+
+  return (
+    <text
+      x={x}
+      y={y}
+      fill="#ffffff"
+      textAnchor="middle"
+      dominantBaseline="central"
+      fontSize={14}
+      fontWeight={800}
+    >
+      {`${Math.round(percent * 100)}%`}
+    </text>
+  );
+}
+
 function shortMonth(date: Date): string {
   return date.toLocaleString("es-ES", { month: "short" });
 }
@@ -132,73 +175,23 @@ function getLast4Months(): { key: string; label: string }[] {
 function CategoryIcon({
   iconName,
   iconBgColor,
+  fallbackText,
   size = 36,
 }: {
   iconName?: string | null;
   iconBgColor?: string | null;
+  fallbackText?: string | null;
   size?: number;
 }) {
-  const emoji = readEmojiFromIconName(iconName);
-  const bg = normalizeIconBgColor(iconBgColor, "#E2E8F0");
-
-  if (emoji) {
-    return (
-      <div
-        style={{
-          width: size,
-          height: size,
-          background: bg,
-          borderRadius: 8,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: size * 0.48,
-          flexShrink: 0,
-        }}
-      >
-        {emoji}
-      </div>
-    );
-  }
-
-  const resolved = resolveEntityIconName(iconName);
-  const assetIconUrl = isAssetIconName(resolved) ? getAssetIconUrl(resolved) : null;
-
-  if (assetIconUrl) {
-    return (
-      <div
-        style={{
-          width: size,
-          height: size,
-          background: bg,
-          borderRadius: 8,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}
-      >
-        <img src={assetIconUrl} alt="" style={{ width: size * 0.5, height: size * 0.5, objectFit: "contain" }} />
-      </div>
-    );
-  }
-
-  const IconComp = APP_ICON_REGISTRY[resolved as AppIconName];
-
   return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        background: bg,
-        borderRadius: 8,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
-      }}
-    >
-      {IconComp && <IconComp size={Math.round(size * 0.5)} color="#475569" />}
+    <div style={{ width: size, height: size }} className="shrink-0">
+      <IconAvatar
+        iconName={iconName}
+        iconBgColor={iconBgColor}
+        fallbackText={fallbackText}
+        className="h-full w-full rounded-lg"
+        iconClassName="text-slate-700"
+      />
     </div>
   );
 }
@@ -267,6 +260,11 @@ function QuickToolPicker({ slotIndex, goals, budgets, filters, onPick, onClose }
             </ul>
           )}
         </div>
+        <div className="border-t px-4 py-3">
+          <button type="button" onClick={onClose} className="btn-cancel-draw w-full justify-center">
+            Cancelar
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -278,10 +276,12 @@ function BarTooltip({
   active,
   payload,
   label,
+  currency = "EUR",
 }: {
   active?: boolean;
   payload?: { name: string; value: number; fill: string }[];
   label?: string;
+  currency?: string;
 }) {
   if (!active || !payload?.length) return null;
   return (
@@ -296,7 +296,7 @@ function BarTooltip({
           <span className="text-white/60">
             {p.name === "income" ? "Ingresos" : "Gastos"}:
           </span>
-          <span className="font-semibold text-white">{formatCurrency(p.value)}</span>
+          <span className="font-semibold text-white">{formatCurrency(p.value, currency)}</span>
         </div>
       ))}
     </div>
@@ -306,15 +306,17 @@ function BarTooltip({
 function DonutTooltip({
   active,
   payload,
+  currency = "EUR",
 }: {
   active?: boolean;
   payload?: { name: string; value: number }[];
+  currency?: string;
 }) {
   if (!active || !payload?.length) return null;
   return (
     <div className="db-tooltip">
       <p className="font-semibold text-white/90">{payload[0].name}</p>
-      <p className="text-white/70">{formatCurrency(payload[0].value)}</p>
+      <p className="text-white/70">{formatCurrency(payload[0].value, currency)}</p>
     </div>
   );
 }
@@ -327,6 +329,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const chartCurrency = user?.preferredCurrency ?? "EUR";
 
   // ── Data state ──────────────────────────────────────────────────────
   const [accounts, setAccounts] = useState<AccountSummaryDto[]>([]);
@@ -348,6 +351,7 @@ export default function DashboardPage() {
     }
   });
   const [pickerSlot, setPickerSlot] = useState<number | null>(null);
+  const [activeDonutIndex, setActiveDonutIndex] = useState<number | null>(null);
 
   // ── Fetch data ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -478,14 +482,14 @@ export default function DashboardPage() {
     if (tool.kind === "goal") {
       const goal = goals.find((g) => g.id === tool.refId);
       if (goal?.iconName) {
-        return <CategoryIcon iconName={goal.iconName} iconBgColor={goal.iconBgColor} size={28} />;
+        return <CategoryIcon iconName={goal.iconName} iconBgColor={goal.iconBgColor} fallbackText={goal.name} size={28} />;
       }
       return <Target className="h-4 w-4 text-teal-500" />;
     }
     if (tool.kind === "budget") {
       const budget = budgets.find((b) => b.id === tool.refId);
       if (budget?.iconName) {
-        return <CategoryIcon iconName={budget.iconName} iconBgColor={budget.iconBgColor} size={28} />;
+        return <CategoryIcon iconName={budget.iconName} iconBgColor={budget.iconBgColor} fallbackText={budget.name} size={28} />;
       }
       return <Wallet className="h-4 w-4 text-sky-500" />;
     }
@@ -608,12 +612,10 @@ export default function DashboardPage() {
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 10, fill: "#94a3b8" }}
-                tickFormatter={(v: number) =>
-                  v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)
-                }
+                tickFormatter={(v: number) => formatCompactCurrency(v, chartCurrency)}
               />
               <Tooltip
-                content={<BarTooltip />}
+                content={<BarTooltip currency={chartCurrency} />}
                 cursor={{ fill: "rgba(0,0,0,0.04)", radius: 6 }}
               />
               <Bar
@@ -661,34 +663,40 @@ export default function DashboardPage() {
                     outerRadius={65}
                     paddingAngle={2}
                     dataKey="value"
+                    labelLine={false}
+                    label={renderDonutPercentageLabel}
+                    onMouseLeave={() => setActiveDonutIndex(null)}
+                    onMouseEnter={(_, index) => setActiveDonutIndex(index)}
                   >
                     {categoryDonutData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={entry.color}
+                        fillOpacity={activeDonutIndex == null || activeDonutIndex === index ? 1 : 0.28}
+                      />
                     ))}
                   </Pie>
-                  <Tooltip content={<DonutTooltip />} />
+                  <Tooltip content={<DonutTooltip currency={chartCurrency} />} />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="flex-1 min-w-0 space-y-1">
-                {categoryDonutData.slice(0, 5).map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-1.5 min-w-0">
+              <div className="style-1 max-h-[152px] flex-1 min-w-0 space-y-1 overflow-y-auto pr-1">
+                {categoryDonutData.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex items-center gap-1.5 min-w-0 rounded px-1 py-0.5 transition ${activeDonutIndex == null || activeDonutIndex === idx ? "opacity-100" : "opacity-35"}`}
+                    onMouseEnter={() => setActiveDonutIndex(idx)}
+                    onMouseLeave={() => setActiveDonutIndex(null)}
+                  >
                     <span
                       className="inline-block w-2 h-2 rounded-full shrink-0"
                       style={{ background: item.color }}
                     />
-                    <span className="text-[11px] text-slate-500 truncate min-w-0">
-                      {item.name}
-                    </span>
+                    <span className="text-[11px] text-slate-500 truncate min-w-0">{item.name}</span>
                     <span className="text-[11px] font-semibold text-slate-700 shrink-0 ml-auto pl-1">
                       {formatCurrency(item.value)}
                     </span>
                   </div>
                 ))}
-                {categoryDonutData.length > 5 && (
-                  <p className="text-[10px] text-slate-400">
-                    +{categoryDonutData.length - 5} más
-                  </p>
-                )}
               </div>
             </div>
           )}
@@ -766,6 +774,7 @@ export default function DashboardPage() {
                     <CategoryIcon
                       iconName={cat?.iconName}
                       iconBgColor={cat?.iconBgColor}
+                      fallbackText={cat?.name ?? tx.categoryName}
                       size={36}
                     />
                     <div className="flex-1 min-w-0">
@@ -842,6 +851,7 @@ export default function DashboardPage() {
                       <CategoryIcon
                         iconName={budget.iconName}
                         iconBgColor={budget.iconBgColor}
+                        fallbackText={budget.name}
                         size={26}
                       />
                       <div className="flex-1 min-w-0 flex items-center justify-between gap-1">

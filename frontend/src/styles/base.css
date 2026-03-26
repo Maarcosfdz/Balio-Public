@@ -21,4 +21,37 @@
   .font-app {
     font-family: var(--font-app);
   }
+
+  /* ── Custom scrollbar (.style-1 only) ── */
+  #style-1,
+  .style-1 {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.55) transparent;
+    -ms-overflow-style: auto;
+  }
+
+  #style-1::-webkit-scrollbar-track,
+  .style-1::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  #style-1::-webkit-scrollbar,
+  .style-1::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+    display: block;
+  }
+
+  #style-1::-webkit-scrollbar-thumb,
+  .style-1::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.55);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  #style-1::-webkit-scrollbar-thumb:hover,
+  .style-1::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.75);
+  }
 }

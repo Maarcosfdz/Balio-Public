@@ -23,7 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import DateRangePicker from "../../transactions/components/DateRangePicker";
 import { HexColorInput, HexColorPicker } from "react-colorful";
-import { renderWidget } from "../registry";
+import { renderWidget, getDefaultSeriesColor } from "../registry";
 import { buildConfigForType } from "../mocks";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -33,6 +33,7 @@ import type {
   BarWidgetConfig,
   ComparisonWidgetConfig,
   DateRangePreset,
+  HeatmapWidgetConfig,
   LineWidgetConfig,
   StackedBarWidgetConfig,
   DonutWidgetConfig,
@@ -471,6 +472,14 @@ export default function AnalysisConfigurator({
         for (const tx of filteredDraftTransactions) {
           if (barConfig.transactionType && tx.type !== barConfig.transactionType) continue;
           keys.add(tx.categoryName);
+        }
+        return Array.from(keys).sort((a, b) => a.localeCompare(b));
+      }
+      if (barConfig.mode === "expensesByAccount") {
+        const keys = new Set<string>();
+        for (const tx of filteredDraftTransactions) {
+          if (barConfig.transactionType && tx.type !== barConfig.transactionType) continue;
+          keys.add(tx.accountName);
         }
         return Array.from(keys).sort((a, b) => a.localeCompare(b));
       }
@@ -1108,6 +1117,7 @@ export default function AnalysisConfigurator({
                       placeholder={t("analysis.configurator.selectMode")}
                       options={[
                         { value: "expensesByCategory", label: t("analysis.configurator.barModeOptions.expensesByCategory") },
+                        { value: "expensesByAccount", label: t("analysis.configurator.barModeOptions.expensesByAccount") },
                         { value: "incomeByMonth", label: t("analysis.configurator.barModeOptions.incomeByMonth") },
                       ]}
                       onChange={(value) =>
@@ -1127,54 +1137,58 @@ export default function AnalysisConfigurator({
                     />
                   </div>
 
+                  <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+                    <input
+                      type="checkbox"
+                      checked={(draft.config as BarWidgetConfig).gradientFill ?? false}
+                      onChange={(e) => changeDraftConfig({ gradientFill: e.target.checked })}
+                      className="h-3.5 w-3.5 rounded accent-indigo-500"
+                    />
+                    <span className="text-sm text-slate-600">{t("analysis.configurator.gradientFill")}</span>
+                  </label>
+
                   {editableSeriesKeys.length > 0 && (
-                    <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                    <div className="space-y-1 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
                         {t("analysis.configurator.colorPerBar")}
                       </p>
-                      <div className="space-y-2">
+                      <div className="space-y-1">
                         {editableSeriesKeys.map((key) => {
                           const editorId = `bar:${key}`;
-                          const currentColor = (draft.config as BarWidgetConfig).seriesColors?.[key] ?? "#0284c7";
+                          const currentColor = (draft.config as BarWidgetConfig).seriesColors?.[key] ?? getDefaultSeriesColor(key, editableSeriesKeys);
                           const isOpen = activeColorEditor === editorId;
+                          const existingColors = (draft.config as BarWidgetConfig).seriesColors ?? {};
 
                           return (
-                            <div key={key} className="rounded-md border border-slate-200 bg-white p-2">
-                              <div className="flex items-center justify-between gap-3 text-sm text-slate-700">
-                                <span className="truncate">{key}</span>
+                            <div key={key} className="space-y-1">
+                              <div className="flex items-center gap-2">
                                 <button
                                   type="button"
-                                  className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                                  className="h-5 w-5 shrink-0 cursor-pointer rounded border border-slate-300 shadow-sm hover:scale-110 transition-transform"
+                                  style={{ backgroundColor: currentColor }}
                                   onClick={() => setActiveColorEditor(isOpen ? null : editorId)}
-                                >
-                                  <span className="h-4 w-4 rounded-sm border border-slate-300" style={{ backgroundColor: currentColor }} />
-                                  {currentColor.toUpperCase()}
-                                </button>
+                                />
+                                <span className="min-w-0 flex-1 truncate text-[11px] text-slate-600">{key}</span>
+                                <span className="shrink-0 font-mono text-[10px] text-slate-400">{currentColor.toUpperCase()}</span>
                               </div>
-
                               {isOpen && (
-                                <div className="mt-2 space-y-2">
+                                <div className="ml-7 space-y-1">
                                   <HexColorPicker
                                     color={currentColor}
                                     onChange={(color) =>
                                       changeDraftConfig({
-                                        seriesColors: {
-                                          ...((draft.config as BarWidgetConfig).seriesColors ?? {}),
-                                          [key]: color,
-                                        },
+                                        seriesColors: { ...existingColors, [key]: color },
                                       })}
+                                    style={{ width: "100%", height: "140px" }}
                                   />
                                   <HexColorInput
                                     color={currentColor}
                                     onChange={(color) =>
                                       changeDraftConfig({
-                                        seriesColors: {
-                                          ...((draft.config as BarWidgetConfig).seriesColors ?? {}),
-                                          [key]: color,
-                                        },
+                                        seriesColors: { ...existingColors, [key]: color },
                                       })}
                                     prefixed
-                                    className="h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-sm uppercase"
+                                    className="h-7 w-full rounded border border-slate-300 bg-slate-50 px-2 text-[11px] uppercase"
                                   />
                                 </div>
                               )}
@@ -1238,6 +1252,29 @@ export default function AnalysisConfigurator({
                       })}
                   />
 
+                  <div className="flex flex-col gap-1.5">
+                    {(draft.config as LineWidgetConfig).visualization === "area" && (
+                      <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+                        <input
+                          type="checkbox"
+                          checked={(draft.config as LineWidgetConfig).blurFill ?? false}
+                          onChange={(e) => changeDraftConfig({ blurFill: e.target.checked })}
+                          className="h-3.5 w-3.5 rounded accent-indigo-500"
+                        />
+                        <span className="text-sm text-slate-600">{t("analysis.configurator.blurFill")}</span>
+                      </label>
+                    )}
+                    <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+                      <input
+                        type="checkbox"
+                        checked={(draft.config as LineWidgetConfig).neonGlow ?? false}
+                        onChange={(e) => changeDraftConfig({ neonGlow: e.target.checked })}
+                        className="h-3.5 w-3.5 rounded accent-indigo-500"
+                      />
+                      <span className="text-sm text-slate-600">{t("analysis.configurator.neonGlow")}</span>
+                    </label>
+                  </div>
+
                   {((draft.config as LineWidgetConfig).mode === "byCategory" || (draft.config as LineWidgetConfig).mode === "byAccount") && (
                     <MultiSelectDropdown
                       label={t("analysis.configurator.fields.lineSeries")}
@@ -1256,53 +1293,47 @@ export default function AnalysisConfigurator({
                   )}
 
                   {editableSeriesKeys.length > 0 && (
-                    <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                    <div className="space-y-1 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
                         {t("analysis.configurator.colorsAndLegend")}
                       </p>
-                      <div className="space-y-2">
+                      <div className="space-y-1">
                         {editableSeriesKeys.map((key) => {
                           const editorId = `line:${key}`;
-                          const currentColor = (draft.config as LineWidgetConfig).seriesColors?.[key] ?? "#0284c7";
+                          const currentColor = (draft.config as LineWidgetConfig).seriesColors?.[key] ?? getDefaultSeriesColor(key, editableSeriesKeys);
                           const isOpen = activeColorEditor === editorId;
+                          const existingColors = (draft.config as LineWidgetConfig).seriesColors ?? {};
 
                           return (
-                            <div key={key} className="rounded-md border border-slate-200 bg-white p-2">
-                              <div className="flex items-center justify-between gap-3 text-sm text-slate-700">
-                                <span className="truncate">{key}</span>
+                            <div key={key} className="space-y-1">
+                              <div className="flex items-center gap-2">
                                 <button
                                   type="button"
-                                  className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                                  className="h-5 w-5 shrink-0 cursor-pointer rounded border border-slate-300 shadow-sm hover:scale-110 transition-transform"
+                                  style={{ backgroundColor: currentColor }}
                                   onClick={() => setActiveColorEditor(isOpen ? null : editorId)}
-                                >
-                                  <span className="h-4 w-4 rounded-sm border border-slate-300" style={{ backgroundColor: currentColor }} />
-                                  {currentColor.toUpperCase()}
-                                </button>
+                                />
+                                <span className="min-w-0 flex-1 truncate text-[11px] text-slate-600">{key}</span>
+                                <span className="shrink-0 font-mono text-[10px] text-slate-400">{currentColor.toUpperCase()}</span>
                               </div>
-
                               {isOpen && (
-                                <div className="mt-2 space-y-2">
+                                <div className="ml-7 space-y-1">
                                   <HexColorPicker
                                     color={currentColor}
                                     onChange={(color) =>
                                       changeDraftConfig({
-                                        seriesColors: {
-                                          ...((draft.config as LineWidgetConfig).seriesColors ?? {}),
-                                          [key]: color,
-                                        },
+                                        seriesColors: { ...existingColors, [key]: color },
                                       })}
+                                    style={{ width: "100%", height: "140px" }}
                                   />
                                   <HexColorInput
                                     color={currentColor}
                                     onChange={(color) =>
                                       changeDraftConfig({
-                                        seriesColors: {
-                                          ...((draft.config as LineWidgetConfig).seriesColors ?? {}),
-                                          [key]: color,
-                                        },
+                                        seriesColors: { ...existingColors, [key]: color },
                                       })}
                                     prefixed
-                                    className="h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-sm uppercase"
+                                    className="h-7 w-full rounded border border-slate-300 bg-slate-50 px-2 text-[11px] uppercase"
                                   />
                                 </div>
                               )}
@@ -1344,53 +1375,47 @@ export default function AnalysisConfigurator({
                   </div>
 
                   {editableSeriesKeys.length > 0 && (
-                    <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                    <div className="space-y-1 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
                         {t("analysis.configurator.colorsAndLegend")}
                       </p>
-                      <div className="space-y-2">
+                      <div className="space-y-1">
                         {editableSeriesKeys.map((key) => {
                           const editorId = `donut:${key}`;
-                          const currentColor = (draft.config as DonutWidgetConfig).seriesColors?.[key] ?? "#0284c7";
+                          const currentColor = (draft.config as DonutWidgetConfig).seriesColors?.[key] ?? getDefaultSeriesColor(key, editableSeriesKeys);
                           const isOpen = activeColorEditor === editorId;
+                          const existingColors = (draft.config as DonutWidgetConfig).seriesColors ?? {};
 
                           return (
-                            <div key={key} className="rounded-md border border-slate-200 bg-white p-2">
-                              <div className="flex items-center justify-between gap-3 text-sm text-slate-700">
-                                <span className="truncate">{key}</span>
+                            <div key={key} className="space-y-1">
+                              <div className="flex items-center gap-2">
                                 <button
                                   type="button"
-                                  className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                                  className="h-5 w-5 shrink-0 cursor-pointer rounded border border-slate-300 shadow-sm hover:scale-110 transition-transform"
+                                  style={{ backgroundColor: currentColor }}
                                   onClick={() => setActiveColorEditor(isOpen ? null : editorId)}
-                                >
-                                  <span className="h-4 w-4 rounded-sm border border-slate-300" style={{ backgroundColor: currentColor }} />
-                                  {currentColor.toUpperCase()}
-                                </button>
+                                />
+                                <span className="min-w-0 flex-1 truncate text-[11px] text-slate-600">{key}</span>
+                                <span className="shrink-0 font-mono text-[10px] text-slate-400">{currentColor.toUpperCase()}</span>
                               </div>
-
                               {isOpen && (
-                                <div className="mt-2 space-y-2">
+                                <div className="ml-7 space-y-1">
                                   <HexColorPicker
                                     color={currentColor}
                                     onChange={(color) =>
                                       changeDraftConfig({
-                                        seriesColors: {
-                                          ...((draft.config as DonutWidgetConfig).seriesColors ?? {}),
-                                          [key]: color,
-                                        },
+                                        seriesColors: { ...existingColors, [key]: color },
                                       })}
+                                    style={{ width: "100%", height: "140px" }}
                                   />
                                   <HexColorInput
                                     color={currentColor}
                                     onChange={(color) =>
                                       changeDraftConfig({
-                                        seriesColors: {
-                                          ...((draft.config as DonutWidgetConfig).seriesColors ?? {}),
-                                          [key]: color,
-                                        },
+                                        seriesColors: { ...existingColors, [key]: color },
                                       })}
                                     prefixed
-                                    className="h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-sm uppercase"
+                                    className="h-7 w-full rounded border border-slate-300 bg-slate-50 px-2 text-[11px] uppercase"
                                   />
                                 </div>
                               )}
@@ -1450,54 +1475,58 @@ export default function AnalysisConfigurator({
                     />
                   )}
 
+                  <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+                    <input
+                      type="checkbox"
+                      checked={(draft.config as StackedBarWidgetConfig).gradientFill ?? false}
+                      onChange={(e) => changeDraftConfig({ gradientFill: e.target.checked })}
+                      className="h-3.5 w-3.5 rounded accent-indigo-500"
+                    />
+                    <span className="text-sm text-slate-600">{t("analysis.configurator.gradientFill")}</span>
+                  </label>
+
                   {editableSeriesKeys.length > 0 && (
-                    <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                    <div className="space-y-1 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
                         {t("analysis.configurator.colorsAndLegend")}
                       </p>
-                      <div className="space-y-2">
+                      <div className="space-y-1">
                         {editableSeriesKeys.map((key) => {
                           const editorId = `stacked:${key}`;
-                          const currentColor = (draft.config as StackedBarWidgetConfig).seriesColors?.[key] ?? "#0284c7";
+                          const currentColor = (draft.config as StackedBarWidgetConfig).seriesColors?.[key] ?? getDefaultSeriesColor(key, editableSeriesKeys);
                           const isOpen = activeColorEditor === editorId;
+                          const existingColors = (draft.config as StackedBarWidgetConfig).seriesColors ?? {};
 
                           return (
-                            <div key={key} className="rounded-md border border-slate-200 bg-white p-2">
-                              <div className="flex items-center justify-between gap-3 text-sm text-slate-700">
-                                <span className="truncate">{key}</span>
+                            <div key={key} className="space-y-1">
+                              <div className="flex items-center gap-2">
                                 <button
                                   type="button"
-                                  className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                                  className="h-5 w-5 shrink-0 cursor-pointer rounded border border-slate-300 shadow-sm hover:scale-110 transition-transform"
+                                  style={{ backgroundColor: currentColor }}
                                   onClick={() => setActiveColorEditor(isOpen ? null : editorId)}
-                                >
-                                  <span className="h-4 w-4 rounded-sm border border-slate-300" style={{ backgroundColor: currentColor }} />
-                                  {currentColor.toUpperCase()}
-                                </button>
+                                />
+                                <span className="min-w-0 flex-1 truncate text-[11px] text-slate-600">{key}</span>
+                                <span className="shrink-0 font-mono text-[10px] text-slate-400">{currentColor.toUpperCase()}</span>
                               </div>
-
                               {isOpen && (
-                                <div className="mt-2 space-y-2">
+                                <div className="ml-7 space-y-1">
                                   <HexColorPicker
                                     color={currentColor}
                                     onChange={(color) =>
                                       changeDraftConfig({
-                                        seriesColors: {
-                                          ...((draft.config as StackedBarWidgetConfig).seriesColors ?? {}),
-                                          [key]: color,
-                                        },
+                                        seriesColors: { ...existingColors, [key]: color },
                                       })}
+                                    style={{ width: "100%", height: "140px" }}
                                   />
                                   <HexColorInput
                                     color={currentColor}
                                     onChange={(color) =>
                                       changeDraftConfig({
-                                        seriesColors: {
-                                          ...((draft.config as StackedBarWidgetConfig).seriesColors ?? {}),
-                                          [key]: color,
-                                        },
+                                        seriesColors: { ...existingColors, [key]: color },
                                       })}
                                     prefixed
-                                    className="h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-sm uppercase"
+                                    className="h-7 w-full rounded border border-slate-300 bg-slate-50 px-2 text-[11px] uppercase"
                                   />
                                 </div>
                               )}
@@ -1528,65 +1557,112 @@ export default function AnalysisConfigurator({
                       })}
                   />
 
-                  <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+                    <input
+                      type="checkbox"
+                      checked={(draft.config as ComparisonWidgetConfig).gradientFill ?? false}
+                      onChange={(e) => changeDraftConfig({ gradientFill: e.target.checked })}
+                      className="h-3.5 w-3.5 rounded accent-indigo-500"
+                    />
+                    <span className="text-sm text-slate-600">{t("analysis.configurator.gradientFill")}</span>
+                  </label>
+
+                  <div className="space-y-1 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
                       {t("analysis.configurator.colorsAndLegend")}
                     </p>
-                    {(["income", "expense"] as const).map((key) => {
-                      const editorId = `comparison:${key}`;
-                      const currentColor = (draft.config as ComparisonWidgetConfig).seriesColors?.[key]
-                        ?? (key === "income" ? "#0f766e" : "#dc2626");
-                      const isOpen = activeColorEditor === editorId;
+                    <div className="space-y-1">
+                      {(["income", "expense"] as const).map((key) => {
+                        const editorId = `comparison:${key}`;
+                        const currentColor = (draft.config as ComparisonWidgetConfig).seriesColors?.[key]
+                          ?? getDefaultSeriesColor(key, ["income", "expense"]);
+                        const isOpen = activeColorEditor === editorId;
+                        const existingColors = (draft.config as ComparisonWidgetConfig).seriesColors ?? {};
+                        const displayLabel = key === "income"
+                          ? t("analysis.configurator.kpiOptions.income")
+                          : t("analysis.configurator.kpiOptions.expense");
 
-                      return (
-                        <div key={key} className="rounded-md border border-slate-200 bg-white p-2">
-                          <div className="flex items-center justify-between gap-3 text-sm text-slate-700">
-                            <span className="truncate">
-                              {key === "income"
-                                ? t("analysis.configurator.kpiOptions.income")
-                                : t("analysis.configurator.kpiOptions.expense")}
-                            </span>
-                            <button
-                              type="button"
-                              className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-                              onClick={() => setActiveColorEditor(isOpen ? null : editorId)}
-                            >
-                              <span className="h-4 w-4 rounded-sm border border-slate-300" style={{ backgroundColor: currentColor }} />
-                              {currentColor.toUpperCase()}
-                            </button>
-                          </div>
-
-                          {isOpen && (
-                            <div className="mt-2 space-y-2">
-                              <HexColorPicker
-                                color={currentColor}
-                                onChange={(color) =>
-                                  changeDraftConfig({
-                                    seriesColors: {
-                                      ...((draft.config as ComparisonWidgetConfig).seriesColors ?? {}),
-                                      [key]: color,
-                                    },
-                                  })}
+                        return (
+                          <div key={key} className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                className="h-5 w-5 shrink-0 cursor-pointer rounded border border-slate-300 shadow-sm hover:scale-110 transition-transform"
+                                style={{ backgroundColor: currentColor }}
+                                onClick={() => setActiveColorEditor(isOpen ? null : editorId)}
                               />
-                              <HexColorInput
-                                color={currentColor}
-                                onChange={(color) =>
-                                  changeDraftConfig({
-                                    seriesColors: {
-                                      ...((draft.config as ComparisonWidgetConfig).seriesColors ?? {}),
-                                      [key]: color,
-                                    },
-                                  })}
-                                prefixed
-                                className="h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-sm uppercase"
-                              />
+                              <span className="min-w-0 flex-1 truncate text-[11px] text-slate-600">{displayLabel}</span>
+                              <span className="shrink-0 font-mono text-[10px] text-slate-400">{currentColor.toUpperCase()}</span>
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                            {isOpen && (
+                              <div className="ml-7 space-y-1">
+                                <HexColorPicker
+                                  color={currentColor}
+                                  onChange={(color) =>
+                                    changeDraftConfig({
+                                      seriesColors: { ...existingColors, [key]: color },
+                                    })}
+                                  style={{ width: "100%", height: "140px" }}
+                                />
+                                <HexColorInput
+                                  color={currentColor}
+                                  onChange={(color) =>
+                                    changeDraftConfig({
+                                      seriesColors: { ...existingColors, [key]: color },
+                                    })}
+                                  prefixed
+                                  className="h-7 w-full rounded border border-slate-300 bg-slate-50 px-2 text-[11px] uppercase"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </>
+              )}
+
+              {draft.type === "heatmap" && (
+                <div className="space-y-1 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                    {t("analysis.configurator.heatmapColor")}
+                  </p>
+                  {(() => {
+                    const hmBaseColor = (draft.config as HeatmapWidgetConfig).baseColor ?? "#7c3aed";
+                    const hmEditorId = "heatmap:base";
+                    const hmOpen = activeColorEditor === hmEditorId;
+                    return (
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            className="h-5 w-5 shrink-0 cursor-pointer rounded border border-slate-300 shadow-sm hover:scale-110 transition-transform"
+                            style={{ backgroundColor: hmBaseColor }}
+                            onClick={() => setActiveColorEditor(hmOpen ? null : hmEditorId)}
+                          />
+                          <span className="min-w-0 flex-1 truncate text-[11px] text-slate-600">{t("analysis.configurator.heatmapBaseColor")}</span>
+                          <span className="shrink-0 font-mono text-[10px] text-slate-400">{hmBaseColor.toUpperCase()}</span>
+                        </div>
+                        {hmOpen && (
+                          <div className="ml-7 space-y-1">
+                            <HexColorPicker
+                              color={hmBaseColor}
+                              onChange={(color) => changeDraftConfig({ baseColor: color } as Partial<HeatmapWidgetConfig>)}
+                              style={{ width: "100%", height: "140px" }}
+                            />
+                            <HexColorInput
+                              color={hmBaseColor}
+                              onChange={(color) => changeDraftConfig({ baseColor: color } as Partial<HeatmapWidgetConfig>)}
+                              prefixed
+                              className="h-7 w-full rounded border border-slate-300 bg-slate-50 px-2 text-[11px] uppercase"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
               )}
 
               <div className="flex items-center gap-2 pt-2">
