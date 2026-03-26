@@ -1,12 +1,24 @@
 /* ============================================================
- * main2.css — Styles for MainPage2 (new landing page)
+ * main2.css — Styles for MainPage2 (landing page)
+ *
+ * Sections:
+ *   - Scroll reveal
+ *   - Marquee ticker
+ *   - Scroll-driven feature section (Jeton-style)
+ *   - Showcase phone (large, for scroll section)
+ *   - Hero phone (small, for hero)
+ *   - Floating stat cards
+ *   - Hero glow & grid pattern
+ *   - Feature visual placeholders
+ *   - Staggered list reveal
  * ============================================================ */
 
 /* ── Scroll reveal ──────────────────────────────────────────── */
 .m2-reveal {
   opacity: 0;
   transform: translateY(30px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .m2-reveal.visible {
   opacity: 1;
@@ -16,16 +28,6 @@
 .m2-reveal-d2 { transition-delay: 0.2s; }
 .m2-reveal-d3 { transition-delay: 0.3s; }
 .m2-reveal-d4 { transition-delay: 0.4s; }
-.m2-reveal-d5 { transition-delay: 0.5s; }
-
-/* ── Tab panel fade ─────────────────────────────────────────── */
-.m2-tab-panel {
-  animation: m2TabFade 0.35s ease;
-}
-@keyframes m2TabFade {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
 
 /* ── Marquee ticker ─────────────────────────────────────────── */
 .m2-ticker-wrap {
@@ -46,18 +48,151 @@
   to   { transform: translateX(-50%); }
 }
 
-/* ── Snippet scroll track ───────────────────────────────────── */
-.m2-snippet-track {
-  overflow-x: auto;
-  scroll-behavior: smooth;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  cursor: grab;
-}
-.m2-snippet-track:active { cursor: grabbing; }
-.m2-snippet-track::-webkit-scrollbar { display: none; }
+/* ══════════════════════════════════════════════════════════════
+ * SCROLL-DRIVEN FEATURE SECTION  (the centrepiece)
+ * ══════════════════════════════════════════════════════════════ */
 
-/* ── Phone mockup ───────────────────────────────────────────── */
+/* Outer container — its height drives scroll distance */
+.m2-scroll-outer {
+  position: relative;
+}
+
+/* Inner sticky viewport — stays on screen while scrolling */
+.m2-scroll-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Content that enters when a step activates */
+.m2-step-content-enter {
+  animation: m2StepContentIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes m2StepContentIn {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Phone screen that enters when a step activates */
+.m2-step-screen-enter {
+  animation: m2StepScreenIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes m2StepScreenIn {
+  from { opacity: 0; transform: translateY(18px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Ambient glow that shifts colour per step */
+.m2-step-glow {
+  position: absolute;
+  width: 480px;
+  height: 480px;
+  border-radius: 50%;
+  filter: blur(120px);
+  pointer-events: none;
+  opacity: 0.18;
+  transition: background-color 0.8s ease;
+}
+
+/* ── Showcase phone (large, scroll section) ─────────────────── */
+.m2-showcase-phone {
+  width: 230px;
+  height: 470px;
+  border-radius: 2.75rem;
+  border: 7px solid #0f172a;
+  background: #f8fafc;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 60px 120px -20px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+@media (min-width: 1024px) {
+  .m2-showcase-phone {
+    width: 270px;
+    height: 550px;
+  }
+}
+.m2-showcase-notch {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 52px;
+  height: 8px;
+  border-radius: 5px;
+  background: #0f172a;
+  z-index: 10;
+}
+.m2-showcase-screen {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  padding-top: 4px;
+}
+
+/* ── Progress track (numbered steps at bottom) ──────────────── */
+.m2-progress {
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+  width: 100%;
+  max-width: 540px;
+}
+.m2-progress-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+.m2-progress-step.dimmed { opacity: 0.3; }
+
+.m2-progress-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  z-index: 2;
+}
+.m2-progress-dot.active {
+  background: #38bdf8;
+  border-color: #38bdf8;
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.5);
+  transform: scale(1.35);
+}
+.m2-progress-dot.done {
+  background: #34d399;
+  border-color: #34d399;
+}
+
+/* Connecting line between dots */
+.m2-progress-line {
+  position: absolute;
+  top: 5px;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  z-index: 1;
+}
+.m2-progress-line-fill {
+  height: 100%;
+  background: linear-gradient(to right, #34d399, #38bdf8);
+  transition: width 0.4s ease;
+}
+
+/* ── Hero phone (small) ─────────────────────────────────────── */
 .m2-phone {
   width: 210px;
   height: 430px;
@@ -120,22 +255,7 @@
   50%       { transform: translateY(-5px); }
 }
 
-/* ── Feature visual blocks (screenshot placeholders) ───────── */
-.m2-feature-visual {
-  width: 100%;
-  min-height: 300px;
-  border-radius: 1.75rem;
-  overflow: hidden;
-  box-shadow:
-    0 40px 80px -20px rgba(0, 0, 0, 0.45),
-    0 0 0 1px rgba(255, 255, 255, 0.06);
-  /* Replace inner content with <img> when you have a screenshot:
-     Replace this entire div with:
-     <img src="/images/your-screen.png" alt="..." className="w-full rounded-[1.75rem] shadow-2xl" />
-  */
-}
-
-/* ── Hero background animated gradient glow ────────────────── */
+/* ── Hero glow ──────────────────────────────────────────────── */
 .m2-hero-glow {
   position: absolute;
   inset: 0;
@@ -170,18 +290,21 @@
   66%       { transform: scale(0.95) translate(-15px, 10px); opacity: 0.7; }
 }
 
-/* ── Grid dot pattern for hero background ───────────────────── */
+/* ── Grid dot pattern ───────────────────────────────────────── */
 .m2-grid-pattern {
   background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
   background-size: 28px 28px;
 }
 
-/* ── Snippet card active glow ───────────────────────────────── */
-.m2-snippet-card {
-  transition: transform 0.3s ease, opacity 0.3s ease, box-shadow 0.3s ease;
-}
-.m2-snippet-card.active {
-  box-shadow: 0 0 0 2px currentColor, 0 16px 48px -12px rgba(0,0,0,0.4);
+/* ── Feature visual blocks (screenshot placeholders) ───────── */
+.m2-feature-visual {
+  width: 100%;
+  min-height: 300px;
+  border-radius: 1.75rem;
+  overflow: hidden;
+  box-shadow:
+    0 40px 80px -20px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 /* ── Staggered list reveal ──────────────────────────────────── */
@@ -194,4 +317,3 @@
 .m2-reveal.visible .m2-stagger-item:nth-child(2) { opacity: 1; transform: none; transition-delay: 0.25s; }
 .m2-reveal.visible .m2-stagger-item:nth-child(3) { opacity: 1; transform: none; transition-delay: 0.35s; }
 .m2-reveal.visible .m2-stagger-item:nth-child(4) { opacity: 1; transform: none; transition-delay: 0.45s; }
-.m2-reveal.visible .m2-stagger-item:nth-child(5) { opacity: 1; transform: none; transition-delay: 0.55s; }
