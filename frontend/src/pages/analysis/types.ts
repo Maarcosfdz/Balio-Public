@@ -36,9 +36,10 @@ export interface TableWidgetConfig extends WidgetCommonConfig {
 }
 
 export interface BarWidgetConfig extends WidgetCommonConfig {
-  mode: "expensesByCategory" | "incomeByMonth";
+  mode: "expensesByCategory" | "expensesByAccount" | "incomeByMonth";
   valueMode: "amount" | "count";
   seriesColors?: Record<string, string>;
+  gradientFill?: boolean;
 }
 
 export interface LineWidgetConfig extends WidgetCommonConfig {
@@ -48,6 +49,8 @@ export interface LineWidgetConfig extends WidgetCommonConfig {
   splitBy: "none" | "category" | "account";
   seriesKeys?: string[];
   seriesColors?: Record<string, string>;
+  neonGlow?: boolean;
+  blurFill?: boolean;
 }
 
 export interface DonutWidgetConfig extends WidgetCommonConfig {
@@ -62,15 +65,18 @@ export interface StackedBarWidgetConfig extends WidgetCommonConfig {
   valueMode: "amount" | "count";
   seriesKeys?: string[];
   seriesColors?: Record<string, string>;
+  gradientFill?: boolean;
 }
 
 export interface HeatmapWidgetConfig extends WidgetCommonConfig {
   mode: "dailyExpenses";
+  baseColor?: string;
 }
 
 export interface ComparisonWidgetConfig extends WidgetCommonConfig {
   compare: "weekVsPrevious" | "monthVsPrevious" | "quarterVsPrevious" | "yearVsPrevious";
   seriesColors?: Record<string, string>;
+  gradientFill?: boolean;
 }
 
 export type WidgetConfig =

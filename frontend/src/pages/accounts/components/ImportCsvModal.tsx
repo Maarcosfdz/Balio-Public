@@ -327,7 +327,7 @@ export default function ImportCsvModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+              className="btn-cancel-draw flex-1 justify-center"
             >
               {t("common.cancel")}
             </button>

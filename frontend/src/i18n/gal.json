@@ -626,6 +626,7 @@
       "filterLoadError": "Non se puido cargar o filtro seleccionado.",
       "filterIncompatible": "O filtro gardado ten un formato incompatible.",
       "filterImported": "Filtro \"{{name}}\" importado ao widget.",
+      "widgetTitleRequired": "O widget debe ter un nome.",
       "widgetSaveError": "Non se puido gardar o widget.",
       "widgetUpdateError": "Non se puido actualizar o widget.",
       "widgetDeleteError": "Non se puido eliminar o widget."
@@ -683,6 +684,11 @@
       "uncategorized": "Sen categoría",
       "colorPerBar": "Cor por barra",
       "colorsAndLegend": "Cores e lenda",
+      "gradientFill": "Recheo degradado",
+      "blurFill": "Degradado de recheo",
+      "neonGlow": "Brillo neón",
+      "heatmapColor": "Cor do mapa de calor",
+      "heatmapBaseColor": "Cor base",
       "saveChart": "Gardar gráfico",
       "updateChart": "Actualizar gráfico",
       "preview": "Previsualización",
@@ -747,6 +753,7 @@
       },
       "barModeOptions": {
         "expensesByCategory": "Por categoría",
+        "expensesByAccount": "Por conta",
         "incomeByMonth": "Por mes"
       },
       "lineModeOptions": {
@@ -813,6 +820,7 @@
       "transactionsCount": "{{count}} transaccións",
       "series": "Serie",
       "showLegend": "Mostrar lenda",
+      "hideLegend": "Ocultar lenda",
       "legend": "Lenda",
       "outOfRange": "Fóra de rango",
       "uncategorized": "Sen categoría",

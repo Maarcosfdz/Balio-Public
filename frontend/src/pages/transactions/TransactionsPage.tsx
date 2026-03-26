@@ -39,6 +39,7 @@ import FilterPanel, {
   type ActiveFilters,
 } from "./components/FilterPanel";
 import { ROUTES } from "@/config/routes";
+import { IconAvatar } from "@/components/icons/IconAvatar";
 
 const PAGE_SIZE = 20;
 const AUTO_REFRESH_INTERVAL = 30_000; // 30 seconds
@@ -678,35 +679,15 @@ export default function TransactionsPage() {
                 <div className="col-span-2 flex items-center gap-2 min-w-0">
                   {(() => {
                     const cat = tx.categoryId ? categoryMap.get(tx.categoryId) : null;
-                    if (cat?.iconName) {
-                      const bg = cat.iconBgColor ?? "#e2e8f0";
+                    if (cat?.iconName || tx.categoryName) {
                       return (
-                        <span
+                        <IconAvatar
+                          iconName={cat?.iconName}
+                          iconBgColor={cat?.iconBgColor}
+                          fallbackText={cat?.name ?? tx.categoryName}
                           className="tx-cat-icon flex-shrink-0"
-                          style={{ background: bg }}
-                          title={cat.name}
-                        >
-                          {cat.iconName.startsWith("emoji:") ? (
-                            <span>{cat.iconName.slice(6)}</span>
-                          ) : (
-                            <span style={{ fontSize: "0.6rem", fontWeight: 800, color: "#475569" }}>
-                              {cat.name.charAt(0).toUpperCase()}
-                            </span>
-                          )}
-                        </span>
-                      );
-                    }
-                    if (tx.categoryName) {
-                      return (
-                        <span
-                          className="tx-cat-icon flex-shrink-0"
-                          style={{ background: "#f1f5f9" }}
-                          title={tx.categoryName}
-                        >
-                          <span style={{ fontSize: "0.6rem", fontWeight: 800, color: "#94a3b8" }}>
-                            {tx.categoryName.charAt(0).toUpperCase()}
-                          </span>
-                        </span>
+                          iconClassName="text-[11px]"
+                        />
                       );
                     }
                     return null;

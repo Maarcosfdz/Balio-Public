@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   Area,
   AreaChart,
@@ -6,6 +6,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
   Line,
   LineChart,
   Pie,
@@ -21,6 +22,7 @@ import type {
   BarWidgetConfig,
   ComparisonWidgetConfig,
   DonutWidgetConfig,
+  HeatmapWidgetConfig,
   LineWidgetConfig,
   StackedBarWidgetConfig,
   TableWidgetConfig,
@@ -40,20 +42,48 @@ interface WidgetRendererDefinition {
   render: (input: RendererInput) => ReactNode;
 }
 
-const CHART_COLORS = ["#0284c7", "#0f766e", "#2563eb", "#f59e0b", "#dc2626", "#7c3aed"];
+export const CHART_COLORS = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#f43f5e", "#a855f7"];
 
-function chartH(size: AnalysisWidget["size"]): number {
-  if (size === "lg") return 440;
-  if (size === "md") return 180;
-  return 180;
+export function getDefaultSeriesColor(key: string, allKeys: string[]): string {
+  const idx = allKeys.indexOf(key);
+  return CHART_COLORS[Math.max(0, idx) % CHART_COLORS.length];
 }
 
-function toMoney(value: number, currency = "EUR"): string {
+function chartH(size: AnalysisWidget["size"]): number {
+  if (size === "lg") return 400;
+  return 168;
+}
+
+const axisTick = { fill: "#94a3b8", fontSize: 11 };
+const axisProps = { axisLine: false as const, tickLine: false as const, tick: axisTick };
+const gridProps = { vertical: false as const, strokeDasharray: "3 3", stroke: "#e2e8f0" };
+const legendStyle = { fontSize: 11, paddingTop: 2 };
+
+let _preferredCurrency = "EUR";
+
+export function setChartCurrency(currency: string) {
+  _preferredCurrency = currency || "EUR";
+}
+
+function toMoney(value: number, currency?: string): string {
   return new Intl.NumberFormat(i18n.resolvedLanguage, {
     style: "currency",
-    currency,
+    currency: currency ?? _preferredCurrency,
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+function toCompactMoney(value: number, currency?: string): string {
+  try {
+    return new Intl.NumberFormat(i18n.resolvedLanguage, {
+      style: "currency",
+      currency: currency ?? _preferredCurrency,
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(value);
+  } catch {
+    return toMoney(value, currency);
+  }
 }
 
 function formatTooltipValue(value: number | string | undefined): string {
@@ -397,6 +427,38 @@ function monthLabelFromKey(monthKey: string): string {
   });
 }
 
+const DONUT_LEGEND_COLLAPSE_THRESHOLD = 6;
+
+function DonutPercentLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }: {
+  cx?: number;
+  cy?: number;
+  midAngle?: number;
+  innerRadius?: number;
+  outerRadius?: number;
+  percent?: number;
+}) {
+  if (
+    typeof cx !== "number"
+    || typeof cy !== "number"
+    || typeof midAngle !== "number"
+    || typeof innerRadius !== "number"
+    || typeof outerRadius !== "number"
+    || typeof percent !== "number"
+  ) {
+    return null;
+  }
+  if (percent < 0.06) return null; // hide for slices < 6%
+  const RADIAN = Math.PI / 180;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.55;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  return (
+    <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={700} style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}>
+      {`${(percent * 100).toFixed(0)}%`}
+    </text>
+  );
+}
+
 function DonutWithAdaptiveLegend({
   data,
   widget,
@@ -408,85 +470,105 @@ function DonutWithAdaptiveLegend({
 }) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const total = Math.max(1, data.reduce((sum, row) => sum + row.value, 0));
-  const average = data.length > 0 ? total / data.length : 0;
-
   const isLarge = widget.size === "lg";
   const isMedium = widget.size === "md";
+  const manyItems = data.length > DONUT_LEGEND_COLLAPSE_THRESHOLD;
 
-  const chartHeight = isLarge ? 320 : isMedium ? 220 : 170;
-  const minPctLabel = isLarge ? 0.06 : isMedium ? 0.1 : 0.14;
-  const innerRadius = widget.size === "lg" ? "47%" : widget.size === "md" ? "42%" : "36%";
-  const outerRadius = widget.size === "lg" ? "79%" : widget.size === "md" ? "74%" : "68%";
-  const activeItem = activeIndex !== null ? data[activeIndex] : null;
-  const activeValue = activeItem?.value ?? total;
-  const deltaVsAverage = average > 0 ? ((activeValue - average) / average) * 100 : 0;
-  const deltaPositive = deltaVsAverage >= 0;
-
-  const chartNode = (
-    <div className="relative h-full w-full">
-      <ResponsiveContainer width="100%" height={chartHeight}>
-        <PieChart margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
-          <Pie
-            data={data}
-            dataKey="value"
-            nameKey="name"
-            cx="50%"
-            cy="50%"
-            innerRadius={innerRadius}
-            outerRadius={outerRadius}
-            isAnimationActive
-            animationDuration={420}
-            animationEasing="ease-out"
-            label={({ percent }) => (percent && percent >= minPctLabel ? `${(percent * 100).toFixed(0)}%` : "")}
-            labelLine={{ stroke: "#94a3b8", strokeWidth: 1 }}
-            onMouseLeave={() => setActiveIndex(null)}
-            onMouseEnter={(_, index) => setActiveIndex(index)}
-          >
-            {data.map((entry, index) => {
-              const isActive = activeIndex === null ? true : index === activeIndex;
-              return (
-                <Cell
-                  key={`${entry.name}-${index}`}
-                  fill={getSeriesColor(config.seriesColors, entry.name, index)}
-                  fillOpacity={isActive ? 1 : 0.42}
-                />
-              );
-            })}
-          </Pie>
-          <Tooltip
-            formatter={(value) => {
-              const numericValue = Number(value ?? 0);
-              const percent = total <= 0 ? 0 : (numericValue / total) * 100;
-              const valueText = formatTooltipByMode(numericValue, config.valueMode);
-              return `${valueText} (${percent.toFixed(1)}%)`;
-            }}
-            contentStyle={chartTooltipStyle}
-          />
-        </PieChart>
-      </ResponsiveContainer>
-    </div>
+  const pieContent = (innerR: string, outerR: string) => (
+    <PieChart margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
+      <Pie
+        data={data}
+        dataKey="value"
+        nameKey="name"
+        cx="50%"
+        cy="50%"
+        innerRadius={innerR}
+        outerRadius={outerR}
+        isAnimationActive
+        animationDuration={420}
+        animationEasing="ease-out"
+        onMouseLeave={() => setActiveIndex(null)}
+        onMouseEnter={(_, index) => setActiveIndex(index)}
+        label={DonutPercentLabel}
+        labelLine={false}
+      >
+        {data.map((entry, index) => {
+          const isActive = activeIndex === null ? true : index === activeIndex;
+          return (
+            <Cell
+              key={`${entry.name}-${index}`}
+              fill={getSeriesColor(config.seriesColors, entry.name, index)}
+              fillOpacity={isActive ? 1 : 0.38}
+            />
+          );
+        })}
+      </Pie>
+      <Tooltip
+        formatter={(value) => {
+          const numericValue = Number(value ?? 0);
+          const percent = total <= 0 ? 0 : (numericValue / total) * 100;
+          return `${formatTooltipByMode(numericValue, config.valueMode)} (${percent.toFixed(1)}%)`;
+        }}
+        contentStyle={chartTooltipStyle}
+      />
+    </PieChart>
   );
 
-  return (
-    <div className="h-full w-full">
-      {chartNode}
+  const legendItem = (entry: DonutDatum, index: number) => {
+    const pct = total <= 0 ? 0 : (entry.value / total) * 100;
+    const isActive = activeIndex === null ? true : index === activeIndex;
+    return (
+      <div
+        key={entry.name}
+        className={`flex cursor-default items-center gap-1.5 rounded-md px-1 py-[3px] transition-all duration-150 ${isActive ? "opacity-100" : "opacity-35"}`}
+        onMouseEnter={() => setActiveIndex(index)}
+        onMouseLeave={() => setActiveIndex(null)}
+      >
+        <span
+          className="h-2 w-2 shrink-0 rounded-full"
+          style={{ backgroundColor: getSeriesColor(config.seriesColors, entry.name, index) }}
+        />
+        <span className="min-w-0 flex-1 truncate text-[11px] text-slate-600">{entry.name}</span>
+        <span className="shrink-0 text-[11px] font-bold tabular-nums text-slate-700">{pct.toFixed(1)}%</span>
+      </div>
+    );
+  };
 
-      {activeItem && (
-        <div className={`mt-1 flex ${isMedium ? "justify-start" : "justify-center"}`}>
-          <div className="rounded-xl border border-slate-200/70 bg-white/70 px-3 py-2 text-center shadow-sm backdrop-blur transition-all duration-200 ease-out">
-            <p className="text-[11px] font-medium text-slate-500">{activeItem.name}</p>
-            <p className="text-sm font-semibold text-slate-800">
-              {formatTooltipByMode(activeValue, config.valueMode)}
-            </p>
-            <p className="text-[11px] text-slate-500">{((activeItem.value / total) * 100).toFixed(1)}%</p>
-            {data.length > 1 && (
-              <p className={`text-[11px] font-medium ${deltaPositive ? "text-emerald-600" : "text-rose-600"}`}>
-                {deltaPositive ? "+" : ""}{deltaVsAverage.toFixed(1)}% vs media
-              </p>
-            )}
+  if (isLarge || isMedium) {
+    return (
+      <div className="flex h-full w-full flex-row items-stretch gap-3">
+        <div className={`min-h-0 ${isLarge ? "w-[62%]" : "w-[58%]"}`}>
+          <ResponsiveContainer width="100%" height="100%">
+            {pieContent(isLarge ? "40%" : "36%", isLarge ? "86%" : "84%")}
+          </ResponsiveContainer>
+        </div>
+
+        <div
+          className={[
+            "style-1 min-w-0 flex-1 overflow-y-auto rounded-md border border-slate-200 bg-slate-50/50 px-2 py-1",
+            isLarge ? "max-h-[360px]" : "max-h-[230px]",
+            manyItems ? "space-y-0.5" : "space-y-0",
+          ].join(" ")}
+        >
+          <div className={isLarge ? "grid grid-cols-1 gap-y-0.5" : "grid grid-cols-1 gap-y-0.5"}>
+            {data.map((entry, index) => legendItem(entry, index))}
           </div>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  // sm: donut left, legend right
+  return (
+    <div className="flex h-full w-full flex-row items-stretch gap-2">
+      <div className={`h-full shrink-0 ${isMedium ? "w-[52%]" : "w-[50%]"}`}>
+        <ResponsiveContainer width="100%" height="100%">
+          {pieContent(isMedium ? "34%" : "32%", isMedium ? "80%" : "76%")}
+        </ResponsiveContainer>
+      </div>
+      <div className="style-1 flex min-w-0 flex-1 flex-col justify-center gap-0.5 overflow-y-auto py-1">
+        {data.map((entry, index) => legendItem(entry, index))}
+      </div>
     </div>
   );
 }
@@ -501,7 +583,7 @@ const WEEKDAY_LABELS = [
   tA("weekdays.sun"),
 ];
 
-function HeatmapNavigator({ data, size }: { data: HeatmapDatum[]; size: AnalysisWidget["size"] }) {
+function HeatmapNavigator({ data, size, baseColor }: { data: HeatmapDatum[]; size: AnalysisWidget["size"]; baseColor?: string }) {
   const months = useMemo(
     () => Array.from(new Set(data.map((row) => row.day.slice(0, 7)))).sort((a, b) => a.localeCompare(b)),
     [data],
@@ -517,6 +599,7 @@ function HeatmapNavigator({ data, size }: { data: HeatmapDatum[]; size: Analysis
   );
 
   const [selectedMonth, setSelectedMonth] = useState(months[months.length - 1] ?? "");
+  const [selectedDay, setSelectedDay] = useState<string>("");
   const currentMonth = monthsInYear.includes(selectedMonth)
     ? selectedMonth
     : (monthsInYear[monthsInYear.length - 1] ?? months[months.length - 1] ?? "");
@@ -554,37 +637,37 @@ function HeatmapNavigator({ data, size }: { data: HeatmapDatum[]; size: Analysis
 
   const monthIndex = Math.max(0, monthsInYear.indexOf(currentMonth));
 
-  useEffect(() => {
-    if (selectedMonth.startsWith(selectedYear)) return;
-    if (monthsInYear.length > 0) {
-      setSelectedMonth(monthsInYear[monthsInYear.length - 1]);
-    }
-  }, [selectedYear, selectedMonth, monthsInYear]);
-
   const monthLabel = currentMonth ? monthLabelFromKey(currentMonth) : "";
   const isLarge = size === "lg";
   const isMedium = size === "md";
-  const cellHeightClass = isLarge ? "h-14" : isMedium ? "h-10" : "h-8";
-  const showAmountLabel = isLarge;
+  const cellHeightClass = isLarge ? "h-12" : isMedium ? "h-8" : "h-[18px]";
+  const gridGapClass = isLarge ? "gap-1.5" : isMedium ? "gap-1" : "gap-px";
+  const navPaddingClass = isLarge ? "px-3 py-2" : "px-2 py-0.5";
+  const monthTextClass = isLarge ? "text-sm" : "text-[10px]";
+  const weekdayTextClass = isLarge ? "text-[10px]" : "text-[7px]";
+  const dayTextClass = isLarge ? "text-xs" : isMedium ? "text-[10px]" : "text-[8px]";
+  const selectedCell = cells.find((item) => item.day === selectedDay);
+  const fallbackCell = [...cells].reverse().find((item) => item.inRange);
+  const infoCell = selectedCell ?? fallbackCell;
 
   return (
-    <div className="space-y-2">
+    <div className="style-1 flex h-full w-full flex-col gap-1 overflow-y-auto pr-1">
       {/* Navigation header */}
-      <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+      <div className={`flex shrink-0 items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50/80 ${navPaddingClass}`}>
         <button
           type="button"
-          className="rounded border border-slate-300 bg-white px-2 py-0.5 text-xs text-slate-600 hover:bg-slate-100 disabled:opacity-40"
+          className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-xs text-slate-500 hover:bg-slate-100 disabled:opacity-30"
           onClick={() => setSelectedMonth(monthsInYear[Math.max(0, monthIndex - 1)] ?? currentMonth)}
           disabled={monthIndex <= 0}
         >
           ‹
         </button>
 
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="text-sm font-semibold capitalize text-slate-700">{monthLabel}</span>
+        <div className="flex flex-col items-center gap-0">
+          <span className={`${monthTextClass} font-semibold capitalize text-slate-700`}>{monthLabel}</span>
           {years.length > 1 && (
             <select
-              className="h-5 border-0 bg-transparent text-[10px] text-slate-400 focus:outline-none"
+              className="h-4 border-0 bg-transparent text-[9px] text-slate-400 focus:outline-none"
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
             >
@@ -597,7 +680,7 @@ function HeatmapNavigator({ data, size }: { data: HeatmapDatum[]; size: Analysis
 
         <button
           type="button"
-          className="rounded border border-slate-300 bg-white px-2 py-0.5 text-xs text-slate-600 hover:bg-slate-100 disabled:opacity-40"
+          className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-xs text-slate-500 hover:bg-slate-100 disabled:opacity-30"
           onClick={() => setSelectedMonth(monthsInYear[Math.min(monthsInYear.length - 1, monthIndex + 1)] ?? currentMonth)}
           disabled={monthIndex >= monthsInYear.length - 1}
         >
@@ -605,11 +688,21 @@ function HeatmapNavigator({ data, size }: { data: HeatmapDatum[]; size: Analysis
         </button>
       </div>
 
+      {isLarge && infoCell && (
+        <div className="shrink-0 rounded-md border border-slate-200 bg-white/90 px-2 py-1 text-[11px] text-slate-600">
+          <span className="font-semibold text-slate-700">{infoCell.day}</span>
+          <span className="mx-1.5 text-slate-300">|</span>
+          <span className="font-semibold text-slate-800">
+            {infoCell.inRange ? toMoney(infoCell.value) : tA("outOfRange")}
+          </span>
+        </div>
+      )}
+
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className={`grid min-h-0 flex-1 grid-cols-7 content-start pb-1 ${gridGapClass}`}>
         {/* Weekday headers */}
         {WEEKDAY_LABELS.map((label) => (
-          <div key={label} className="py-0.5 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+          <div key={label} className={`${weekdayTextClass} py-0 text-center font-semibold uppercase tracking-wide text-slate-400`}>
             {label}
           </div>
         ))}
@@ -621,30 +714,60 @@ function HeatmapNavigator({ data, size }: { data: HeatmapDatum[]; size: Analysis
 
         {/* Day cells */}
         {cells.map((item) => {
-          const bg =
-            !item.inRange
-              ? "bg-slate-100 border-slate-200 text-slate-300"
-              : item.intensity === 0
-                ? "bg-slate-50 border-slate-200 text-slate-600"
-                : item.intensity < 0.3
-                  ? "bg-cyan-100 border-cyan-200 text-cyan-800"
-                  : item.intensity < 0.6
-                    ? "bg-cyan-300 border-cyan-400 text-cyan-900"
-                    : "bg-cyan-600 border-cyan-700 text-white";
+          const alpha = Math.round(item.intensity * 220);
+          const bgStyle = baseColor && item.inRange && item.intensity > 0
+            ? { backgroundColor: `${baseColor}${alpha.toString(16).padStart(2, "0")}`, borderColor: baseColor }
+            : undefined;
 
-          const amountLabel = item.inRange && item.value > 0
-            ? new Intl.NumberFormat(i18n.resolvedLanguage, { notation: "compact", maximumFractionDigits: 0 }).format(item.value)
+          // Determine if the cell background is "light" so we use dark text
+          const isLightCell = item.inRange && item.intensity > 0 && item.intensity < 0.5;
+
+          const bgClass = !item.inRange
+            ? "bg-slate-100 border-slate-100 text-slate-300"
+            : item.intensity === 0
+              ? "bg-white border-slate-200 text-slate-500"
+              : baseColor
+                ? `border ${isLightCell ? "text-slate-800" : "text-white"}`
+                : item.intensity < 0.25
+                  ? "bg-violet-100 border-violet-200 text-violet-800"
+                  : item.intensity < 0.55
+                    ? "bg-violet-300 border-violet-400 text-violet-900"
+                    : item.intensity < 0.8
+                      ? "bg-violet-500 border-violet-600 text-white"
+                      : "bg-violet-800 border-violet-900 text-white";
+
+          const compactAmount = item.inRange
+            ? item.value > 0
+              ? toCompactMoney(item.value)
+              : "-"
             : "";
+          const showAmount = (isLarge || isMedium) && item.inRange;
+          const isSelected = selectedDay === item.day;
 
           return (
             <div
               key={item.day}
-              className={`${cellHeightClass} rounded-md border p-0.5 text-center flex flex-col items-center justify-center overflow-hidden ${bg}`}
+              role="button"
+              tabIndex={item.inRange ? 0 : -1}
+              className={`${cellHeightClass} flex flex-col items-center justify-center overflow-hidden rounded border p-0 text-center transition hover:opacity-85 ${isSelected ? "ring-2 ring-sky-400" : ""} ${item.inRange ? "cursor-pointer" : "cursor-default"} ${bgClass}`}
+              style={bgStyle}
               title={`${item.day}: ${item.inRange ? toMoney(item.value) : tA("outOfRange")}`}
+              onClick={() => {
+                if (item.inRange) setSelectedDay(item.day);
+              }}
+              onKeyDown={(event) => {
+                if (!item.inRange) return;
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setSelectedDay(item.day);
+                }
+              }}
             >
-              <span className="text-[10px] font-semibold leading-none">{item.dayNumber}</span>
-              {showAmountLabel && amountLabel && (
-                <span className="mt-0.5 text-[8px] leading-none opacity-80">{amountLabel}</span>
+              <span className={`${dayTextClass} font-semibold leading-none`}>{item.dayNumber}</span>
+              {showAmount && (
+                <span className={`mt-0.5 leading-none ${isLarge ? "text-[10px]" : "text-[9px]"} ${compactAmount === "-" ? "font-bold opacity-100" : "font-semibold opacity-90"}`}>
+                  {compactAmount}
+                </span>
               )}
             </div>
           );
@@ -705,6 +828,48 @@ function comparePeriods(
     { period: tA("period.current"), income: currentIncome, expense: currentExpense },
     { period: tA("period.previous"), income: previousIncome, expense: previousExpense },
   ];
+}
+
+function barGradDefs(colors: string[]) {
+  return (
+    <defs>
+      {colors.map((color) => {
+        const id = `bgrad-${color.replace(/[^a-f0-9]/gi, "")}`;
+        return (
+          <linearGradient key={id} id={id} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.9} />
+            <stop offset="100%" stopColor={color} stopOpacity={0.3} />
+          </linearGradient>
+        );
+      })}
+    </defs>
+  );
+}
+
+function barFill(color: string, useGradient: boolean): string {
+  if (!useGradient) return color;
+  return `url(#bgrad-${color.replace(/[^a-f0-9]/gi, "")})`;
+}
+
+function areaGradDefs(colors: string[], blurFill: boolean) {
+  return (
+    <defs>
+      {colors.map((color) => {
+        const id = `ag-${color.replace(/[^a-f0-9]/gi, "")}`;
+        return (
+          <linearGradient key={id} id={id} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={blurFill ? 0.72 : 0.25} />
+            <stop offset="55%" stopColor={color} stopOpacity={blurFill ? 0.22 : 0.08} />
+            <stop offset="100%" stopColor={color} stopOpacity={0} />
+          </linearGradient>
+        );
+      })}
+    </defs>
+  );
+}
+
+function areaFill(color: string): string {
+  return `url(#ag-${color.replace(/[^a-f0-9]/gi, "")})`;
 }
 
 const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
@@ -844,16 +1009,19 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
       if (config.valueMode === "amount" && preview) {
         const dataset = preview.datasets[0];
         const data = zipSeries(preview.labels, dataset.data, "value");
+        const useGradient = (config as BarWidgetConfig).gradientFill === true;
+        const barColors = data.map((entry, idx) => getSeriesColor(config.seriesColors, String(entry.name), idx));
         return (
           <ResponsiveContainer width="100%" height={chartH(widget.size)}>
-            <BarChart data={data}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} />
-              <Bar dataKey="value" radius={6} isAnimationActive={false}>
+            <BarChart data={data} margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
+              {useGradient && barGradDefs(barColors)}
+              <CartesianGrid {...gridProps} />
+              <XAxis dataKey="name" {...axisProps} />
+              <YAxis {...axisProps} />
+              <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} cursor={{ fill: "rgba(99,102,241,0.06)" }} />
+              <Bar dataKey="value" radius={[6, 6, 2, 2]} isAnimationActive={false}>
                 {data.map((entry, idx) => (
-                  <Cell key={`${entry.name}-${idx}`} fill={getSeriesColor(config.seriesColors, String(entry.name), idx)} />
+                  <Cell key={`${entry.name}-${idx}`} fill={barFill(getSeriesColor(config.seriesColors, String(entry.name), idx), useGradient)} />
                 ))}
               </Bar>
             </BarChart>
@@ -865,27 +1033,33 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
       const grouped =
         config.mode === "expensesByCategory"
           ? groupByCategory(filtered, config.transactionType)
-          : monthlyIncomeExpense(filtered).map((row) => ({
-              name: row.month,
-              amount: row.income,
-              count: row.incomeCount,
-            }));
+          : config.mode === "expensesByAccount"
+            ? groupByAccount(filtered, config.transactionType)
+            : monthlyIncomeExpense(filtered).map((row) => ({
+                name: row.month,
+                amount: row.income,
+                count: row.incomeCount,
+              }));
 
       const data = grouped.map((row) => ({
         name: row.name,
         value: config.valueMode === "count" ? row.count : row.amount,
       }));
 
+      const useGradientLocal = (config as BarWidgetConfig).gradientFill === true;
+      const barColorsLocal = data.map((entry, idx) => getSeriesColor(config.seriesColors, String(entry.name), idx));
+
       return (
         <ResponsiveContainer width="100%" height={chartH(widget.size)}>
-          <BarChart data={data}>
-            <CartesianGrid vertical={false} strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} />
-            <Bar dataKey="value" radius={6} isAnimationActive={false}>
+          <BarChart data={data} margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
+            {useGradientLocal && barGradDefs(barColorsLocal)}
+            <CartesianGrid {...gridProps} />
+            <XAxis dataKey="name" {...axisProps} />
+            <YAxis {...axisProps} />
+            <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} cursor={{ fill: "rgba(99,102,241,0.06)" }} />
+            <Bar dataKey="value" radius={[6, 6, 2, 2]} isAnimationActive={false}>
               {data.map((entry, idx) => (
-                <Cell key={`${entry.name}-${idx}`} fill={getSeriesColor(config.seriesColors, String(entry.name), idx)} />
+                <Cell key={`${entry.name}-${idx}`} fill={barFill(getSeriesColor(config.seriesColors, String(entry.name), idx), useGradientLocal)} />
               ))}
             </Bar>
           </BarChart>
@@ -908,82 +1082,72 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
           return row;
         });
 
-        if (preview.datasets.length === 1) {
+        const multiSeries = preview.datasets.length > 1;
+
+        if (!multiSeries) {
+          const color = getSeriesColor(config.seriesColors, preview.datasets[0].label, 0);
+          const neonGlow = config.neonGlow === true;
+          const blurFill = config.blurFill === true;
           return (
-            <ResponsiveContainer width="100%" height={chartH(widget.size)}>
-              {config.visualization === "area" ? (
-              <AreaChart data={data}>
-                <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} />
-                <Area
-                  type="monotone"
-                  dataKey={preview.datasets[0].label}
-                  stroke={getSeriesColor(config.seriesColors, preview.datasets[0].label, 0)}
-                  fill={getSeriesColor(config.seriesColors, preview.datasets[0].label, 0)}
-                  fillOpacity={0.2}
-                  isAnimationActive={false}
-                />
-              </AreaChart>
-              ) : (
-              <LineChart data={data}>
-                <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} />
-                <Line
-                  type="monotone"
-                  dataKey={preview.datasets[0].label}
-                  stroke={getSeriesColor(config.seriesColors, preview.datasets[0].label, 0)}
-                  strokeWidth={2}
-                  isAnimationActive={false}
-                />
-              </LineChart>
-              )}
-            </ResponsiveContainer>
+            <div className="h-full w-full">
+              <ResponsiveContainer width="100%" height={chartH(widget.size)}>
+                {config.visualization === "area" ? (
+                <AreaChart data={data} margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
+                  {areaGradDefs([color], blurFill)}
+                  <CartesianGrid {...gridProps} />
+                  <XAxis dataKey="month" {...axisProps} />
+                  <YAxis {...axisProps} />
+                  <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} />
+                  <Area type="monotone" dataKey={preview.datasets[0].label} stroke={color} strokeWidth={neonGlow ? 3 : 2} style={neonGlow ? { filter: `drop-shadow(0 0 6px ${color})` } : undefined} fill={areaFill(color)} fillOpacity={1} isAnimationActive={false} dot={false} />
+                </AreaChart>
+                ) : (
+                <LineChart data={data} margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
+                  <CartesianGrid {...gridProps} />
+                  <XAxis dataKey="month" {...axisProps} />
+                  <YAxis {...axisProps} />
+                  <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} />
+                  <Line type="monotone" dataKey={preview.datasets[0].label} stroke={color} strokeWidth={neonGlow ? 3 : 2.5} style={neonGlow ? { filter: `drop-shadow(0 0 6px ${color})` } : undefined} dot={false} isAnimationActive={false} />
+                </LineChart>
+                )}
+              </ResponsiveContainer>
+            </div>
           );
         }
 
+        const neonGlowMulti = config.neonGlow === true;
+        const blurFillMulti = config.blurFill === true;
+        const multiColors = preview.datasets.map((dataset, idx) => getSeriesColor(config.seriesColors, dataset.label, idx));
         return (
-          <ResponsiveContainer width="100%" height={chartH(widget.size)}>
-            {config.visualization === "area" ? (
-            <AreaChart data={data}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} />
-              {preview.datasets.map((dataset, idx) => (
-                <Area
-                  key={dataset.label}
-                  type="monotone"
-                  dataKey={dataset.label}
-                  stroke={getSeriesColor(config.seriesColors, dataset.label, idx)}
-                  fill={getSeriesColor(config.seriesColors, dataset.label, idx)}
-                  fillOpacity={0.2}
-                  isAnimationActive={false}
-                />
-              ))}
-            </AreaChart>
-            ) : (
-            <LineChart data={data}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} />
-              {preview.datasets.map((dataset, idx) => (
-                <Line
-                  key={dataset.label}
-                  type="monotone"
-                  dataKey={dataset.label}
-                  stroke={getSeriesColor(config.seriesColors, dataset.label, idx)}
-                  strokeWidth={2}
-                  isAnimationActive={false}
-                />
-              ))}
-            </LineChart>
-            )}
-          </ResponsiveContainer>
+          <div className="h-full w-full">
+            <ResponsiveContainer width="100%" height={chartH(widget.size)}>
+              {config.visualization === "area" ? (
+              <AreaChart data={data} margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
+                {areaGradDefs(multiColors, blurFillMulti)}
+                <CartesianGrid {...gridProps} />
+                <XAxis dataKey="month" {...axisProps} />
+                <YAxis {...axisProps} />
+                <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} />
+                <Legend iconType="circle" iconSize={8} wrapperStyle={legendStyle} />
+                {preview.datasets.map((dataset, idx) => {
+                  const c = multiColors[idx];
+                  return <Area key={dataset.label} type="monotone" dataKey={dataset.label} stroke={c} fill={areaFill(c)} fillOpacity={1} strokeWidth={neonGlowMulti ? 3 : 2} style={neonGlowMulti ? { filter: `drop-shadow(0 0 6px ${c})` } : undefined} isAnimationActive={false} dot={false} />;
+                })}
+              </AreaChart>
+              ) : (
+              <LineChart data={data} margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
+                <CartesianGrid {...gridProps} />
+                <XAxis dataKey="month" {...axisProps} />
+                <YAxis {...axisProps} />
+                <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} />
+                <Legend iconType="circle" iconSize={8} wrapperStyle={legendStyle} />
+                {preview.datasets.map((dataset, idx) => {
+                  const c = multiColors[idx];
+                  return <Line key={dataset.label} type="monotone" dataKey={dataset.label} stroke={c} strokeWidth={neonGlowMulti ? 3 : 2.5} style={neonGlowMulti ? { filter: `drop-shadow(0 0 6px ${c})` } : undefined} isAnimationActive={false} dot={false} />;
+                })}
+              </LineChart>
+              )}
+            </ResponsiveContainer>
+          </div>
         );
       }
 
@@ -1016,50 +1180,45 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
         seriesKeys = grouped.keys;
       }
 
+      const multiSeries = seriesKeys.length > 1;
+      const neonGlowLocal = config.neonGlow === true;
+      const blurFillLocal = config.blurFill === true;
+      const localColors = seriesKeys.map((key, idx) => getSeriesColor(config.seriesColors, key, idx));
       const renderSeries = (asArea: boolean) =>
-        seriesKeys.map((seriesKey, idx) =>
-          asArea ? (
-            <Area
-              key={seriesKey}
-              type="monotone"
-              dataKey={seriesKey}
-              stroke={getSeriesColor(config.seriesColors, seriesKey, idx)}
-              fill={getSeriesColor(config.seriesColors, seriesKey, idx)}
-              fillOpacity={0.2}
-              isAnimationActive={false}
-            />
+        seriesKeys.map((seriesKey, idx) => {
+          const color = localColors[idx];
+          return asArea ? (
+            <Area key={seriesKey} type="monotone" dataKey={seriesKey} stroke={color} fill={areaFill(color)} fillOpacity={1} strokeWidth={neonGlowLocal ? 3 : 2} style={neonGlowLocal ? { filter: `drop-shadow(0 0 6px ${color})` } : undefined} isAnimationActive={false} dot={false} />
           ) : (
-            <Line
-              key={seriesKey}
-              type="monotone"
-              dataKey={seriesKey}
-              stroke={getSeriesColor(config.seriesColors, seriesKey, idx)}
-              strokeWidth={2}
-              isAnimationActive={false}
-            />
-          ),
-        );
+            <Line key={seriesKey} type="monotone" dataKey={seriesKey} stroke={color} strokeWidth={neonGlowLocal ? 3 : 2.5} style={neonGlowLocal ? { filter: `drop-shadow(0 0 6px ${color})` } : undefined} isAnimationActive={false} dot={false} />
+          );
+        });
 
       return (
-        <ResponsiveContainer width="100%" height={chartH(widget.size)}>
-          {config.visualization === "area" ? (
-            <AreaChart data={data}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} />
-              {renderSeries(true)}
-            </AreaChart>
-          ) : (
-            <LineChart data={data}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} />
-              {renderSeries(false)}
-            </LineChart>
-          )}
-        </ResponsiveContainer>
+        <div className="h-full w-full">
+          <ResponsiveContainer width="100%" height={chartH(widget.size)}>
+            {config.visualization === "area" ? (
+              <AreaChart data={data} margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
+                {areaGradDefs(localColors, blurFillLocal)}
+                <CartesianGrid {...gridProps} />
+                <XAxis dataKey="month" {...axisProps} />
+                <YAxis {...axisProps} />
+                <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} />
+                {multiSeries && <Legend iconType="circle" iconSize={8} wrapperStyle={legendStyle} />}
+                {renderSeries(true)}
+              </AreaChart>
+            ) : (
+              <LineChart data={data} margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
+                <CartesianGrid {...gridProps} />
+                <XAxis dataKey="month" {...axisProps} />
+                <YAxis {...axisProps} />
+                <Tooltip formatter={(value) => formatTooltipByMode(value as number, config.valueMode)} contentStyle={chartTooltipStyle} />
+                {multiSeries && <Legend iconType="circle" iconSize={8} wrapperStyle={legendStyle} />}
+                {renderSeries(false)}
+              </LineChart>
+            )}
+          </ResponsiveContainer>
+        </div>
       );
     },
   },
@@ -1105,21 +1264,20 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
           return row;
         });
 
+        const useGradientStacked = cfg.gradientFill === true;
+        const stackedPreviewColors = preview.datasets.map((dataset, idx) => getSeriesColor(cfg.seriesColors, dataset.label, idx));
+
         return (
           <ResponsiveContainer width="100%" height={chartH(widget.size)}>
-            <BarChart data={data}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip formatter={(value) => formatTooltipByMode(value as number, cfg.valueMode)} contentStyle={chartTooltipStyle} />
+            <BarChart data={data} margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
+              {useGradientStacked && barGradDefs(stackedPreviewColors)}
+              <CartesianGrid {...gridProps} />
+              <XAxis dataKey="month" {...axisProps} />
+              <YAxis {...axisProps} />
+              <Tooltip formatter={(value) => formatTooltipByMode(value as number, cfg.valueMode)} contentStyle={chartTooltipStyle} cursor={{ fill: "rgba(99,102,241,0.06)" }} />
+              <Legend iconType="circle" iconSize={8} wrapperStyle={legendStyle} />
               {preview.datasets.map((dataset, idx) => (
-                <Bar
-                  key={dataset.label}
-                  dataKey={dataset.label}
-                  stackId="stack"
-                  fill={getSeriesColor(cfg.seriesColors, dataset.label, idx)}
-                  isAnimationActive={false}
-                />
+                <Bar key={dataset.label} dataKey={dataset.label} stackId="stack" fill={barFill(getSeriesColor(cfg.seriesColors, dataset.label, idx), useGradientStacked)} radius={idx === preview.datasets.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]} isAnimationActive={false} />
               ))}
             </BarChart>
           </ResponsiveContainer>
@@ -1129,21 +1287,20 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
       const filtered = applyCommonFilters(transactions, widget.config);
       const stack = stackedByMode(filtered, cfg);
 
+      const useGradientStackedLocal = cfg.gradientFill === true;
+      const stackedLocalColors = stack.keys.map((seriesKey, idx) => getSeriesColor(cfg.seriesColors, seriesKey, idx));
+
       return (
         <ResponsiveContainer width="100%" height={chartH(widget.size)}>
-          <BarChart data={stack.rows}>
-            <CartesianGrid vertical={false} strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
-            <YAxis />
-            <Tooltip formatter={(value) => formatTooltipByMode(value as number, cfg.valueMode)} contentStyle={chartTooltipStyle} />
+          <BarChart data={stack.rows} margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
+            {useGradientStackedLocal && barGradDefs(stackedLocalColors)}
+            <CartesianGrid {...gridProps} />
+            <XAxis dataKey="month" {...axisProps} />
+            <YAxis {...axisProps} />
+            <Tooltip formatter={(value) => formatTooltipByMode(value as number, cfg.valueMode)} contentStyle={chartTooltipStyle} cursor={{ fill: "rgba(99,102,241,0.06)" }} />
+            <Legend iconType="circle" iconSize={8} wrapperStyle={legendStyle} />
             {stack.keys.map((seriesKey, idx) => (
-              <Bar
-                key={seriesKey}
-                dataKey={seriesKey}
-                stackId="stack"
-                fill={getSeriesColor(cfg.seriesColors, seriesKey, idx)}
-                isAnimationActive={false}
-              />
+              <Bar key={seriesKey} dataKey={seriesKey} stackId="stack" fill={barFill(getSeriesColor(cfg.seriesColors, seriesKey, idx), useGradientStackedLocal)} radius={idx === stack.keys.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]} isAnimationActive={false} />
             ))}
           </BarChart>
         </ResponsiveContainer>
@@ -1175,19 +1332,21 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
           })
           .sort((a, b) => a.day.localeCompare(b.day));
 
+        const hmConfig = widget.config as HeatmapWidgetConfig;
         return (
-          <div className="w-full max-w-full overflow-hidden">
-            <HeatmapNavigator data={normalized} size={widget.size} />
+          <div className="h-full w-full">
+            <HeatmapNavigator data={normalized} size={widget.size} baseColor={hmConfig.baseColor} />
           </div>
         );
       }
 
       const filtered = applyCommonFilters(transactions, widget.config);
       const data = heatmapDailyExpenses(filtered);
+      const hmCfg = widget.config as HeatmapWidgetConfig;
 
       return (
-        <div className="w-full max-w-full overflow-hidden">
-            <HeatmapNavigator data={data} size={widget.size} />
+        <div className="h-full w-full">
+          <HeatmapNavigator data={data} size={widget.size} baseColor={hmCfg.baseColor} />
         </div>
       );
     },
@@ -1196,6 +1355,7 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
     label: "analysis.widgetTypes.comparison.label",
     render: ({ widget, transactions, previewData }) => {
       const cfg = widget.config as ComparisonWidgetConfig;
+      const useGrad = cfg.gradientFill === true;
       const preview = toChartPreview(previewData);
       if (preview) {
         const data = preview.labels.map((label, idx) => {
@@ -1206,40 +1366,43 @@ const widgetRegistry: Record<WidgetType, WidgetRendererDefinition> = {
           return row;
         });
 
+        const compColors = preview.datasets.map((dataset, idx) => getSeriesColor(cfg.seriesColors, dataset.label, idx));
+
         return (
           <ResponsiveContainer width="100%" height={chartH(widget.size)}>
-            <BarChart data={data}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" />
-              <XAxis dataKey="period" />
-              <YAxis />
-              <Tooltip formatter={formatTooltipValue} contentStyle={chartTooltipStyle} />
-              {preview.datasets.map((dataset, idx) => (
-                <Bar
-                  key={dataset.label}
-                  dataKey={dataset.label}
-                  fill={getSeriesColor(cfg.seriesColors, dataset.label, idx)}
-                  radius={6}
-                  isAnimationActive={false}
-                />
-              ))}
+            <BarChart data={data} margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
+              {useGrad && barGradDefs(compColors)}
+              <CartesianGrid {...gridProps} />
+              <XAxis dataKey="period" {...axisProps} />
+              <YAxis {...axisProps} />
+              <Tooltip formatter={formatTooltipValue} contentStyle={chartTooltipStyle} cursor={{ fill: "rgba(99,102,241,0.06)" }} />
+              <Legend iconType="circle" iconSize={8} wrapperStyle={legendStyle} />
+              {preview.datasets.map((dataset, idx) => {
+                const c = getSeriesColor(cfg.seriesColors, dataset.label, idx);
+                return <Bar key={dataset.label} dataKey={dataset.label} fill={barFill(c, useGrad)} radius={[6, 6, 2, 2]} isAnimationActive={false} />;
+              })}
             </BarChart>
           </ResponsiveContainer>
         );
       }
 
       const filtered = applyCommonFilters(transactions, widget.config);
-      const config = widget.config as ComparisonWidgetConfig;
-      const data = comparePeriods(filtered, config.compare);
+      const data = comparePeriods(filtered, cfg.compare);
+      const incomeColor = getSeriesColor(cfg.seriesColors, "income", 0);
+      const expenseColor = getSeriesColor(cfg.seriesColors, "expense", 1);
+      const compLocalColors = [incomeColor, expenseColor];
 
       return (
         <ResponsiveContainer width="100%" height={chartH(widget.size)}>
-          <BarChart data={data}>
-            <CartesianGrid vertical={false} strokeDasharray="3 3" />
-            <XAxis dataKey="period" />
-            <YAxis />
-            <Tooltip formatter={formatTooltipValue} contentStyle={chartTooltipStyle} />
-            <Bar dataKey="income" fill={getSeriesColor(cfg.seriesColors, "income", 0)} radius={6} isAnimationActive={false} />
-            <Bar dataKey="expense" fill={getSeriesColor(cfg.seriesColors, "expense", 1)} radius={6} isAnimationActive={false} />
+          <BarChart data={data} margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
+            {useGrad && barGradDefs(compLocalColors)}
+            <CartesianGrid {...gridProps} />
+            <XAxis dataKey="period" {...axisProps} />
+            <YAxis {...axisProps} />
+            <Tooltip formatter={formatTooltipValue} contentStyle={chartTooltipStyle} cursor={{ fill: "rgba(99,102,241,0.06)" }} />
+            <Legend iconType="circle" iconSize={8} wrapperStyle={legendStyle} />
+            <Bar dataKey="income" fill={barFill(incomeColor, useGrad)} radius={[6, 6, 2, 2]} isAnimationActive={false} />
+            <Bar dataKey="expense" fill={barFill(expenseColor, useGrad)} radius={[6, 6, 2, 2]} isAnimationActive={false} />
           </BarChart>
         </ResponsiveContainer>
       );

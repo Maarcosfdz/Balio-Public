@@ -60,7 +60,8 @@
       "Bash(grep -i \"currency\\\\|EUR\\\\|exchange\" ./frontend/src/i18n/*.json)",
       "Bash(find c:Usersmarcos.romayDesktopCodigosbalioBaliofrontenddistassets -name image-*.png)",
       "Bash(find /c/Users/marcos.romay/Desktop/Codigos/balio/Balio/frontend/src -type f -name *account*)",
-      "Bash(grep -r import.*.css c:/Users/marcos.romay/Desktop/Codigos/balio/Balio/frontend/src/main.tsx c:/Users/marcos.romay/Desktop/Codigos/balio/Balio/frontend/src/App.tsx)"
+      "Bash(grep -r import.*.css c:/Users/marcos.romay/Desktop/Codigos/balio/Balio/frontend/src/main.tsx c:/Users/marcos.romay/Desktop/Codigos/balio/Balio/frontend/src/App.tsx)",
+      "Bash(find /c/Users/marcos.romay/Desktop/Codigos/balio/Balio/frontend/src -type f \\\\\\(-name *.ts -o -name *.tsx \\\\\\) -path */hooks/* -o -name use*.ts -o -name use*.tsx)"
     ]
   }
 }
