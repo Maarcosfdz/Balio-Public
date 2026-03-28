@@ -19,6 +19,21 @@ interface AccountCardProps {
   onBalanceAdjusted?: () => void;
 }
 
+function ViewAllArrowIcon() {
+  return (
+    <svg
+      className="db-view-all-arrow"
+      viewBox="0 0 24 12"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path className="one" d="M2 2 L7 6 L2 10" />
+      <path className="two" d="M9 2 L14 6 L9 10" />
+      <path className="three" d="M16 2 L21 6 L16 10" />
+    </svg>
+  );
+}
+
 export default function AccountCard({
   account,
   onEdit,
@@ -103,9 +118,9 @@ export default function AccountCard({
               <button
                 onClick={() => onSetDefault(account)}
                 title={t("accounts.setDefault", "Establecer como predeterminada")}
-                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-emerald-50 hover:text-emerald-600"
+                className="accounts-action-btn accounts-action-btn--default"
               >
-                <Check className="h-4 w-4" />
+                <Check className="accounts-action-btn__icon h-4 w-4" />
               </button>
             )}
             {account.isDefault && (
@@ -122,11 +137,11 @@ export default function AccountCard({
             {account.type === "BANK" && (
               <button
                 onClick={() => setRulesOpen(true)}
-                className="rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-500 transition hover:bg-sky-50 hover:text-sky-600"
+                className="accounts-rule-btn"
                 title="Reglas bancarias"
               >
                 <span className="flex items-center gap-1.5">
-                  <SlidersHorizontal className="h-4 w-4" />
+                  <SlidersHorizontal className="accounts-rule-btn__icon h-4 w-4" />
                   Reglas
                 </span>
               </button>
@@ -134,13 +149,13 @@ export default function AccountCard({
             <button
               onClick={handleExport}
               disabled={exporting}
-              className="rounded-lg p-1.5 text-slate-400 transition hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-50"
+              className="accounts-action-btn accounts-action-btn--export disabled:opacity-50"
               title={t("csv.export")}
             >
               {exporting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Download className="h-4 w-4" />
+                <Download className="accounts-action-btn__icon accounts-action-btn__icon--down h-4 w-4" />
               )}
             </button>
             <button
@@ -178,9 +193,9 @@ export default function AccountCard({
             </span>
             <button
               onClick={handleViewAll}
-              className="text-xs font-semibold text-sky-500 transition hover:text-sky-600"
+              className="db-view-all"
             >
-              {t("accountsPage.viewAll")}
+              {t("accountsPage.viewAll")} <ViewAllArrowIcon />
             </button>
           </div>
 

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
+import { ToastBanner } from "@/components/ui/toast-banner";
 import type { AccountSummaryDto } from "@/types";
 import { accountService } from "@/backend/accountService";
 import { transactionService } from "@/backend/transactionService";
@@ -39,9 +40,10 @@ export default function AccountsPage() {
     if (showLoading) setLoading(true);
     try {
       const raw = await accountService.getAll();
-      // Normalize: ensure at most one default (keep first found)
-      const firstDefault = raw.find((a) => a.isDefault)?.id ?? null;
-      const normalized = raw.map((a) => ({ ...a, isDefault: firstDefault ? a.id === firstDefault : !!a.isDefault }));
+      // Normalize: ensure exactly one visual default when there are accounts.
+      // If backend returns none marked, fallback to the first account.
+      const firstDefault = raw.find((a) => a.isDefault)?.id ?? raw[0]?.id ?? null;
+      const normalized = raw.map((a) => ({ ...a, isDefault: firstDefault ? a.id === firstDefault : false }));
       setAccounts(normalized);
     } catch {
       setAccounts([]);
@@ -173,18 +175,23 @@ export default function AccountsPage() {
       <div className="space-y-6">
         {/* ── Linked bank account banner ── */}
         {linkedBanner && (
-          <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-emerald-700">
-            <CheckCircle2 className="h-5 w-5 shrink-0" />
-            <p className="text-sm font-semibold">¡Cuenta bancaria vinculada y sincronizada correctamente!</p>
-          </div>
+          <ToastBanner
+            tone="success"
+            message={t("accounts.linkedSynced", "¡Cuenta bancaria vinculada y sincronizada correctamente!")}
+            onClose={() => setLinkedBanner(false)}
+          />
         )}
 
         {/* ── Bank linking error banner ── */}
         {linkError && (
-          <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-red-700">
-            <AlertCircle className="h-5 w-5 shrink-0" />
-            <p className="text-sm font-semibold">Error al enlazar la cuenta bancaria. La cuenta se ha eliminado automáticamente. Inténtalo de nuevo.</p>
-          </div>
+          <ToastBanner
+            tone="error"
+            message={t(
+              "accounts.linkError",
+              "Error al enlazar la cuenta bancaria. La cuenta se ha eliminado automáticamente. Inténtalo de nuevo.",
+            )}
+            onClose={() => setLinkError(false)}
+          />
         )}
 
         {/* ── Hero + summary ── */}

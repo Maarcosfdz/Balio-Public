@@ -6,6 +6,7 @@ import { accountService } from "@/backend/accountService";
 import { bankService, type BankInstitution } from "@/backend/bankService";
 import { typeIcon } from "../utils";
 import { FieldError } from "@/components/ui/field-error";
+import { GradientButton } from "@/components/ui/gradient-button";
 
 interface AccountFormDialogProps {
   open: boolean;
@@ -42,6 +43,7 @@ export default function AccountFormDialog({ open, initial, onClose, onSaved }: A
       setCurrency(initial?.currency ?? "EUR");
       setBalance(initial ? initial.balance.toFixed(2) : "0.00");
       setSetDefault(false);
+      setLoading(false);
       setError("");
       setSelectedBank(null);
       setInstitutionSearch("");
@@ -322,10 +324,16 @@ export default function AccountFormDialog({ open, initial, onClose, onSaved }: A
             <button type="button" onClick={onClose} className="btn-cancel-draw flex-1 justify-center">
               {t("common.cancel")}
             </button>
-            <button type="submit" disabled={loading} className="squishy-save-simple flex-1 justify-center">
-              {loading ? <Loader2 className="squishy-save-icon h-4 w-4 animate-spin" /> : <Save className="squishy-save-icon h-4 w-4" />}
+            <GradientButton
+              type="submit"
+              disabled={loading}
+              weight="normal"
+              iconVariant={loading ? "none" : "other"}
+              icon={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              className="flex-1 justify-center"
+            >
               {type === "BANK" && !isEdit ? "Guardar y vincular" : t("common.save")}
-            </button>
+            </GradientButton>
           </div>
         </form>
       </div>

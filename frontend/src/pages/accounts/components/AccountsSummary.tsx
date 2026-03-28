@@ -1,5 +1,6 @@
 import { Download, Plus, Upload, Wallet } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { GradientButton } from "@/components/ui/gradient-button";
 import { fmtAmount } from "../utils";
 
 interface AccountsSummaryProps {
@@ -50,24 +51,26 @@ export default function AccountsSummary({
               onClick={onExport}
               className="accounts-glass-btn"
             >
-              <Download className="h-4 w-4" />
+              <Download className="accounts-glass-btn__icon accounts-glass-btn__icon--down h-4 w-4" />
               {t("csv.export", "Exportar")}
             </button>
             <button
               onClick={onImport}
               className="accounts-glass-btn"
             >
-              <Upload className="h-4 w-4" />
+              <Upload className="accounts-glass-btn__icon accounts-glass-btn__icon--up h-4 w-4" />
               {t("csv.import", "Importar")}
             </button>
             {canAdd && (
-              <button
+              <GradientButton
                 onClick={onAdd}
-                className="accounts-glass-btn accounts-glass-btn--primary"
+                size="sm"
+                weight="normal"
+                iconVariant="plus"
+                icon={<Plus className="h-4 w-4" />}
               >
-                <Plus className="h-4 w-4" />
                 {t("accounts.newAccount", "Nueva cuenta")}
-              </button>
+              </GradientButton>
             )}
           </div>
         </div>
