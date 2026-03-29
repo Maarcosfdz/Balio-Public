@@ -23,6 +23,7 @@ import { authService } from "@/backend/authService";
 import { useAuth } from "@/contexts/AuthContext";
 import { ToastBanner, type ToastBannerTone } from "@/components/ui/toast-banner";
 import { FieldError } from "@/components/ui/field-error";
+import { GradientButton } from "@/components/ui/gradient-button";
 
 // ── Small reusable components ────────────────────────────────────────────
 
@@ -220,14 +221,14 @@ function ProfileSection({ onToast }: { onToast: (t: Toast) => void }) {
             >
               {t("common.cancel")}
             </button>
-            <button
+            <GradientButton
               type="submit"
               disabled={loading}
-              className="squishy-save-simple"
+              iconVariant={loading ? "none" : "other"}
+              icon={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             >
-              {loading ? <Loader2 className="squishy-save-icon h-4 w-4 animate-spin" /> : <Save className="squishy-save-icon h-4 w-4" />}
               {t("common.save")}
-            </button>
+            </GradientButton>
           </div>
         )}
       </form>
@@ -306,14 +307,14 @@ function PasswordSection({ onToast }: { onToast: (t: Toast) => void }) {
         </div>
 
         <div className="flex justify-end pt-1">
-          <button
+          <GradientButton
             type="submit"
             disabled={loading || !oldPwd || !newPwd || !confirmPwd}
-            className="squishy-save-simple"
+            iconVariant={loading ? "none" : "other"}
+            icon={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           >
-            {loading ? <Loader2 className="squishy-save-icon h-4 w-4 animate-spin" /> : <Save className="squishy-save-icon h-4 w-4" />}
             {t("common.save")}
-          </button>
+          </GradientButton>
         </div>
       </form>
     </SectionCard>

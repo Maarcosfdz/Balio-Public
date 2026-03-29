@@ -16,6 +16,7 @@ export interface WidgetCommonConfig {
   dateRange: DateRangePreset;
   transactionType?: "INCOME" | "EXPENSE";
   accountId?: string;
+  accountIds: string[];
   categoryIds: string[];
   startDate?: string;
   endDate?: string;
@@ -36,21 +37,14 @@ export interface TableWidgetConfig extends WidgetCommonConfig {
 }
 
 export interface BarWidgetConfig extends WidgetCommonConfig {
-  mode: "expensesByCategory" | "expensesByAccount" | "incomeByMonth";
+  mode: "expensesByCategory" | "incomeByMonth";
   valueMode: "amount" | "count";
   seriesColors?: Record<string, string>;
-  gradientFill?: boolean;
 }
 
 export interface LineWidgetConfig extends WidgetCommonConfig {
-  mode: "balanceTrend" | "incomeVsExpense" | "byCategory" | "byAccount";
+  mode: "balanceTrend" | "incomeVsExpense";
   valueMode: "amount" | "count";
-  visualization: "line" | "area";
-  splitBy: "none" | "category" | "account";
-  seriesKeys?: string[];
-  seriesColors?: Record<string, string>;
-  neonGlow?: boolean;
-  blurFill?: boolean;
 }
 
 export interface DonutWidgetConfig extends WidgetCommonConfig {
@@ -61,22 +55,15 @@ export interface DonutWidgetConfig extends WidgetCommonConfig {
 
 export interface StackedBarWidgetConfig extends WidgetCommonConfig {
   mode: "monthlyIncomeExpenseByAccount";
-  stackBy: "type" | "account" | "category";
-  valueMode: "amount" | "count";
-  seriesKeys?: string[];
-  seriesColors?: Record<string, string>;
-  gradientFill?: boolean;
+  stackBy: "type" | "account";
 }
 
 export interface HeatmapWidgetConfig extends WidgetCommonConfig {
   mode: "dailyExpenses";
-  baseColor?: string;
 }
 
 export interface ComparisonWidgetConfig extends WidgetCommonConfig {
   compare: "weekVsPrevious" | "monthVsPrevious" | "quarterVsPrevious" | "yearVsPrevious";
-  seriesColors?: Record<string, string>;
-  gradientFill?: boolean;
 }
 
 export type WidgetConfig =
