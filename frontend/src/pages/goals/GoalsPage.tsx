@@ -21,6 +21,7 @@ import {
 import type { GoalSummaryDto } from "@/types";
 import { goalService } from "@/backend/goalService";
 import { FieldError } from "@/components/ui/field-error";
+import { GradientButton } from "@/components/ui/gradient-button";
 import { IconAvatar } from "@/components/icons/IconAvatar";
 import { IconPicker } from "@/components/icons/IconPicker";
 import {
@@ -354,14 +355,15 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
             >
               {t("common.cancel")}
             </button>
-            <button
+            <GradientButton
               type="submit"
               disabled={loading}
-              className="squishy-save-simple flex-1 justify-center"
+              iconVariant={loading ? "none" : "other"}
+              icon={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              className="flex-1 justify-center"
             >
-              {loading ? <Loader2 className="squishy-save-icon h-4 w-4 animate-spin" /> : <Save className="squishy-save-icon h-4 w-4" />}
               {t("common.save")}
-            </button>
+            </GradientButton>
           </div>
         </form>
       </div>
@@ -491,9 +493,9 @@ function EmptyGoalCard({ onAdd }: { onAdd: () => void }) {
   return (
     <button
       onClick={onAdd}
-      className="flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-slate-200 bg-white py-12 text-slate-400 transition hover:border-sky-300 hover:bg-sky-50/50 hover:text-sky-500"
+      className="app-add-dashed flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-slate-200 bg-white py-12 text-slate-400 transition hover:border-sky-300 hover:bg-sky-50/50 hover:text-sky-500"
     >
-      <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-current">
+      <div className="app-add-dashed-ring flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-current">
         <Plus className="h-7 w-7" />
       </div>
       <div className="text-center">
@@ -635,14 +637,15 @@ export default function GoalsPage() {
                 </div>
 
                 {/* Botón nueva meta */}
-                <button
+                <GradientButton
                   onClick={() => { setEditTarget(null); setFormOpen(true); }}
                   disabled={!canAdd}
-                  className="goal-new-btn"
+                  size="sm"
+                  iconVariant="plus"
+                  icon={<Plus className="h-4 w-4" />}
                 >
-                  <Plus className="goal-new-icon h-4 w-4" />
                   {t("goals.create")}
-                </button>
+                </GradientButton>
               </div>
             </div>
           </div>

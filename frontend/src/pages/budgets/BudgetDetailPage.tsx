@@ -31,6 +31,8 @@ import { transactionService } from "@/backend/transactionService";
 import type { TransactionSummaryDto } from "@/types";
 import { IconAvatar } from "@/components/icons/IconAvatar";
 import { IconPicker } from "@/components/icons/IconPicker";
+import { GradientButton } from "@/components/ui/gradient-button";
+import Pagination from "@/components/ui/Pagination";
 import {
   DEFAULT_ICON_BG_COLOR,
   normalizeIconBgColor,
@@ -40,6 +42,8 @@ import {
 
 const MAX_CATEGORIES = 40;
 const TX_FETCH_PAGE_SIZE = 200;
+const CATEGORY_TX_PAGE_SIZE = 10;
+const BUDGET_TX_PAGE_SIZE = 10;
 
 // ── Formatting ──────────────────────────────────────────────────────
 const _nf = new Intl.NumberFormat(undefined, {
@@ -298,10 +302,16 @@ function CategoryFormDialog({
             <button type="button" onClick={onClose} className="btn-cancel-draw flex-1 justify-center">
               {t("common.cancel")}
             </button>
-            <button type="submit" disabled={loading} className="squishy-save-simple flex-1 justify-center">
-              {loading ? <Loader2 className="squishy-save-icon h-4 w-4 animate-spin" /> : <Save className="squishy-save-icon h-4 w-4" />}
+            <GradientButton
+              type="submit"
+              disabled={loading}
+              weight="normal"
+              iconVariant={loading ? "none" : "other"}
+              icon={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              className="flex-1 justify-center"
+            >
               {t("common.save")}
-            </button>
+            </GradientButton>
           </div>
         </form>
       </div>
@@ -470,6 +480,8 @@ function CategoryRow({ cat, budgetId, onEdit, onDelete, onRefresh }: CategoryRow
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [addTxOpen, setAddTxOpen] = useState(false);
   const [unlinking, setUnlinking] = useState<string | null>(null);
+  const [txSearchTerm, setTxSearchTerm] = useState("");
+  const [txPage, setTxPage] = useState(1);
 
   const rawPct = Math.max(0, cat.usagePercent);
   const progressPct = Math.min(100, rawPct);
@@ -482,6 +494,27 @@ function CategoryRow({ cat, budgetId, onEdit, onDelete, onRefresh }: CategoryRow
     () => new Set(cat.transactions.map((tx) => tx.id)),
     [cat.transactions],
   );
+
+  const filteredTransactions = useMemo(() => {
+    const q = txSearchTerm.toLowerCase().trim();
+    if (!q) return cat.transactions;
+    return cat.transactions.filter((tx) => tx.name.toLowerCase().includes(q));
+  }, [cat.transactions, txSearchTerm]);
+
+  const txTotalPages = Math.max(1, Math.ceil(filteredTransactions.length / CATEGORY_TX_PAGE_SIZE));
+
+  const visibleTransactions = useMemo(() => {
+    const start = (txPage - 1) * CATEGORY_TX_PAGE_SIZE;
+    return filteredTransactions.slice(start, start + CATEGORY_TX_PAGE_SIZE);
+  }, [filteredTransactions, txPage]);
+
+  useEffect(() => {
+    setTxPage(1);
+  }, [txSearchTerm, expanded, cat.id]);
+
+  useEffect(() => {
+    if (txPage > txTotalPages) setTxPage(txTotalPages);
+  }, [txPage, txTotalPages]);
 
   const handleUnlink = async (txId: string) => {
     setUnlinking(txId);
@@ -603,13 +636,21 @@ function CategoryRow({ cat, budgetId, onEdit, onDelete, onRefresh }: CategoryRow
             </button>
           </div>
 
-          {cat.transactions.length === 0 ? (
+          <input
+            type="text"
+            value={txSearchTerm}
+            onChange={(e) => setTxSearchTerm(e.target.value)}
+            placeholder={t("txPage.searchByNamePlaceholder")}
+            className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+          />
+
+          {filteredTransactions.length === 0 ? (
             <p className="py-3 text-center text-xs text-slate-400">
-              {t("budgets.detail.noTransactions")}
+              {txSearchTerm ? t("common.noResults") : t("budgets.detail.noTransactions")}
             </p>
           ) : (
             <div className="max-h-56 space-y-1 overflow-y-auto">
-              {cat.transactions.map((tx) => (
+              {visibleTransactions.map((tx) => (
                 <div
                   key={tx.id}
                   className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-slate-50"
@@ -633,24 +674,30 @@ function CategoryRow({ cat, budgetId, onEdit, onDelete, onRefresh }: CategoryRow
                     <span className="text-sm font-semibold tabular-nums text-slate-700">
                       {fmtAmt(tx.amount)}
                     </span>
-                    {tx.manual && (
-                      <button
-                        onClick={() => handleUnlink(tx.id)}
-                        disabled={unlinking === tx.id}
-                        className="rounded-lg p-1 text-slate-400 hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
-                        title="Unlink"
-                      >
-                        {unlinking === tx.id ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Unlink className="h-3 w-3" />
-                        )}
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleUnlink(tx.id)}
+                      disabled={unlinking === tx.id}
+                      className="rounded-lg p-1 text-slate-400 hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+                      title={t("budgets.detail.removeFromCategory")}
+                    >
+                      {unlinking === tx.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Unlink className="h-3 w-3" />
+                      )}
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
+          )}
+
+          {filteredTransactions.length > 0 && txTotalPages > 1 && (
+            <Pagination
+              currentPage={txPage}
+              totalPages={txTotalPages}
+              onPageChange={setTxPage}
+            />
           )}
 
           <AddTransactionDialog
@@ -679,6 +726,47 @@ export default function BudgetDetailPage() {
   const [categories, setCategories] = useState<CategorySummaryDto[]>([]);
   const [catFormOpen, setCatFormOpen] = useState(false);
   const [editCat, setEditCat] = useState<BudgetCategoryResponseDto | null>(null);
+  const [budgetTxPage, setBudgetTxPage] = useState(1);
+
+  const allBudgetTransactions = useMemo(() => {
+    if (!budget) return [] as Array<TransactionSummaryDto & { budgetCategoryName: string }>;
+
+    const unique = new Map<string, TransactionSummaryDto & { budgetCategoryName: string }>();
+
+    for (const cat of budget.categories) {
+      for (const tx of cat.transactions) {
+        if (!unique.has(tx.id)) {
+          unique.set(tx.id, {
+            id: tx.id,
+            name: tx.name,
+            amount: tx.amount,
+            date: tx.date,
+            type: "EXPENSE",
+            categoryName: tx.categoryName,
+            budgetCategoryName: cat.name,
+          });
+        }
+      }
+    }
+
+    return Array.from(unique.values())
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [budget]);
+
+  const budgetTxTotalPages = Math.max(1, Math.ceil(allBudgetTransactions.length / BUDGET_TX_PAGE_SIZE));
+
+  const visibleBudgetTransactions = useMemo(() => {
+    const start = (budgetTxPage - 1) * BUDGET_TX_PAGE_SIZE;
+    return allBudgetTransactions.slice(start, start + BUDGET_TX_PAGE_SIZE);
+  }, [allBudgetTransactions, budgetTxPage]);
+
+  useEffect(() => {
+    setBudgetTxPage(1);
+  }, [budget?.id]);
+
+  useEffect(() => {
+    if (budgetTxPage > budgetTxTotalPages) setBudgetTxPage(budgetTxTotalPages);
+  }, [budgetTxPage, budgetTxTotalPages]);
 
   const fetchBudget = useCallback(async (showLoading = true) => {
     if (!budgetId) return;
@@ -752,12 +840,6 @@ export default function BudgetDetailPage() {
     if (!lead || current.usagePercent > lead.usagePercent) return current;
     return lead;
   }, null);
-  const recentManualTransactions = budget.categories
-    .flatMap((cat) => cat.transactions
-      .filter((tx) => tx.manual)
-      .map((tx) => ({ ...tx, budgetCategoryName: cat.name })))
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 4);
 
   return (
     <div className="budget-detail-page-enter space-y-6">
@@ -814,14 +896,16 @@ export default function BudgetDetailPage() {
                   {t(`budgets.periodicities.${budget.periodicity}`)} · {formatDate(budget.periodStart)} — {formatDate(budget.periodEnd)}
                 </p>
               </div>
-              <button
+              <GradientButton
                 onClick={() => { setEditCat(null); setCatFormOpen(true); }}
                 disabled={!canAddCat}
-                className="budget-new-btn"
+                size="sm"
+                weight="normal"
+                iconVariant="plus"
+                icon={<Plus className="h-4 w-4" />}
               >
-                <Plus className="budget-new-icon h-4 w-4" />
                 {t("budgets.detail.addCategory")}
-              </button>
+              </GradientButton>
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -878,10 +962,10 @@ export default function BudgetDetailPage() {
 
           {canAddCat && (
             <button
-              className="flex min-h-[228px] flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-200 bg-white text-slate-400 transition hover:border-sky-300 hover:bg-sky-50/40 hover:text-sky-500"
+              className="app-add-dashed flex min-h-[228px] flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-200 bg-white text-slate-400 transition hover:border-sky-300 hover:bg-sky-50/40 hover:text-sky-500"
               onClick={() => { setEditCat(null); setCatFormOpen(true); }}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-dashed border-current">
+              <div className="app-add-dashed-ring flex h-12 w-12 items-center justify-center rounded-full border-2 border-dashed border-current">
                 <Plus className="h-6 w-6" />
               </div>
               <span className="text-sm font-semibold">{t("budgets.detail.addCategory")}</span>
@@ -921,19 +1005,27 @@ export default function BudgetDetailPage() {
 
         <div className="rounded-2xl border border-slate-200 bg-white p-5 lg:col-span-4">
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
-            {t("budgets.detail.transactions")}
+            {t("budgets.detail.allBudgetTransactions", "Transacciones del presupuesto")}
           </p>
-          {recentManualTransactions.length === 0 ? (
+          {allBudgetTransactions.length === 0 ? (
             <p className="mt-3 text-sm text-slate-400">{t("budgets.detail.noTransactions")}</p>
           ) : (
             <div className="mt-3 space-y-2">
-              {recentManualTransactions.map((tx) => (
+              {visibleBudgetTransactions.map((tx) => (
                 <div key={tx.id} className="rounded-xl border border-slate-100 px-3 py-2">
                   <p className="truncate text-sm font-semibold text-slate-700">{tx.name}</p>
                   <p className="text-[11px] text-slate-400">{tx.budgetCategoryName} · {tx.date}</p>
                   <p className="mt-1 text-sm font-bold tabular-nums text-slate-800">{fmtAmt(tx.amount)}</p>
                 </div>
               ))}
+
+              {budgetTxTotalPages > 1 && (
+                <Pagination
+                  currentPage={budgetTxPage}
+                  totalPages={budgetTxTotalPages}
+                  onPageChange={setBudgetTxPage}
+                />
+              )}
             </div>
           )}
         </div>
