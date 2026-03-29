@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Building2, Link2, Loader2, RefreshCw, Search, X } from "lucide-react";
 import { bankService, type BankInstitution } from "@/backend/bankService";
 import type { BankConnectionDto } from "@/types";
+import SingleSelectDropdown from "@/components/ui/SelectDropdown";
 
 interface BankConnectionPanelProps {
   accountId: string;
@@ -128,27 +129,27 @@ export default function BankConnectionPanel({ accountId, onSynced }: BankConnect
 
           {isLinked ? (
             <div className="flex items-center gap-1.5">
-              <select
-                value={lookBackDays}
-                onChange={(e) => setLookBackDays(Number(e.target.value))}
+              <SingleSelectDropdown
+                value={String(lookBackDays)}
+                onChange={(v) => setLookBackDays(Number(v))}
+                options={[
+                  { value: "90", label: "90 días" },
+                  { value: "365", label: "1 año" },
+                  { value: "730", label: "2 años" },
+                  { value: "1095", label: "3 años" },
+                ]}
                 disabled={syncing}
-                className="h-7 rounded-lg border border-slate-200 bg-white px-1.5 text-[11px] text-slate-600 outline-none focus:border-sky-300 disabled:opacity-60"
-                title="Período a importar"
-              >
-                <option value={90}>90 días</option>
-                <option value={365}>1 año</option>
-                <option value={730}>2 años</option>
-                <option value={1095}>3 años</option>
-              </select>
+                buttonClassName="h-7 rounded-lg border border-slate-200 bg-white px-1.5 text-[11px] text-slate-600 outline-none"
+              />
               <button
                 onClick={handleSync}
                 disabled={syncing}
-                className="flex shrink-0 items-center gap-1 rounded-lg bg-sky-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-600 disabled:opacity-60"
+                className="accounts-sync-btn flex shrink-0 items-center gap-1 rounded-lg bg-sky-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-600 disabled:opacity-60"
               >
                 {syncing ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <RefreshCw className="h-3.5 w-3.5" />
+                  <RefreshCw className="accounts-sync-btn__icon h-3.5 w-3.5" />
                 )}
                 Sincronizar
               </button>

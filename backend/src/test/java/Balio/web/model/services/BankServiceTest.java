@@ -203,7 +203,7 @@ class BankServiceTest {
             BankConnection conn = new BankConnection(bankAccount, user, null, null, null);
             conn.setProvider("ENABLE_BANKING");
             when(bankConnectionDao.findByAccountIdAndUserId(ACCOUNT_ID, USER_ID)).thenReturn(Optional.of(conn));
-            when(enableBankingSyncService.sync(conn)).thenReturn(4);
+            when(enableBankingSyncService.sync(conn, 90)).thenReturn(4);
 
             int result = service.syncTransactions(USER_ID, ACCOUNT_ID);
 
@@ -648,6 +648,96 @@ class BankServiceTest {
             assertEquals("Netflix", expense.getName());
             assertEquals("Netflix", income.getName());
         }
+
+            @Test
+            @DisplayName("applies mapped category from another matching rule when first one only renames")
+            void shouldApplyCategoryWhenFirstMatchOnlyRenames() throws InstanceNotFoundException {
+                Transaction tx = new Transaction("Ella Nieminen", new BigDecimal("42"),
+                    LocalDate.now(), TransactionType.EXPENSE, user);
+                tx.setAccount(bankAccount);
+                setFieldViaReflection(tx, "id", UUID.randomUUID());
+
+                BankTransactionRule renameOnly = new BankTransactionRule(
+                    user, bankAccount, "Ella Nieminen", null,
+                    TransactionType.EXPENSE, "Ella Nieminen", null, 800);
+                BankTransactionRule categoryOnly = new BankTransactionRule(
+                    user, bankAccount, "Ella Nieminen", null,
+                    TransactionType.EXPENSE, null, category, 700);
+
+                when(userDao.findById(USER_ID)).thenReturn(Optional.of(user));
+                when(accountDao.findByIdAndUserId(ACCOUNT_ID, USER_ID)).thenReturn(Optional.of(bankAccount));
+                when(categoryDao.findByIdAndUserId(CATEGORY_ID, USER_ID)).thenReturn(Optional.of(category));
+                when(ruleDao.save(any())).thenAnswer(inv -> inv.getArgument(0));
+                when(ruleDao.findAllByUserIdAndAccountIdOrderByPriorityDesc(USER_ID, ACCOUNT_ID))
+                    .thenReturn(List.of(renameOnly, categoryOnly));
+                when(transactionDao.findAllByUserIdAndAccountIdOrderByDateDesc(USER_ID, ACCOUNT_ID))
+                    .thenReturn(List.of(tx));
+
+                BankService.RuleCreationResult result = service.createRule(
+                    USER_ID, ACCOUNT_ID, "Ella Nieminen", null, TransactionType.EXPENSE,
+                    "Ella Nieminen", CATEGORY_ID, true, null);
+
+                assertEquals(1, result.appliedTransactions());
+                assertEquals(category, tx.getCategory());
+            }
+
+                @Test
+                @DisplayName("does not assign EXPENSE category to INCOME transactions when reapplying")
+                void shouldNotAssignMismatchedCategoryType() throws InstanceNotFoundException {
+                    Transaction tx = new Transaction("Onni Virtanen", new BigDecimal("8.95"),
+                        LocalDate.now(), TransactionType.INCOME, user);
+                    tx.setAccount(bankAccount);
+                    setFieldViaReflection(tx, "id", UUID.randomUUID());
+
+                    BankTransactionRule mismatchedCategoryRule = new BankTransactionRule(
+                        user, bankAccount, "Onni", null,
+                        null, null, category, 900); // 'category' is EXPENSE
+
+                    when(userDao.findById(USER_ID)).thenReturn(Optional.of(user));
+                    when(accountDao.findByIdAndUserId(ACCOUNT_ID, USER_ID)).thenReturn(Optional.of(bankAccount));
+                        when(categoryDao.findByIdAndUserId(CATEGORY_ID, USER_ID)).thenReturn(Optional.of(category));
+                    when(ruleDao.save(any())).thenAnswer(inv -> inv.getArgument(0));
+                    when(ruleDao.findAllByUserIdAndAccountIdOrderByPriorityDesc(USER_ID, ACCOUNT_ID))
+                        .thenReturn(List.of(mismatchedCategoryRule));
+                    when(transactionDao.findAllByUserIdAndAccountIdOrderByDateDesc(USER_ID, ACCOUNT_ID))
+                        .thenReturn(List.of(tx));
+
+                    BankService.RuleCreationResult result = service.createRule(
+                        USER_ID, ACCOUNT_ID, "Onni", null, null,
+                        null, CATEGORY_ID, true, null);
+
+                    assertEquals(0, result.appliedTransactions());
+                    assertNull(tx.getCategory());
+                }
+
+                @Test
+                @DisplayName("clears legacy invalid category when transaction type mismatches")
+                void shouldClearLegacyInvalidCategory() throws InstanceNotFoundException {
+                    Transaction tx = new Transaction("Onni Nieminen", new BigDecimal("2.40"),
+                        LocalDate.now(), TransactionType.INCOME, user);
+                    tx.setAccount(bankAccount);
+                    tx.setCategory(category); // legacy wrong state: EXPENSE category on INCOME transaction
+                    setFieldViaReflection(tx, "id", UUID.randomUUID());
+
+                    BankTransactionRule noCategoryRule = new BankTransactionRule(
+                        user, bankAccount, "Onni", null,
+                        null, "Onni Nieminen", null, 500);
+
+                    when(userDao.findById(USER_ID)).thenReturn(Optional.of(user));
+                    when(accountDao.findByIdAndUserId(ACCOUNT_ID, USER_ID)).thenReturn(Optional.of(bankAccount));
+                    when(ruleDao.save(any())).thenAnswer(inv -> inv.getArgument(0));
+                    when(ruleDao.findAllByUserIdAndAccountIdOrderByPriorityDesc(USER_ID, ACCOUNT_ID))
+                        .thenReturn(List.of(noCategoryRule));
+                    when(transactionDao.findAllByUserIdAndAccountIdOrderByDateDesc(USER_ID, ACCOUNT_ID))
+                        .thenReturn(List.of(tx));
+
+                    BankService.RuleCreationResult result = service.createRule(
+                        USER_ID, ACCOUNT_ID, "Onni", null, null,
+                        "Onni Nieminen", null, true, null);
+
+                    assertEquals(1, result.appliedTransactions());
+                    assertNull(tx.getCategory());
+                }
     }
 
     /* ─── helpers ─────────────────────────────────────────────── */
