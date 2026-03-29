@@ -33,7 +33,7 @@ import { categoryService } from "@/backend/categoryService";
 import "@/styles/pages/transactions.css";
 import { ToastBanner } from "@/components/ui/toast-banner";
 import AddTransactionModal from "@/components/transactions/AddTransactionModal";
-import ApplyRulesModal from "@/components/transactions/ApplyRulesModal";
+import ApplyRulesModal from "./components/ApplyRulesModal";
 import Pagination from "@/components/ui/Pagination";
 import FilterPanel, {
   type ActiveFilters,
@@ -42,10 +42,23 @@ import { ROUTES } from "@/config/routes";
 import { IconAvatar } from "@/components/icons/IconAvatar";
 
 const PAGE_SIZE = 20;
-const AUTO_REFRESH_INTERVAL = 30_000; // 30 seconds
+const AUTO_REFRESH_INTERVAL = 3_600_000; // 1 hour
+const AUTO_SYNC_THROTTLE_MS = 3_600_000; // 1 hour
+const LAST_AUTO_SYNC_KEY = "balio_tx_last_auto_sync_ms";
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  EUR: "€",
+  USD: "$",
+  JPY: "¥",
+  GBP: "£",
+};
 
 function normalize(s: string) {
   return s.toLowerCase().replace(/\s+/g, "");
+}
+
+function currencyLabel(code?: string) {
+  const upper = (code ?? "EUR").toUpperCase();
+  return CURRENCY_SYMBOLS[upper] ?? upper;
 }
 
 export default function TransactionsPage() {
@@ -186,18 +199,28 @@ export default function TransactionsPage() {
 
   const syncStaleIfNeeded = useCallback(async () => {
     try {
+      const now = Date.now();
+      const lastRaw = localStorage.getItem(LAST_AUTO_SYNC_KEY);
+      const lastSync = lastRaw ? Number(lastRaw) : 0;
+      if (Number.isFinite(lastSync) && now - lastSync < AUTO_SYNC_THROTTLE_MS) {
+        return;
+      }
+
+      // Registramos intento para evitar auto-sync repetido al reabrir la página.
+      localStorage.setItem(LAST_AUTO_SYNC_KEY, String(now));
+
       const result = await bankService.syncStale(15);
       if (result.syncedAccounts > 0) {
         setSyncSummary(
           result.imported > 0
-            ? `Sincronización automática: ${result.imported} transacción${result.imported !== 1 ? "es" : ""} nueva${result.imported !== 1 ? "s" : ""}.`
-            : "Sincronización automática completada.",
+            ? t("txPage.autoSyncWithImported", { count: result.imported })
+            : t("txPage.autoSyncDone"),
         );
       }
     } catch {
       // ignore auto-sync errors here; page data still loads afterwards
     }
-  }, []);
+  }, [t]);
 
   // Initial / per-navigation load.
   // location.key changes on every navigation event so this runs whenever the
@@ -360,17 +383,21 @@ export default function TransactionsPage() {
     setSyncSummary(null);
     try {
       const result = await bankService.syncAll();
+      localStorage.setItem(LAST_AUTO_SYNC_KEY, String(Date.now()));
       setSyncSummary(
         result.syncedAccounts === 0
-          ? "No hay cuentas bancarias enlazadas para sincronizar."
+          ? t("txPage.syncNoLinkedAccounts")
           : result.imported === 0
-            ? `Se sincronizaron ${result.syncedAccounts} cuenta${result.syncedAccounts !== 1 ? "s" : ""} y no había movimientos nuevos.`
-            : `Se sincronizaron ${result.syncedAccounts} cuenta${result.syncedAccounts !== 1 ? "s" : ""} y entraron ${result.imported} transacción${result.imported !== 1 ? "es" : ""} nueva${result.imported !== 1 ? "s" : ""}.`,
+            ? t("txPage.syncDoneNoNew", { accounts: result.syncedAccounts })
+            : t("txPage.syncDoneWithImported", {
+              accounts: result.syncedAccounts,
+              imported: result.imported,
+            }),
       );
       const cp = isServerPagedRef.current ? pageRef.current - 1 : 0;
       await fetchTransactions(filtersRef.current, false, cp);
     } catch {
-      setSyncSummary("No se pudo sincronizar ahora mismo.");
+      setSyncSummary(t("txPage.syncErrorNow"));
     } finally {
       setSyncingAll(false);
     }
@@ -432,9 +459,9 @@ export default function TransactionsPage() {
   const formatAmount = (tx: TransactionSummaryDto) => {
     const sign = tx.type === "EXPENSE" ? "-" : "+";
     const currency = tx.currency ?? "EUR";
-    const main = `${sign}${tx.amount.toFixed(2)} ${currency}`;
+    const main = `${sign}${tx.amount.toFixed(2)} ${currencyLabel(currency)}`;
     if (tx.originalCurrency && tx.originalCurrency !== currency && tx.originalAmount != null) {
-      return `${main} (${sign}${tx.originalAmount.toFixed(2)} ${tx.originalCurrency})`;
+      return `${main} (${sign}${tx.originalAmount.toFixed(2)} ${currencyLabel(tx.originalCurrency)})`;
     }
     return main;
   };
@@ -459,7 +486,7 @@ export default function TransactionsPage() {
               className="tx-sync-btn"
               onClick={handleSyncAll}
               disabled={syncingAll}
-              title="Sync bancos"
+              title={syncingAll ? t("txPage.syncingBanks") : t("txPage.syncBanks")}
             >
               {syncingAll ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -480,7 +507,7 @@ export default function TransactionsPage() {
                   <ArrowDownCircle className="h-6 w-6 text-rose-500" />
                 </div>
                 <div className="tx-bento-text">
-                  <p className="tx-bento-card-label">Add Entry</p>
+                  <p className="tx-bento-card-label">{t("txPage.addEntry")}</p>
                   <p className="tx-bento-card-title">{t("txPage.addExpense")}</p>
                 </div>
               </button>
@@ -495,7 +522,7 @@ export default function TransactionsPage() {
                   <ArrowUpCircle className="h-6 w-6 text-white" />
                 </div>
                 <div className="tx-bento-text" style={{ position: "relative", zIndex: 1 }}>
-                  <p className="tx-bento-card-label">Log Growth</p>
+                  <p className="tx-bento-card-label">{t("txPage.logGrowth")}</p>
                   <p className="tx-bento-card-title">{t("txPage.addIncome")}</p>
                 </div>
               </button>
@@ -529,7 +556,7 @@ export default function TransactionsPage() {
                 onClick={() => navigate(ROUTES.FILTERS)}
               >
                 <ListChecks className="h-4 w-4" />
-                Filtros guardados
+                {t("txPage.savedFilters")}
               </button>
             </div>
           </div>
@@ -556,7 +583,7 @@ export default function TransactionsPage() {
                   <button
                     onClick={() => handleRemoveTab(pf.id)}
                     className="text-slate-300 opacity-0 transition group-hover:opacity-100 hover:text-slate-500"
-                    aria-label={`Quitar ${pf.name}`}
+                    aria-label={t("txPage.removeFilterTabAria", { name: pf.name })}
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -567,10 +594,10 @@ export default function TransactionsPage() {
               <div ref={addPickerRef} className="relative">
                 <button
                   onClick={() => setShowAddPicker((v) => !v)}
-                  className="flex h-5 w-5 items-center justify-center rounded-md text-slate-400 transition hover:text-sky-500"
+                  className="tx-add-filter-tab-btn"
                   title={t("txPage.addFilterTab", "Añadir filtro a tabs")}
                 >
-                  <Plus className="h-3.5 w-3.5" />
+                  <Plus className="tx-add-filter-tab-btn__icon h-3.5 w-3.5" />
                 </button>
                 {showAddPicker && (
                   <div className="tx-filter-dropdown" style={{ left: 0, right: "auto" }}>
@@ -613,7 +640,7 @@ export default function TransactionsPage() {
               <button
                 className={`tx-filter-dropdown-btn ${filtersOpen ? "tx-filter-dropdown-btn--active" : ""}`}
                 onClick={() => setFiltersOpen((v) => !v)}
-                title="Filtrar transacciones"
+                title={t("txPage.filterTransactions")}
               >
                 <SlidersHorizontal className="h-4 w-4" />
               </button>

@@ -1192,6 +1192,50 @@ class TransactionControllerTest {
         }
 
         @Test
+        @DisplayName("200 – rule categoryId ignored when category type mismatches row type")
+        void ruleCategoryIgnoredWhenTypeMismatch() throws Exception {
+            when(categoryDao.findAllByUserIdOrderByNameAsc(USER_ID)).thenReturn(List.of(testCategory));
+            when(transactionService.addIncome(any(), any(), any(), any(), any(), any(), anyBoolean()))
+                    .thenReturn(testTransaction);
+
+            // testCategory is EXPENSE, row is INCOME (+)
+            String rules = objectMapper.writeValueAsString(List.of(
+                    Map.of("pattern", "salary", "categoryId", CATEGORY_ID.toString())));
+
+            String content = APP_HEADER + "2026-01-15,Salary,3000.00,\n";
+
+            mockMvc.perform(MockMvcRequestBuilders.multipart("/transaction/import/csv")
+                            .file(csvFile(content))
+                            .param("rules", rules)
+                            .requestAttr("userId", USER_ID))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.imported", is(1)));
+
+            verify(transactionService).addIncome(eq(USER_ID), isNull(), isNull(),
+                    eq("Salary"), any(), any(), anyBoolean());
+        }
+
+        @Test
+        @DisplayName("200 – CSV category by name ignored when category type mismatches row type")
+        void csvCategoryByNameIgnoredWhenTypeMismatch() throws Exception {
+            when(categoryDao.findAllByUserIdOrderByNameAsc(USER_ID)).thenReturn(List.of(testCategory));
+            when(transactionService.addIncome(any(), any(), any(), any(), any(), any(), anyBoolean()))
+                    .thenReturn(testTransaction);
+
+            // testCategory is EXPENSE and row is INCOME (+)
+            String content = APP_HEADER + "2026-01-15,Salary,2000.00,Food\n";
+
+            mockMvc.perform(MockMvcRequestBuilders.multipart("/transaction/import/csv")
+                            .file(csvFile(content))
+                            .requestAttr("userId", USER_ID))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.imported", is(1)));
+
+            verify(transactionService).addIncome(eq(USER_ID), isNull(), isNull(),
+                    eq("Salary"), any(), any(), anyBoolean());
+        }
+
+        @Test
         @DisplayName("200 – rule transactionType=INCOME skips expense row")
         void ruleTypeIncomeSkipsExpense() throws Exception {
             when(categoryDao.findAllByUserIdOrderByNameAsc(USER_ID)).thenReturn(List.of());

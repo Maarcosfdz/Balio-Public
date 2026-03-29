@@ -324,7 +324,9 @@ public class TransactionServiceImpl implements TransactionService {
                 tx.setName(newName.trim());
                 changed = true;
             }
-            if (targetCategory != null && (tx.getCategory() == null
+            if (targetCategory != null
+                    && targetCategory.getType() == tx.getType()
+                    && (tx.getCategory() == null
                     || !targetCategory.getId().equals(tx.getCategory().getId()))) {
                 tx.setCategory(targetCategory);
                 changed = true;

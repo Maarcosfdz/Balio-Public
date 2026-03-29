@@ -313,7 +313,13 @@ public class TransactionController {
                             }
                             if (rule.getCategoryId() != null && !rule.getCategoryId().isBlank()) {
                                 try {
-                                    categoryId = UUID.fromString(rule.getCategoryId());
+                                    UUID ruleCategoryId = UUID.fromString(rule.getCategoryId());
+                                    Category ruleCategory = findCategoryById(userCategories, ruleCategoryId);
+                                    // Keep backward compatibility when category catalog is not available,
+                                    // but enforce type matching when the category is known.
+                                    if (ruleCategory == null || ruleCategory.getType() == type) {
+                                        categoryId = ruleCategoryId;
+                                    }
                                 } catch (IllegalArgumentException ignored) {}
                             }
                             if (rule.getMappedName() != null && !rule.getMappedName().isBlank()) {
@@ -428,16 +434,19 @@ public class TransactionController {
     }
 
     private UUID findCategoryByName(List<Category> categories, String name, TransactionType type) {
-        // First try exact match with matching type
+        // Only accept categories matching the transaction type.
         for (Category c : categories) {
             if (c.getName().equalsIgnoreCase(name) && c.getType() == type) {
                 return c.getId();
             }
         }
-        // Then try any type
+        return null;
+    }
+
+    private Category findCategoryById(List<Category> categories, UUID categoryId) {
         for (Category c : categories) {
-            if (c.getName().equalsIgnoreCase(name)) {
-                return c.getId();
+            if (c.getId().equals(categoryId)) {
+                return c;
             }
         }
         return null;

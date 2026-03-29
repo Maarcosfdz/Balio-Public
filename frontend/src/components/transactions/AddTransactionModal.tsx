@@ -17,6 +17,7 @@ import { accountService } from "@/backend/accountService";
 import { categoryService } from "@/backend/categoryService";
 import { exchangeRateService } from "@/backend/exchangeRateService";
 import CategoryCombobox from "@/components/ui/CategoryCombobox";
+import { GradientButton } from "@/components/ui/gradient-button";
 
 interface AddTransactionModalProps {
   type: TransactionType;
@@ -275,11 +276,14 @@ export default function AddTransactionModal({
   const [exchangeRate, setExchangeRate] = useState("");
   const [fxLoading, setFxLoading] = useState(false);
 
-  // Derive account currency from selected account
-  const accountCurrency = useMemo(
-    () => accounts.find((a) => a.id === accountId)?.currency ?? "EUR",
+  const selectedAccount = useMemo(
+    () => accounts.find((a) => a.id === accountId),
     [accounts, accountId],
   );
+
+  // Derive account currency from selected account
+  const accountCurrency = selectedAccount?.currency ?? "EUR";
+  const isBankAccount = selectedAccount?.type === "BANK";
 
   // Auto-fetch exchange rate when currency pair changes
   useEffect(() => {
@@ -359,8 +363,15 @@ export default function AddTransactionModal({
 
   const handleAccountChange = (v: string) => {
     setAccountId(v);
-    if (!v) setAffectsBalance(false);
+    const next = accounts.find((acc) => acc.id === v);
+    if (!v || next?.type === "BANK") setAffectsBalance(false);
   };
+
+  useEffect(() => {
+    if (!accountId || isBankAccount) {
+      setAffectsBalance(false);
+    }
+  }, [accountId, isBankAccount]);
 
   // Validation: only name and amount are required
   const isValid = useMemo(
@@ -468,9 +479,7 @@ export default function AddTransactionModal({
 
   if (!open) return null;
 
-  const accentBg      = isExpense ? "bg-gradient-to-r from-rose-500 to-red-400"    : "bg-gradient-to-r from-sky-500 to-emerald-500";
   const accentText    = isExpense ? "text-rose-600"     : "text-sky-600";
-  const accentHover   = isExpense ? "hover:opacity-90"  : "hover:opacity-90";
   const accentBadgeBg = isExpense ? "bg-rose-100"       : "bg-sky-100";
 
   return (
@@ -650,20 +659,20 @@ export default function AddTransactionModal({
           </div>
 
           {/* 6. Affects balance */}
-          <label className={`flex items-center gap-2.5 ${accountId ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}>
+          <label className={`flex items-center gap-2.5 ${(accountId && !isBankAccount) ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}>
             <input
               type="checkbox"
               checked={affectsBalance}
               onChange={(e) => setAffectsBalance(e.target.checked)}
-              disabled={!accountId}
-              className="h-4.5 w-4.5 rounded border-slate-300 text-sky-500 focus:ring-sky-200"
+              disabled={!accountId || isBankAccount}
+              className="h-5 w-5 rounded-md border-emerald-200 text-emerald-400 focus:ring-emerald-100"
             />
             <div>
               <span className="text-sm font-medium text-slate-700">
                 {t("transactions.affectsBalance")}
               </span>
               <p className="text-xs text-slate-400">
-                {t("txPage.affectsBalanceDesc")}
+                {isBankAccount ? t("txPage.affectsBalanceBankLocked") : t("txPage.affectsBalanceDesc")}
               </p>
             </div>
           </label>
@@ -762,10 +771,11 @@ export default function AddTransactionModal({
             >
               {t("common.cancel")}
             </button>
-            <button
+            <GradientButton
               type="submit"
               disabled={!isValid || submitting}
-              className={`rounded-lg px-5 py-2 text-sm font-semibold text-white shadow-sm transition ${accentBg} ${accentHover} disabled:cursor-not-allowed disabled:opacity-50`}
+              weight="normal"
+              className="rounded-lg px-5 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting
                 ? t("common.loading")
@@ -774,7 +784,7 @@ export default function AddTransactionModal({
                   : isExpense
                     ? t("txPage.saveExpense")
                     : t("txPage.saveIncome")}
-            </button>
+            </GradientButton>
           </div>
         </form>
       </div>
