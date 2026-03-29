@@ -61,7 +61,12 @@
       "Bash(find c:Usersmarcos.romayDesktopCodigosbalioBaliofrontenddistassets -name image-*.png)",
       "Bash(find /c/Users/marcos.romay/Desktop/Codigos/balio/Balio/frontend/src -type f -name *account*)",
       "Bash(grep -r import.*.css c:/Users/marcos.romay/Desktop/Codigos/balio/Balio/frontend/src/main.tsx c:/Users/marcos.romay/Desktop/Codigos/balio/Balio/frontend/src/App.tsx)",
-      "Bash(find /c/Users/marcos.romay/Desktop/Codigos/balio/Balio/frontend/src -type f \\\\\\(-name *.ts -o -name *.tsx \\\\\\) -path */hooks/* -o -name use*.ts -o -name use*.tsx)"
+      "Bash(find /c/Users/marcos.romay/Desktop/Codigos/balio/Balio/frontend/src -type f \\\\\\(-name *.ts -o -name *.tsx \\\\\\) -path */hooks/* -o -name use*.ts -o -name use*.tsx)",
+      "WebFetch(domain:www.jeton.com)",
+      "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''c:/Users/mroma/Desktop/FIC/4.Cuarto/TFG/Balio/frontend/src/i18n/en.json''\\)\\); console.log\\(''en: OK''\\)\")",
+      "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''c:/Users/mroma/Desktop/FIC/4.Cuarto/TFG/Balio/frontend/src/i18n/es.json''\\)\\); console.log\\(''es: OK''\\)\")",
+      "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''c:/Users/mroma/Desktop/FIC/4.Cuarto/TFG/Balio/frontend/src/i18n/gal.json''\\)\\); console.log\\(''gal: OK''\\)\")",
+      "Bash(node -e \"const fs = require\\(''fs''\\); const src = fs.readFileSync\\(''c:/Users/mroma/Desktop/FIC/4.Cuarto/TFG/Balio/frontend/src/pages/mainPage/AboutPage.tsx'', ''utf8''\\); const missing = [''ab-reveal'',''ab-visible'',''ab-stagger'',''ab-gradient-text'',''ab-float-1'',''ab-orb'',''ab-grid-bg'',''ab-feature-card'',''ab-arch-card'',''ab-tech-badge'',''ab-avatar'',''ab-hero-title'',''ab-hero-badge'',''ab-stat-card'',''ab-link-arrow'',''ab-link-row''].filter\\(c => !src.includes\\(c\\)\\); console.log\\(missing.length ? ''MISSING: '' + missing.join\\('', ''\\) : ''All CSS classes present in TSX''\\);\")"
     ]
   }
 }

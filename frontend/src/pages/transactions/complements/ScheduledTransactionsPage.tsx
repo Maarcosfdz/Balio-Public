@@ -463,18 +463,18 @@ export default function ScheduledTransactionsPage() {
       )}
 
       <div className="rounded-xl bg-white px-5 py-4">
+        <button onClick={() => navigate(ROUTES.TRANSACTIONS)} className="tx-back-btn mb-2">
+          <span className="tx-back-btn-inner">
+            <span className="tx-back-btn-text">
+              {t("nav.backToTransactions", "Transacciones")}
+            </span>
+          </span>
+        </button>
         <PageHeader
           left={<CalendarClock className="h-8 w-8 text-amber-500" />}
           title={t("scheduled.title")}
           actions={
             <div className="flex items-center gap-3">
-              <button onClick={() => navigate(ROUTES.TRANSACTIONS)} className="group tx-outline-hover-btn self-center">
-                <svg className="tx-outline-hover-border" viewBox="0 0 100 36" preserveAspectRatio="none" aria-hidden="true">
-                  <rect className="tx-outline-hover-bg" x="1" y="1" width="98" height="34" rx="10" />
-                  <rect className="tx-outline-hover-hl" x="1" y="1" width="98" height="34" rx="10" />
-                </svg>
-                <span className="relative z-10 hidden sm:inline">{t("nav.transactions")}</span>
-              </button>
               <button onClick={() => { setEditing(null); setFormOpen(true); }} className="sched-new-btn">
                 <Plus className="sched-new-icon relative z-10 h-4 w-4" />
                 <span className="relative z-10">{t("scheduled.create")}</span>

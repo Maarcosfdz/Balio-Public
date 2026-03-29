@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowDownCircle,
-  ArrowLeft,
   ArrowRight,
   ArrowUpCircle,
   Bookmark,
@@ -15,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import Pagination from "@/components/ui/Pagination";
+import { GradientButton } from "@/components/ui/gradient-button";
 import type { FilterSummaryDto, TransactionSummaryDto } from "@/types";
 import { filterService } from "@/backend/filterService";
 import { ROUTES } from "@/config/routes";
@@ -235,13 +235,15 @@ function FilterCard({ filter, onDeleted, onEdited }: FilterCardProps) {
 
       {/* Footer button */}
       <div className="border-t border-slate-100 px-5 py-3">
-        <button
+        <GradientButton
           onClick={handleApply}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-emerald-500 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90"
+          weight="normal"
+          iconVariant="other"
+          icon={<ArrowRight className="h-4 w-4" />}
+          className="w-full rounded-xl py-2.5 text-sm"
         >
           {t("filters.applyAndGo")}
-          <ArrowRight className="h-4 w-4" />
-        </button>
+        </GradientButton>
       </div>
     </div>
   );
@@ -327,7 +329,6 @@ export default function FiltersPage() {
             className="tx-back-btn mb-2"
           >
             <span className="tx-back-btn-inner">
-              <ArrowLeft className="h-4 w-4" />
               <span className="tx-back-btn-text">
                 {t("nav.backToTransactions", "Transacciones")}
               </span>
@@ -374,4 +375,3 @@ export default function FiltersPage() {
     </div>
   );
 }
-

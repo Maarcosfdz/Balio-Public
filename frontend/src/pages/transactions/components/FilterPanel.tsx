@@ -16,7 +16,7 @@ import { accountService } from "@/backend/accountService";
 import { categoryService } from "@/backend/categoryService";
 import { filterService } from "@/backend/filterService";
 import SaveFilterDialog from "./SaveFilterDialog";
-import DateRangePicker from "./DateRangePicker";
+import DateRangePicker from "@/components/ui/DateRangePicker";
 
 export interface ActiveFilters {
   type?: TransactionType;
@@ -434,7 +434,7 @@ export default function FilterPanel({
     try {
       await filterService.create({ name, definition });
       setShowSaveDialog(false);
-      try { window.dispatchEvent(new CustomEvent("balio:filters-updated")); } catch {}
+      try { window.dispatchEvent(new CustomEvent("balio:filters-updated")); } catch { /* no-op */ }
     } catch {
       // no-op
     }
@@ -449,7 +449,7 @@ export default function FilterPanel({
     const definition = JSON.stringify(buildFilters());
     try {
       await filterService.update(editFilterId, { definition });
-      try { window.dispatchEvent(new CustomEvent("balio:filters-updated")); } catch {}
+      try { window.dispatchEvent(new CustomEvent("balio:filters-updated")); } catch { /* no-op */ }
       setUpdateOk(true);
       setTimeout(() => setUpdateOk(false), 2000);
       onUpdated?.();
