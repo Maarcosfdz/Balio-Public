@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Maximize2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { ResponsiveGridLayout, useContainerWidth } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import ExpandDiagonalIcon from "./ExpandDiagonalIcon";
 import { getWidgetRenderer, renderWidget } from "../registry";
 import type { AnalysisTransaction, AnalysisWidget, WidgetSize } from "../types";
 import { useTranslation } from "react-i18next";
@@ -198,7 +199,7 @@ export default function AnalysisBoard({
                               onClick={() => setLightboxWidget(widget)}
                               title={t("analysis.board.expand")}
                             >
-                              <Maximize2 className="h-3.5 w-3.5" />
+                              <ExpandDiagonalIcon className="h-3.5 w-3.5" />
                             </button>
 
                             {editMode && (
@@ -240,7 +241,7 @@ export default function AnalysisBoard({
       </div>
 
       {/* Add chart — dashed empty style */}
-      <button type="button" onClick={onCreate} className="analysis-add-btn">
+      <button type="button" onClick={onCreate} className="analysis-add-btn app-add-dashed">
         <Plus className="h-4 w-4" />
         {t("analysis.actions.addWidget")}
       </button>

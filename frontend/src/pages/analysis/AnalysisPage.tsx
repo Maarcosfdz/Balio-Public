@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChartNoAxesCombined, LayoutDashboard, RefreshCw } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
-import { Button } from "@/components/ui/button";
+import { GradientButton } from "@/components/ui/gradient-button";
 import { ToastBanner, type ToastBannerTone } from "@/components/ui/toast-banner";
 import {
   accountService,
@@ -41,6 +41,7 @@ import { useTranslation } from "react-i18next";
 interface FilterDefinitionLike {
   type?: "INCOME" | "EXPENSE";
   accountId?: string;
+  accountIds?: string[];
   categoryId?: string;
   categoryIds?: string[];
   startDate?: string;
@@ -106,13 +107,18 @@ function parseFilterDefinition(definition: string): FilterDefinitionLike | null 
   try {
     const parsed = JSON.parse(definition) as Record<string, unknown>;
     if (typeof parsed !== "object" || parsed === null) return null;
+    const accountIds = toStringArray(parsed.accountIds);
+    const oneAccount = typeof parsed.accountId === "string" ? parsed.accountId : undefined;
+    if (oneAccount && !accountIds.includes(oneAccount)) accountIds.unshift(oneAccount);
+
     const categoryIds = toStringArray(parsed.categoryIds);
     const oneCategory = typeof parsed.categoryId === "string" ? parsed.categoryId : undefined;
     if (oneCategory && !categoryIds.includes(oneCategory)) categoryIds.unshift(oneCategory);
 
     return {
       type: parsed.type === "INCOME" || parsed.type === "EXPENSE" ? parsed.type : undefined,
-      accountId: typeof parsed.accountId === "string" ? parsed.accountId : undefined,
+      accountId: oneAccount,
+      accountIds,
       categoryIds,
       startDate: typeof parsed.startDate === "string" ? parsed.startDate : undefined,
       endDate: typeof parsed.endDate === "string" ? parsed.endDate : undefined,
@@ -130,11 +136,14 @@ function mergeFilterIntoConfig<T extends AnalysisWidget["config"]>(
   config: T,
   filter: FilterDefinitionLike,
 ): T {
+  const mergedAccountIds = filter.accountIds ?? (filter.accountId ? [filter.accountId] : []);
+
   return {
     ...config,
     dateRange: "custom",
     transactionType: filter.type,
-    accountId: filter.accountId,
+    accountId: mergedAccountIds[0],
+    accountIds: mergedAccountIds,
     categoryIds: filter.categoryIds ?? [],
     startDate: filter.startDate,
     endDate: filter.endDate,
@@ -218,11 +227,18 @@ function buildConfiguration(
     commonFilter.type = cfg.transactionType;
   }
 
-  if (typeof cfg.accountId === "string" && cfg.accountId.length > 0) {
-    commonFilter.accountId = cfg.accountId;
-  } else {
-    const legacyAccounts = toStringArray(cfg.accountIds);
-    if (legacyAccounts[0]) commonFilter.accountId = legacyAccounts[0];
+  const selectedAccountIds = toStringArray(cfg.accountIds);
+  const mergedAccountIds = selectedAccountIds.length > 0
+    ? selectedAccountIds
+    : typeof cfg.accountId === "string" && cfg.accountId.length > 0
+      ? [cfg.accountId]
+      : [];
+
+  if (mergedAccountIds.length === 1) {
+    commonFilter.accountId = mergedAccountIds[0];
+  }
+  if (mergedAccountIds.length > 1) {
+    commonFilter.accountIds = mergedAccountIds;
   }
 
   if (categoryIds.length === 1) commonFilter.categoryId = categoryIds[0];
@@ -369,7 +385,18 @@ function mapBackendToFrontend(
       typeof widgetConfig.accountId === "string"
         ? widgetConfig.accountId
         : toStringArray(widgetConfig.accountIds)[0]
+          ?? toStringArray(rawFilter?.accountIds)[0]
           ?? (typeof rawFilter?.accountId === "string" ? rawFilter.accountId : undefined),
+    accountIds:
+      toStringArray(widgetConfig.accountIds).length > 0
+        ? toStringArray(widgetConfig.accountIds)
+        : typeof widgetConfig.accountId === "string"
+          ? [widgetConfig.accountId]
+          : toStringArray(rawFilter?.accountIds).length > 0
+            ? toStringArray(rawFilter?.accountIds)
+          : typeof rawFilter?.accountId === "string"
+            ? [rawFilter.accountId]
+            : [],
     categoryIds: Array.from(new Set(mergedCategoryIds)),
     startDate:
       typeof widgetConfig.startDate === "string"
@@ -821,34 +848,39 @@ export default function AnalysisPage() {
   return (
     <>
       <div className="space-y-5">
-        <PageHeader
-          left={<ChartNoAxesCombined className="h-6 w-6 text-sky-600" />}
-          title={t("analysis.title")}
-          subtitle={t("analysis.subtitle")}
-          actions={(
-            <div className="flex gap-2">
-                <Button
-                variant="outline"
-                className="analysis-sync-btn"
-                onClick={() => {
-                  void synchronizeAndReload();
-                }}
-                disabled={syncing || loading}
-              >
-                <RefreshCw className={`mr-2 h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
-                {syncing ? t("analysis.actions.syncing") : t("analysis.actions.sync")}
-              </Button>
+        <div className="analysis-hero-section">
+          <div className="analysis-hero-inner">
+            <PageHeader
+              left={<ChartNoAxesCombined className="h-6 w-6 text-sky-600" />}
+              title={t("analysis.title")}
+              subtitle={t("analysis.subtitle")}
+              actions={(
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="tx-sync-btn analysis-sync-btn"
+                    onClick={() => {
+                      void synchronizeAndReload();
+                    }}
+                    disabled={syncing || loading}
+                    title={t("analysis.actions.sync")}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
+                  </button>
 
-              <Button
-                className={`analysis-edit-btn ${editMode ? "is-active" : ""}`}
-                onClick={toggleEditMode}
-              >
-                <LayoutDashboard className="mr-2 h-4 w-4" />
-                {editMode ? t("analysis.actions.exitEdit") : t("analysis.actions.editDashboard")}
-              </Button>
-            </div>
-          )}
-        />
+                  <GradientButton
+                    size="sm"
+                    iconVariant="other"
+                    icon={<LayoutDashboard className="h-4 w-4" />}
+                    onClick={toggleEditMode}
+                  >
+                    {editMode ? t("analysis.actions.exitEdit") : t("analysis.actions.editDashboard")}
+                  </GradientButton>
+                </div>
+              )}
+            />
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
           <AnalysisBoard

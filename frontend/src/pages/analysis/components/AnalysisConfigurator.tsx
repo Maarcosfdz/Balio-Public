@@ -7,7 +7,6 @@ import {
   Gauge,
   Layers3,
   LineChart,
-  Maximize2,
   PieChart,
   Plus,
   RefreshCw,
@@ -19,9 +18,11 @@ import {
 } from "lucide-react";
 import type { CategorySummaryDto, FilterSummaryDto } from "@/types";
 import { Button } from "@/components/ui/button";
+import { GradientButton } from "@/components/ui/gradient-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import DateRangePicker from "../../transactions/components/DateRangePicker";
+import DateRangePicker from "@/components/ui/DateRangePicker";
+import ExpandDiagonalIcon from "./ExpandDiagonalIcon";
 import { HexColorInput, HexColorPicker } from "react-colorful";
 import { renderWidget, getDefaultSeriesColor } from "../registry";
 import { buildConfigForType } from "../mocks";
@@ -359,13 +360,18 @@ function filterDraftTransactions(transactions: AnalysisTransaction[], draft: Wid
         : undefined;
 
   const normalizedQuery = cfg.nameQuery.trim().toLowerCase();
+  const selectedAccountIds = cfg.accountIds?.length > 0
+    ? cfg.accountIds
+    : cfg.accountId
+      ? [cfg.accountId]
+      : [];
 
   return transactions.filter((tx) => {
     const txDay = tx.date.slice(0, 10);
     if (startDay && txDay < startDay) return false;
     if (endDay && txDay > endDay) return false;
     if (cfg.transactionType && tx.type !== cfg.transactionType) return false;
-    if (cfg.accountId && tx.accountId !== cfg.accountId) return false;
+    if (selectedAccountIds.length > 0 && !selectedAccountIds.includes(tx.accountId)) return false;
     if (cfg.categoryIds.length > 0 && (!tx.categoryId || !cfg.categoryIds.includes(tx.categoryId))) return false;
     if (specificDates.size > 0 && !specificDates.has(txDay)) return false;
     if (normalizedQuery && !tx.name.toLowerCase().includes(normalizedQuery)) return false;
@@ -435,8 +441,6 @@ export default function AnalysisConfigurator({
     { value: "INCOME", label: t("analysis.configurator.transactionTypeOptions.income") },
     { value: "EXPENSE", label: t("analysis.configurator.transactionTypeOptions.expense") },
   ];
-
-  const accountSelectOptions = accountOptions.map((account) => ({ value: account.id, label: account.name }));
 
   const categoryOptions = useMemo(() => {
     const txType = draft?.config.transactionType;
@@ -837,14 +841,15 @@ export default function AnalysisConfigurator({
                 </div>
               )}
 
-              <button
+              <GradientButton
                 type="button"
+                size="sm"
+                iconVariant="plus"
+                icon={<Plus className="h-4 w-4" />}
                 onClick={() => onStartCreate()}
-                className="analysis-add-btn"
               >
-                <Plus className="h-4 w-4" />
                 {t("analysis.actions.addWidget")}
-              </button>
+              </GradientButton>
             </div>
           )}
 
@@ -1004,12 +1009,22 @@ export default function AnalysisConfigurator({
               />
 
               <div className="grid grid-cols-2 gap-3">
-                <SingleSelectDropdown
+                <MultiSelectDropdown
                   label={t("analysis.configurator.fields.account")}
-                  value={draft.config.accountId ?? ""}
-                  options={accountSelectOptions}
-                  placeholder={t("analysis.configurator.all")}
-                  onChange={(value) => changeDraftConfig({ accountId: value || undefined })}
+                  options={accountOptions}
+                  selected={draft.config.accountIds?.length > 0
+                    ? draft.config.accountIds
+                    : draft.config.accountId
+                      ? [draft.config.accountId]
+                      : []}
+                  allLabel={t("analysis.configurator.all")}
+                  noOptionsLabel={t("analysis.configurator.noAccounts")}
+                  selectedManyLabel={t("analysis.configurator.accountsCount")}
+                  onChange={(ids) =>
+                    changeDraftConfig({
+                      accountIds: ids,
+                      accountId: ids.length === 1 ? ids[0] : undefined,
+                    })}
                 />
                 <label className="text-sm font-medium text-slate-700">
                   {t("analysis.configurator.fields.searchName")}
@@ -1666,15 +1681,19 @@ export default function AnalysisConfigurator({
               )}
 
               <div className="flex items-center gap-2 pt-2">
-                <Button className="tx-apply-pastel-btn flex-1" onClick={onSave}>
-                  <Save className="mr-1 h-4 w-4" />
+                <GradientButton
+                  className="flex-1"
+                  iconVariant="other"
+                  icon={<Save className="h-4 w-4" />}
+                  onClick={onSave}
+                >
                   {draft.mode === "create"
                     ? t("analysis.configurator.saveChart")
                     : t("analysis.configurator.updateChart")}
-                </Button>
-                <Button variant="outline" className="tx-cancel-draw-btn" onClick={onCancel}>
+                </GradientButton>
+                <button type="button" className="btn-ghost-draw" onClick={onCancel}>
                   {t("common.cancel")}
-                </Button>
+                </button>
               </div>
             </>
           )}
@@ -1708,7 +1727,7 @@ export default function AnalysisConfigurator({
                 onClick={() => setPreviewExpanded(true)}
                 title={t("analysis.board.expand")}
               >
-                <Maximize2 className="h-3.5 w-3.5" />
+                <ExpandDiagonalIcon className="h-3.5 w-3.5" />
               </button>
             </div>
           </CardHeader>
