@@ -4,6 +4,7 @@ import Balio.web.enums.TransactionType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -72,6 +73,10 @@ public interface TransactionDao extends JpaRepository<Transaction, UUID> {
     // ── BANK SYNC ────────────────────────────────────────────────────────
 
     boolean existsByAccountIdAndExternalId(UUID accountId, String externalId);
+
+    @Modifying
+    @Query("DELETE FROM Transaction t WHERE t.user.id = :userId")
+    void deleteAllByUserId(@Param("userId") UUID userId);
 
     // ── BUDGET ──────────────────────────────────────────────────────────
 

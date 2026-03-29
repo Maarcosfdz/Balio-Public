@@ -3,6 +3,9 @@ package Balio.web.model.entities;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,4 +20,8 @@ public interface ScheduledTransactionDao extends JpaRepository<ScheduledTransact
     List<ScheduledTransaction> findAllByUserIdAndActiveTrue(UUID userId);
 
     long countByUserId(UUID userId);
+
+    @Modifying
+    @Query("DELETE FROM ScheduledTransaction st WHERE st.user.id = :userId")
+    void deleteAllByUserId(@Param("userId") UUID userId);
 }

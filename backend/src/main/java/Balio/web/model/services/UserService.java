@@ -31,4 +31,6 @@ public interface UserService {
                                                                                       IncorrectPasswordException;
 
     User updatePreferredCurrency(UUID id, String currency) throws InstanceNotFoundException;
+
+    void deleteAccount(UUID id) throws InstanceNotFoundException;
 }

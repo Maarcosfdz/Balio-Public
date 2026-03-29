@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -175,6 +176,20 @@ public class UserController {
         // Revoke all refresh tokens on password change for security
         refreshTokenService.revokeAllUserTokens(id);
         log.info("Password changed and tokens revoked: userId={}", id);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteAccount(@RequestAttribute UUID userId,
+                              @PathVariable UUID id)
+            throws PermissionException, InstanceNotFoundException {
+
+        if (!id.equals(userId)) {
+            throw new PermissionException();
+        }
+
+        userService.deleteAccount(id);
+        log.info("Account deleted: userId={}", id);
     }
 
 }

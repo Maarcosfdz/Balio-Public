@@ -168,7 +168,7 @@ export default function BankRulesPanel({ account, open, onClose, onRulesChanged 
     setError("");
     setSuccess("");
     try {
-      const payload = {
+      const payload: BankRuleDto = {
         namePattern: rule.namePattern ?? undefined,
         bankCategory: rule.bankCategory ?? undefined,
         transactionType: rule.transactionType ?? undefined,
@@ -176,7 +176,7 @@ export default function BankRulesPanel({ account, open, onClose, onRulesChanged 
         mappedCategoryId: rule.mappedCategoryId ?? undefined,
         applyToExisting: true,
         applyWindowDays: windowDays,
-      } as any;
+      };
 
       const saved = await bankService.updateRule(account.id, rule.id, payload);
       setRules((prev) => prev.map((r) => (r.id === saved.id ? saved : r)));
@@ -421,11 +421,34 @@ export default function BankRulesPanel({ account, open, onClose, onRulesChanged 
             </div>
 
             {success && (
-              <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-                {success}
+              <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 flex items-start justify-between">
+                <div className="min-w-0">{success}</div>
+                <button
+                  type="button"
+                  onClick={() => setSuccess("")}
+                  className="ml-4 rounded-full p-0.5 text-slate-400 transition hover:bg-slate-200/70 hover:text-slate-600"
+                  aria-label={t("common.close") ?? "Cerrar"}
+                  title={t("common.close") ?? "Cerrar"}
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
             )}
-            {error && <div className="mb-4"><FieldError message={error} /></div>}
+
+            {error && (
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 flex items-start justify-between">
+                <div className="min-w-0"><FieldError message={error} /></div>
+                <button
+                  type="button"
+                  onClick={() => setError("")}
+                  className="ml-4 rounded-full p-0.5 text-slate-400 transition hover:bg-slate-200/70 hover:text-slate-600"
+                  aria-label={t("common.close") ?? "Cerrar"}
+                  title={t("common.close") ?? "Cerrar"}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
 
             <div className="grid gap-4 overflow-y-auto pr-1">
               <div className="space-y-1">
