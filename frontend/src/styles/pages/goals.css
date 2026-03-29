@@ -71,10 +71,12 @@
     #e8f5ef 0%,
     #e0eef9 40%,
     #ede8f8 56%,
-    rgba(241, 245, 243, 0.7) 70%,
-    rgba(241, 245, 243, 0.2) 86%,
-    rgba(241, 245, 243, 0) 100%
+    rgba(241, 245, 243, 0.78) 74%,
+    rgba(241, 245, 243, 0.4) 90%,
+    rgba(241, 245, 243, 0.12) 100%
   );
+  background-size: 122% 100%;
+  background-position: right top;
   -webkit-mask-image: linear-gradient(
     to bottom,
     rgba(0, 0, 0, 1) 0%,

@@ -164,16 +164,27 @@ public class EnableBankingSyncService {
         String bankCategory = txNode.path("proprietary_bank_transaction_code").asText(null);
         LocalDate date = parseDate(txNode.path("booking_date").asText(null));
 
-        // Apply mapping rules (first match wins, ordered by priority desc)
+        // Apply mapping rules (ordered by priority desc). Name and category can be
+        // resolved by different rules to avoid dropping category mappings.
         String resolvedName = name;
         Category resolvedCategory = null;
+        boolean nameResolved = false;
+        boolean categoryResolved = false;
         for (BankTransactionRule rule : rules) {
             if (matches(rule, name, bankCategory, type)) {
-                if (rule.getMappedName() != null && !rule.getMappedName().isBlank()) {
+                if (!nameResolved && rule.getMappedName() != null && !rule.getMappedName().isBlank()) {
                     resolvedName = rule.getMappedName();
+                    nameResolved = true;
                 }
-                resolvedCategory = rule.getMappedCategory();
-                break;
+                if (!categoryResolved
+                        && rule.getMappedCategory() != null
+                        && rule.getMappedCategory().getType() == type) {
+                    resolvedCategory = rule.getMappedCategory();
+                    categoryResolved = true;
+                }
+                if (nameResolved && categoryResolved) {
+                    break;
+                }
             }
         }
 

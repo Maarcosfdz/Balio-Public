@@ -447,13 +447,13 @@ function DonutPercentLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent
   ) {
     return null;
   }
-  if (percent < 0.06) return null; // hide for slices < 6%
+  if (percent < 0.04) return null; // hide only very tiny slices
   const RADIAN = Math.PI / 180;
   const radius = innerRadius + (outerRadius - innerRadius) * 0.55;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
   return (
-    <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={700} style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}>
+    <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central" fontSize={12} fontWeight={800} style={{ textShadow: "0 1px 3px rgba(0,0,0,0.55)" }}>
       {`${(percent * 100).toFixed(0)}%`}
     </text>
   );

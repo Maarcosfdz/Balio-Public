@@ -41,6 +41,7 @@ import type {
   TransactionResponseDto,
 } from "@/types";
 import AddTransactionModal from "@/components/transactions/AddTransactionModal";
+import { GradientButton } from "@/components/ui/gradient-button";
 import { ROUTES } from "@/config/routes";
 import { IconAvatar } from "@/components/icons/IconAvatar";
 import "@/styles/pages/dashboard.css";
@@ -87,17 +88,24 @@ const DONUT_COLORS = [
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-function formatCurrency(amount: number, currency = "EUR"): string {
-  return new Intl.NumberFormat("es-ES", {
+function resolveLocale(language?: string): string {
+  if (!language) return "es-ES";
+  if (language.startsWith("en")) return "en-US";
+  if (language.startsWith("gl") || language.startsWith("gal")) return "gl-ES";
+  return "es-ES";
+}
+
+function formatCurrency(amount: number, currency = "EUR", locale = "es-ES"): string {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     maximumFractionDigits: 2,
   }).format(amount);
 }
 
-function formatCompactCurrency(amount: number, currency = "EUR"): string {
+function formatCompactCurrency(amount: number, currency = "EUR", locale = "es-ES"): string {
   try {
-    return new Intl.NumberFormat("es-ES", {
+    return new Intl.NumberFormat(locale, {
       style: "currency",
       currency,
       notation: "compact",
@@ -105,7 +113,7 @@ function formatCompactCurrency(amount: number, currency = "EUR"): string {
       currencyDisplay: "narrowSymbol",
     }).format(amount);
   } catch {
-    return formatCurrency(amount, currency);
+    return formatCurrency(amount, currency, locale);
   }
 }
 
@@ -124,7 +132,7 @@ function renderDonutPercentageLabel({
   outerRadius?: number;
   percent?: number;
 }) {
-  if (percent < 0.07) return null;
+  if (percent < 0.04) return null;
 
   const RADIAN = Math.PI / 180;
   const labelRadius = innerRadius + (outerRadius - innerRadius) * 0.58;
@@ -138,16 +146,17 @@ function renderDonutPercentageLabel({
       fill="#ffffff"
       textAnchor="middle"
       dominantBaseline="central"
-      fontSize={14}
+      fontSize={12}
       fontWeight={800}
+      style={{ textShadow: "0 1px 3px rgba(0,0,0,0.55)" }}
     >
       {`${Math.round(percent * 100)}%`}
     </text>
   );
 }
 
-function shortMonth(date: Date): string {
-  return date.toLocaleString("es-ES", { month: "short" });
+function shortMonth(date: Date, locale = "es-ES"): string {
+  return date.toLocaleString(locale, { month: "short" });
 }
 
 function startOfMonth(y: number, m: number): string {
@@ -159,13 +168,13 @@ function endOfMonth(y: number, m: number): string {
   return `${y}-${String(m + 1).padStart(2, "0")}-${String(last.getDate()).padStart(2, "0")}`;
 }
 
-function getLast4Months(): { key: string; label: string }[] {
+function getLast4Months(locale = "es-ES"): { key: string; label: string }[] {
   const now = new Date();
   return Array.from({ length: 4 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - (3 - i), 1);
     return {
       key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
-      label: shortMonth(d),
+      label: shortMonth(d, locale),
     };
   });
 }
@@ -196,6 +205,21 @@ function CategoryIcon({
   );
 }
 
+function ViewAllArrowIcon() {
+  return (
+    <svg
+      className="db-view-all-arrow"
+      viewBox="0 0 24 12"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path className="one" d="M2 2 L7 6 L2 10" />
+      <path className="two" d="M9 2 L14 6 L9 10" />
+      <path className="three" d="M16 2 L21 6 L16 10" />
+    </svg>
+  );
+}
+
 // ── QuickToolPicker modal ────────────────────────────────────────────
 
 interface PickerProps {
@@ -208,6 +232,7 @@ interface PickerProps {
 }
 
 function QuickToolPicker({ slotIndex, goals, budgets, filters, onPick, onClose }: PickerProps) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<QuickToolKind>("goal");
 
   const items: { id: string; label: string }[] =
@@ -222,29 +247,33 @@ function QuickToolPicker({ slotIndex, goals, budgets, filters, onPick, onClose }
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full max-w-xs rounded-2xl bg-white shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b">
-          <p className="text-sm font-bold text-slate-800">Configurar acceso rápido</p>
+          <p className="text-sm font-bold text-slate-800">{t("dashboard.page.quickTools.picker.title", "Configurar acceso rápido")}</p>
           <button onClick={onClose} className="p-1 rounded-full text-slate-400 hover:bg-slate-100">
             <X className="h-4 w-4" />
           </button>
         </div>
         <div className="flex gap-1 px-4 py-2 border-b bg-slate-50">
-          {(["goal", "budget", "filter"] as QuickToolKind[]).map((t) => (
+          {(["goal", "budget", "filter"] as QuickToolKind[]).map((kind) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
+              key={kind}
+              onClick={() => setTab(kind)}
               className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${
-                tab === t
+                tab === kind
                   ? "bg-slate-800 text-white"
                   : "text-slate-500 hover:bg-slate-200"
               }`}
             >
-              {t === "goal" ? "Objetivo" : t === "budget" ? "Presupuesto" : "Filtro"}
+              {kind === "goal"
+                ? t("dashboard.page.quickTools.picker.goal", "Objetivo")
+                : kind === "budget"
+                  ? t("dashboard.page.quickTools.picker.budget", "Presupuesto")
+                  : t("dashboard.page.quickTools.picker.filter", "Filtro")}
             </button>
           ))}
         </div>
         <div className="max-h-56 overflow-y-auto px-4 py-2">
           {items.length === 0 ? (
-            <p className="py-6 text-center text-sm text-slate-400">Sin elementos</p>
+            <p className="py-6 text-center text-sm text-slate-400">{t("dashboard.page.quickTools.picker.empty", "Sin elementos")}</p>
           ) : (
             <ul className="space-y-0.5">
               {items.map((item) => (
@@ -262,7 +291,7 @@ function QuickToolPicker({ slotIndex, goals, budgets, filters, onPick, onClose }
         </div>
         <div className="border-t px-4 py-3">
           <button type="button" onClick={onClose} className="btn-cancel-draw w-full justify-center">
-            Cancelar
+            {t("common.cancel", "Cancelar")}
           </button>
         </div>
       </div>
@@ -283,6 +312,9 @@ function BarTooltip({
   label?: string;
   currency?: string;
 }) {
+  const { t, i18n } = useTranslation();
+  const locale = resolveLocale(i18n.resolvedLanguage);
+
   if (!active || !payload?.length) return null;
   return (
     <div className="db-tooltip">
@@ -294,9 +326,12 @@ function BarTooltip({
             style={{ background: p.fill }}
           />
           <span className="text-white/60">
-            {p.name === "income" ? "Ingresos" : "Gastos"}:
+            {p.name === "income"
+              ? t("dashboard.page.charts.incomeLegend", "Ingresos")
+              : t("dashboard.page.charts.expenseLegend", "Gastos")}
+            :
           </span>
-          <span className="font-semibold text-white">{formatCurrency(p.value, currency)}</span>
+          <span className="font-semibold text-white">{formatCurrency(p.value, currency, locale)}</span>
         </div>
       ))}
     </div>
@@ -312,11 +347,14 @@ function DonutTooltip({
   payload?: { name: string; value: number }[];
   currency?: string;
 }) {
+  const { i18n } = useTranslation();
+  const locale = resolveLocale(i18n.resolvedLanguage);
+
   if (!active || !payload?.length) return null;
   return (
     <div className="db-tooltip">
       <p className="font-semibold text-white/90">{payload[0].name}</p>
-      <p className="text-white/70">{formatCurrency(payload[0].value, currency)}</p>
+      <p className="text-white/70">{formatCurrency(payload[0].value, currency, locale)}</p>
     </div>
   );
 }
@@ -328,8 +366,9 @@ function DonutTooltip({
 export default function DashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const chartCurrency = user?.preferredCurrency ?? "EUR";
+  const locale = useMemo(() => resolveLocale(i18n.resolvedLanguage), [i18n.resolvedLanguage]);
 
   // ── Data state ──────────────────────────────────────────────────────
   const [accounts, setAccounts] = useState<AccountSummaryDto[]>([]);
@@ -376,7 +415,7 @@ export default function DashboardPage() {
 
   // ── Monthly bar chart data ───────────────────────────────────────────
   const monthlyData = useMemo<MonthlyBar[]>(() => {
-    const months = getLast4Months();
+    const months = getLast4Months(locale);
     return months.map(({ key, label }) => {
       const [y, m] = key.split("-").map(Number);
       const monthStart = startOfMonth(y, m - 1);
@@ -391,7 +430,7 @@ export default function DashboardPage() {
       }
       return { month: label, income, expense };
     });
-  }, [chartTx]);
+  }, [chartTx, locale]);
 
   // ── Category donut data (current month) ─────────────────────────────
   const categoryDonutData = useMemo<CategorySlice[]>(() => {
@@ -509,28 +548,33 @@ export default function DashboardPage() {
             {/* Greeting + name */}
             <div>
               <p className="text-sm font-medium text-slate-500 mb-0.5">
-                Bienvenido de nuevo 👋
+                {t("dashboard.page.hero.welcomeBack", "Bienvenido de nuevo")} 👋
               </p>
               <h1 className="db-hero-name-gradient text-4xl font-extrabold leading-tight">
-                {user?.nickname ?? "Usuario"}
+                {user?.nickname ?? t("dashboard.page.hero.userFallback", "Usuario")}
               </h1>
               <div className="mt-4">
-                <p className="text-xs text-slate-400 mb-0.5">Balance total</p>
+                <p className="text-xs text-slate-400 mb-0.5">{t("dashboard.page.hero.totalBalance", "Balance total")}</p>
                 <p className="text-3xl font-extrabold text-slate-800 tracking-tight">
-                  {formatCurrency(totalBalance, user?.preferredCurrency ?? "EUR")}
+                  {formatCurrency(totalBalance, user?.preferredCurrency ?? "EUR", locale)}
                 </p>
               </div>
             </div>
 
             {/* Action buttons */}
             <div className="flex items-center gap-2 mt-5 flex-wrap">
-              <button className="btn-primary-gradient db-cta-btn" onClick={() => setAddModal("INCOME")}>
-                <Plus className="h-3.5 w-3.5" />
-                Añadir ingreso
-              </button>
+              <GradientButton
+                size="sm"
+                iconVariant="plus"
+                icon={<Plus className="h-3.5 w-3.5" />}
+                className="db-cta-btn"
+                onClick={() => setAddModal("INCOME")}
+              >
+                {t("dashboard.page.actions.addIncome", "Añadir ingreso")}
+              </GradientButton>
               <button className="db-cta-ghost db-cta-btn" onClick={() => setAddModal("EXPENSE")}>
                 <Minus className="h-3.5 w-3.5" />
-                Añadir gasto
+                {t("dashboard.page.actions.addExpense", "Añadir gasto")}
               </button>
             </div>
           </div>
@@ -541,7 +585,7 @@ export default function DashboardPage() {
       <div className="db-quick-tools">
         <div className="flex items-center justify-between mb-1">
           <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-            Accesos rápidos
+            {t("dashboard.page.quickTools.title", "Accesos rápidos")}
           </p>
           <Settings2 className="h-3.5 w-3.5 text-slate-300" />
         </div>
@@ -550,7 +594,7 @@ export default function DashboardPage() {
           tool ? (
             <div
               key={idx}
-              className="db-quick-tool-slot filled group"
+              className="db-quick-tool-slot filled group app-add-dashed"
               onClick={() => navigateToTool(tool)}
             >
               <div className="flex items-center gap-2 min-w-0">
@@ -572,12 +616,12 @@ export default function DashboardPage() {
           ) : (
             <button
               key={idx}
-              className="db-quick-tool-slot"
+              className="db-quick-tool-slot app-add-dashed"
               onClick={() => setPickerSlot(idx)}
             >
               <div className="flex items-center gap-1.5 text-slate-400">
                 <Plus className="h-3.5 w-3.5" />
-                <span className="text-xs font-medium">Añadir acceso</span>
+                <span className="text-xs font-medium">{t("dashboard.page.quickTools.addAccess", "Añadir acceso")}</span>
               </div>
             </button>
           ),
@@ -589,7 +633,7 @@ export default function DashboardPage() {
 
         {/* Income vs Expense bar chart */}
         <div className="db-card">
-          <p className="db-card-title">Ingresos vs Gastos</p>
+          <p className="db-card-title">{t("dashboard.page.charts.incomeVsExpense", "Ingresos vs gastos")}</p>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={monthlyData} barGap={4} barCategoryGap="30%">
               <defs>
@@ -612,7 +656,7 @@ export default function DashboardPage() {
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 10, fill: "#94a3b8" }}
-                tickFormatter={(v: number) => formatCompactCurrency(v, chartCurrency)}
+                tickFormatter={(v: number) => formatCompactCurrency(v, chartCurrency, locale)}
               />
               <Tooltip
                 content={<BarTooltip currency={chartCurrency} />}
@@ -635,21 +679,21 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3 mt-1">
             <div className="flex items-center gap-1.5">
               <span className="inline-block w-2.5 h-2.5 rounded-full bg-cyan-500" />
-              <span className="text-[11px] text-slate-500">Ingresos</span>
+              <span className="text-[11px] text-slate-500">{t("dashboard.page.charts.incomeLegend", "Ingresos")}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-600" />
-              <span className="text-[11px] text-slate-500">Gastos</span>
+              <span className="text-[11px] text-slate-500">{t("dashboard.page.charts.expenseLegend", "Gastos")}</span>
             </div>
           </div>
         </div>
 
         {/* Category donut */}
         <div className="db-card flex flex-col">
-          <p className="db-card-title">Gastos del mes</p>
+          <p className="db-card-title">{t("dashboard.page.charts.monthExpenses", "Gastos del mes")}</p>
           {categoryDonutData.length === 0 ? (
             <div className="flex-1 flex items-center justify-center">
-              <p className="text-sm text-slate-400">Sin gastos este mes</p>
+              <p className="text-sm text-slate-400">{t("dashboard.page.charts.noMonthExpenses", "Sin gastos este mes")}</p>
             </div>
           ) : (
             <div className="flex items-center gap-3">
@@ -693,7 +737,7 @@ export default function DashboardPage() {
                     />
                     <span className="text-[11px] text-slate-500 truncate min-w-0">{item.name}</span>
                     <span className="text-[11px] font-semibold text-slate-700 shrink-0 ml-auto pl-1">
-                      {formatCurrency(item.value)}
+                      {formatCurrency(item.value, chartCurrency, locale)}
                     </span>
                   </div>
                 ))}
@@ -705,16 +749,16 @@ export default function DashboardPage() {
         {/* Account summary */}
         <div className="db-card">
           <div className="flex items-center justify-between mb-3">
-            <p className="db-card-title mb-0">Cuentas</p>
+            <p className="db-card-title mb-0">{t("dashboard.page.cards.accounts", "Cuentas")}</p>
             <button
               onClick={() => navigate(ROUTES.ACCOUNTS)}
               className="db-view-all"
             >
-              Ver todas <ChevronRight className="h-3 w-3" />
+              {t("dashboard.page.buttons.viewAll", "Ver todos")} <ViewAllArrowIcon />
             </button>
           </div>
           {accounts.length === 0 ? (
-            <p className="text-sm text-slate-400 text-center py-8">Sin cuentas</p>
+            <p className="text-sm text-slate-400 text-center py-8">{t("dashboard.page.empty.accounts", "Sin cuentas")}</p>
           ) : (
             <ul className="space-y-2.5">
               {accounts.slice(0, 4).map((acc) => (
@@ -737,7 +781,7 @@ export default function DashboardPage() {
                   <p
                     className={`text-sm font-bold shrink-0 ${acc.balance >= 0 ? "text-slate-800" : "text-red-500"}`}
                   >
-                    {formatCurrency(acc.balance, acc.currency)}
+                    {formatCurrency(acc.balance, acc.currency, locale)}
                   </p>
                 </li>
               ))}
@@ -752,18 +796,18 @@ export default function DashboardPage() {
         {/* Recent transactions */}
         <div className="db-card">
           <div className="flex items-center justify-between mb-3">
-            <p className="db-card-title mb-0">Transacciones recientes</p>
+            <p className="db-card-title mb-0">{t("dashboard.page.cards.recentTransactions", "Transacciones recientes")}</p>
             <button
               onClick={() => navigate(ROUTES.TRANSACTIONS)}
               className="db-view-all"
             >
-              Ver todas <ChevronRight className="h-3 w-3" />
+              {t("dashboard.page.buttons.viewAll", "Ver todos")} <ViewAllArrowIcon />
             </button>
           </div>
 
           {recentTx.length === 0 ? (
             <p className="text-sm text-slate-400 text-center py-8">
-              Sin transacciones recientes
+              {t("dashboard.page.empty.recentTransactions", "Sin transacciones recientes")}
             </p>
           ) : (
             <ul className="db-tx-list">
@@ -795,10 +839,10 @@ export default function DashboardPage() {
                         }`}
                       >
                         {tx.type === "INCOME" ? "+" : "-"}
-                        {formatCurrency(tx.amount, tx.currency ?? "EUR")}
+                        {formatCurrency(tx.amount, tx.currency ?? "EUR", locale)}
                       </p>
                       <p className="text-[10px] text-slate-400">
-                        {new Date(tx.date).toLocaleDateString("es-ES", {
+                        {new Date(tx.date).toLocaleDateString(locale, {
                           day: "numeric",
                           month: "short",
                         })}
@@ -814,24 +858,24 @@ export default function DashboardPage() {
         {/* Budgets panel */}
         <div className="db-card">
           <div className="flex items-center justify-between mb-3">
-            <p className="db-card-title mb-0">Presupuestos</p>
+            <p className="db-card-title mb-0">{t("dashboard.page.cards.budgets", "Presupuestos")}</p>
             <button
               onClick={() => navigate(ROUTES.BUDGETS)}
               className="db-view-all"
             >
-              Ver todos <ChevronRight className="h-3 w-3" />
+              {t("dashboard.page.buttons.viewAll", "Ver todos")} <ViewAllArrowIcon />
             </button>
           </div>
 
           {budgets.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <Wallet className="h-8 w-8 text-slate-200 mb-2" />
-              <p className="text-sm text-slate-400">Sin presupuestos</p>
+              <p className="text-sm text-slate-400">{t("dashboard.page.empty.budgets", "Sin presupuestos")}</p>
               <button
                 onClick={() => navigate(ROUTES.BUDGETS)}
                 className="mt-2 text-xs text-slate-500 hover:text-slate-800 font-semibold transition"
               >
-                Crear presupuesto
+                {t("dashboard.page.buttons.createBudget", "Crear presupuesto")}
               </button>
             </div>
           ) : (
@@ -863,7 +907,7 @@ export default function DashboardPage() {
                             over ? "text-red-500" : "text-slate-500"
                           }`}
                         >
-                          {formatCurrency(used)} / {formatCurrency(limit)}
+                          {formatCurrency(used, chartCurrency, locale)} / {formatCurrency(limit, chartCurrency, locale)}
                         </p>
                       </div>
                     </div>
