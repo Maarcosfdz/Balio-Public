@@ -115,7 +115,7 @@ function SessionToast({
       action={{
         label: t("auth.sessionWarningAction"),
         onClick: onStayActive,
-        className: "btn-login-hover !mt-3 !rounded-lg !px-4 !py-2 !text-sm !font-semibold",
+        className: "app-gradient-btn app-gradient-btn--sm !mt-3 !rounded-lg !px-4 !py-2 !text-sm !font-semibold",
       }}
       onClose={onClose}
     />

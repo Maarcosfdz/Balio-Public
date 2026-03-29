@@ -2,6 +2,34 @@
  * pages/analysis.css — Estilos específicos de la página de Análisis.
  */
 
+/* ── Analysis hero (fade gris como Accounts) ───────────────────── */
+.analysis-hero-section {
+  position: relative;
+  overflow: visible;
+  margin: -1.5rem -1.5rem 0;
+  padding: 0 1.5rem 1.5rem;
+  background: linear-gradient(
+    180deg,
+    #f0f4f8 0%,
+    #e8edf4 45%,
+    #f2f5f8 80%,
+    transparent 100%
+  );
+}
+
+@media (min-width: 768px) {
+  .analysis-hero-section {
+    margin: -2rem -2rem 0;
+    padding: 0 2rem 1.5rem;
+  }
+}
+
+.analysis-hero-inner {
+  position: relative;
+  z-index: 3;
+  padding-top: 2rem;
+}
+
 /* ── "Editar dashboard" — degradado azul → verde visible en reposo ── */
 .analysis-edit-btn {
   background: linear-gradient(120deg, #0284c7 0%, #0ea5e9 40%, #10b981 80%, #34d399 100%);
@@ -39,18 +67,11 @@
 
 /* ── Botón Sincronizar — hover gris neutro ───────────────────────── */
 .analysis-sync-btn {
-  transition:
-    background-color 180ms ease,
-    color 180ms ease,
-    box-shadow 180ms ease !important;
+  margin-left: 0;
 }
 
-.analysis-sync-btn:hover {
-  background-color: #f1f5f9 !important;
-  color: #475569 !important;
-  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.07) !important;
-  transform: none !important;
-  background-size: auto !important;
+.analysis-sync-btn:hover:not(:disabled) {
+  transform: rotate(90deg);
 }
 
 /* ── Botón editar de tarjeta — hover gris, conserva wiggle del lápiz ── */
@@ -194,21 +215,37 @@
   justify-content: center;
   width: 1.75rem;
   height: 1.75rem;
-  border-radius: 0.375rem;
+  border-radius: 0.2rem;
   border: none;
   background: transparent;
   color: #94a3b8;
   cursor: pointer;
   transition:
     color 150ms ease,
-    background-color 150ms ease,
     transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .analysis-expand-btn:hover {
   color: #0284c7;
-  background-color: #e0f2fe;
   transform: scale(1.15);
+}
+
+.analysis-expand-icon {
+  overflow: visible;
+}
+
+.analysis-expand-icon__nw,
+.analysis-expand-icon__se {
+  transform-box: fill-box;
+  transition: transform 230ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.analysis-expand-btn:hover .analysis-expand-icon__nw {
+  transform: translate(-1.35px, -1.35px);
+}
+
+.analysis-expand-btn:hover .analysis-expand-icon__se {
+  transform: translate(1.35px, 1.35px);
 }
 
 /* ── Banner de modo edición ──────────────────────────────────────── */
