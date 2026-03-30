@@ -25,7 +25,11 @@ public interface CategoryService {
      * @return the persisted category
      * @throws Balio.web.model.Exceptions.UserNotFoundException if the user does not exist (unchecked)
      */
-    Category createCategory(UUID userId, String name, TransactionType type);
+    Category createCategory(UUID userId, String name, TransactionType type, String iconName, String iconBgColor);
+
+    default Category createCategory(UUID userId, String name, TransactionType type) {
+        return createCategory(userId, name, type, null, null);
+    }
 
     /**
      * Deletes a category owned by the user.
@@ -39,8 +43,14 @@ public interface CategoryService {
      *
      * @throws InstanceNotFoundException if the category does not exist or does not belong to the user
      */
-    Category modifyCategory(UUID userId, UUID categoryId, String name, TransactionType type)
+    Category modifyCategory(UUID userId, UUID categoryId, String name, TransactionType type,
+                            String iconName, String iconBgColor)
             throws InstanceNotFoundException;
+
+    default Category modifyCategory(UUID userId, UUID categoryId, String name, TransactionType type)
+            throws InstanceNotFoundException {
+        return modifyCategory(userId, categoryId, name, type, null, null);
+    }
 
     /**
      * Returns all categories belonging to the user, ordered by name.

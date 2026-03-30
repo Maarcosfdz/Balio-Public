@@ -69,7 +69,8 @@ public class GoalController {
     public ResponseEntity<GoalResponseDto> createGoal(@RequestAttribute UUID userId,
                                                       @Validated @RequestBody GoalDto dto) {
 
-        Goal goal = goalService.createGoal(userId, dto.getName(), dto.getTargetAmount());
+        Goal goal = goalService.createGoal(
+                userId, dto.getName(), dto.getTargetAmount(), dto.getIconName(), dto.getIconBgColor());
 
         log.info("Goal created: goalId={}, userId={}", goal.getId(), userId);
 
@@ -88,7 +89,8 @@ public class GoalController {
                                       @Validated @RequestBody GoalUpdateDto dto)
             throws InstanceNotFoundException {
 
-        Goal goal = goalService.modifyGoal(userId, goalId, dto.getName(), dto.getTargetAmount());
+        Goal goal = goalService.modifyGoal(
+                userId, goalId, dto.getName(), dto.getTargetAmount(), dto.getIconName(), dto.getIconBgColor());
         return goalConverter.toResponseDto(goal);
     }
 

@@ -21,6 +21,90 @@
     "ctaButton": "Get Started for Free",
     "allRights": "All rights reserved."
   },
+  "landing": {
+    "badge": "Personal Finance Manager",
+    "heroLine1": "Take control of",
+    "heroHighlight": "your finances",
+    "heroLine2": "with clarity.",
+    "heroSub": "Track, analyze and optimize your money from one place. Accounts, transactions, budgets and goals — all connected.",
+    "heroCta": "Get Started Free",
+    "heroLogin": "Log in",
+    "heroTrust": "Designed for students and professionals",
+    "ticker1": "Visual Analytics",
+    "ticker2": "Account Management",
+    "ticker3": "Transaction Tracking",
+    "ticker4": "Savings Goals",
+    "ticker5": "Budget Control",
+    "ticker6": "Multi-Currency",
+    "ticker7": "Custom Categories",
+    "ticker8": "Scheduled Transactions",
+    "ticker9": "Advanced Filters",
+    "ticker10": "Real-Time Balance",
+    "sectionTitle": "Unify your",
+    "sectionHighlight": "finances.",
+    "featuresTitle": "Everything you need",
+    "featuresHighlight": "in one place",
+    "featuresSub": "Balio brings together the essential tools for managing your personal finances effectively.",
+    "analysis": {
+      "label": "Analytics",
+      "title": "Visualize your financial habits",
+      "desc": "Interactive charts of income and expenses by category, month by month. Detect trends and make better decisions with real data.",
+      "p1": "Monthly income vs expense bars",
+      "p2": "Category distribution donut",
+      "p3": "Last 4 months comparison"
+    },
+    "accounts": {
+      "label": "Accounts",
+      "title": "All your accounts in one place",
+      "desc": "Manage cash, banks and more from a single panel. Check your consolidated total balance and follow every movement in real time.",
+      "p1": "Multiple account types",
+      "p2": "Consolidated total balance",
+      "p3": "Movement history by account"
+    },
+    "transactions": {
+      "label": "Transactions",
+      "title": "Track every movement",
+      "desc": "Add income and expenses with custom categories and icons. Filter, search and understand exactly where your money goes each month.",
+      "p1": "Customizable categories and icons",
+      "p2": "Advanced search and filters",
+      "p3": "Scheduled and recurring transactions"
+    },
+    "goals": {
+      "label": "Goals",
+      "title": "Chase your savings goals",
+      "desc": "Set financial goals and track your progress visually. From a trip to an emergency fund, every active goal at a glance.",
+      "p1": "Visual real-time progress bar",
+      "p2": "Configurable target date",
+      "p3": "Multiple simultaneous active goals"
+    },
+    "budgets": {
+      "label": "Budgets",
+      "title": "Spend with intention and control",
+      "desc": "Set spending limits by category and see how much you have left. Visual alerts when you approach the limit.",
+      "p1": "Configurable limit per category",
+      "p2": "Monthly spending progress bar",
+      "p3": "Visual overspend alert"
+    },
+    "explore": "Explore",
+    "aboutBadge": "Academic Project",
+    "aboutTitle": "Built with",
+    "aboutHighlight": "purpose.",
+    "aboutDesc": "Balio was created as a final degree project to build a complete, secure and modern personal finance app. Every module is designed so anyone can understand and control their money.",
+    "aboutModules": "Modules",
+    "aboutModulesSub": "interconnected",
+    "aboutSecurity": "Security",
+    "aboutSecuritySub": "refresh token",
+    "aboutFrontend": "Frontend",
+    "aboutFrontendSub": "TypeScript · Vite",
+    "aboutBackend": "Backend",
+    "aboutBackendSub": "Boot · PostgreSQL",
+    "ctaLine1": "1 app.",
+    "ctaHighlight": "5 tools.",
+    "ctaLine2": "Everything you need.",
+    "ctaSub": "Join and start understanding your finances in minutes.",
+    "ctaCta": "Create free account",
+    "ctaLogin": "I already have an account"
+  },
   "common": {
     "save": "Save",
     "saved": "Preferences saved",
@@ -32,6 +116,7 @@
     "loading": "Loading...",
     "optional": "optional",
     "noResults": "No results",
+    "noData": "No data",
     "error": "An error occurred",
     "success": "Operation completed successfully",
     "currency": "€"
@@ -90,31 +175,11 @@
   },
   "about": {
     "hero": {
-      "badge": "About",
+      "badge": "TFG · Final Degree Project",
+      "titleLine1": "Built with",
+      "titleHighlight": "purpose.",
       "title": "A final degree project on personal finance with a practical, technical and realistic approach.",
-      "description": "Balio was developed as a final degree project by Marcos Romay Fernandez to provide a simple yet powerful personal finance management tool, with account tracking, transactions, categories, savings goals and visual analysis.",
-      "illustration": {
-        "frontendBackend": "Frontend + backend",
-        "secureSession": "Secure session",
-        "visualization": "Visualization",
-        "stackTitle": "Stack used in Balio"
-      },
-      "architecture": {
-        "items": {
-          "technical": {
-            "title": "Technical architecture",
-            "description": "A React SPA frontend with strict typing and a decoupled Spring Boot backend, connected through an authenticated REST API."
-          },
-          "security": {
-            "title": "Security",
-            "description": "JWT-based authentication with rotating refresh tokens, session control, inactivity logout and protected routes."
-          },
-          "persistence": {
-            "title": "Persistence",
-            "description": "A relational model focused on users, accounts, transactions, categories, filters and savings goals."
-          }
-        }
-      }
+      "description": "Balio was developed as a final degree project by Marcos Romay Fernandez to provide a simple yet powerful personal finance management tool, with account tracking, transactions, categories, savings goals and visual analysis."
     },
     "project": {
       "eyebrow": "About the project",
@@ -171,6 +236,54 @@
     "links": {
       "title": "More information",
       "backHome": "Back to home"
+    },
+    "stats": {
+      "modules": "Modules",
+      "auth": "Auth",
+      "stack": "Full Stack",
+      "i18n": "Languages"
+    },
+    "stack": {
+      "title": "The Tech Stack",
+      "subtitle": "Every layer carefully chosen for reliability and developer experience.",
+      "frontendLabel": "Frontend",
+      "backendLabel": "Backend",
+      "infraLabel": "Infrastructure"
+    },
+    "architecture": {
+      "title": "System Architecture",
+      "subtitle": "A clean three-tier design — decoupled, typed and secure end to end.",
+      "fe": {
+        "title": "React SPA",
+        "p1": "React 19 + TypeScript + Vite",
+        "p2": "Context API for state management",
+        "p3": "i18next · EN / ES / GAL"
+      },
+      "api": {
+        "title": "Spring Boot API",
+        "p1": "RESTful JWT-secured endpoints",
+        "p2": "Rotating refresh tokens",
+        "p3": "Session control & protected routes"
+      },
+      "db": {
+        "title": "PostgreSQL",
+        "p1": "Relational model via JPA / Hibernate",
+        "p2": "Users, accounts, transactions",
+        "p3": "Goals, budgets, categories, filters"
+      }
+    },
+    "author": {
+      "badge": "Author",
+      "name": "Marcos Romay Fernández",
+      "role": "Computer Engineering Student",
+      "university": "University of A Coruña",
+      "program": "Computer Engineering · 2025",
+      "description": "Balio was built as a final degree project combining a real-world personal finance use case with modern full-stack development practices."
+    },
+    "cta": {
+      "title": "Want to see it in action?",
+      "description": "Explore the full app or connect with the author on LinkedIn or GitHub.",
+      "button": "Get started"
     }
   },
   "nav": {
@@ -186,10 +299,78 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "totalBalance": "Total Balance",
-    "recentTransactions": "Recent Transactions",
-    "expensesByCategory": "Expenses by Category",
-    "monthlyOverview": "Monthly Overview"
+    "greetingMorning": "Good Morning,",
+    "greetingAfternoon": "Good Afternoon,",
+    "greetingEvening": "Good Evening,",
+    "editDashboard": "Edit",
+    "doneEditing": "Done",
+    "addWidget": "Add widget",
+    "removeWidget": "Remove",
+    "emptySlot": "Click to add a widget",
+    "pickerTitle": "Choose a widget",
+    "pickerCharts": "Charts",
+    "pickerBudgets": "Budgets",
+    "pickerGoals": "Goals",
+    "pickerAccounts": "Accounts",
+    "pickerQuick": "Quick Stats",
+    "netWorth": "Net Worth",
+    "recentActivity": "Recent Activity",
+    "noCharts": "No saved charts yet. Create some in Analysis.",
+    "noBudgets": "No budgets yet",
+    "noGoals": "No goals yet",
+    "noAccounts": "No accounts yet",
+    "spent": "spent",
+    "of": "of",
+    "remaining": "remaining",
+    "saved": "saved",
+    "balance": "Balance",
+    "viewAll": "View All",
+    "noRecentTx": "No recent transactions",
+    "uncategorized": "Other",
+    "defaultBadge": "Default",
+    "page": {
+      "hero": {
+        "welcomeBack": "Welcome back",
+        "userFallback": "User",
+        "totalBalance": "Total balance"
+      },
+      "actions": {
+        "addIncome": "Add income",
+        "addExpense": "Add expense"
+      },
+      "quickTools": {
+        "title": "Quick tools",
+        "addAccess": "Add quick access",
+        "picker": {
+          "title": "Set quick access",
+          "goal": "Goal",
+          "budget": "Budget",
+          "filter": "Filter",
+          "empty": "No items"
+        }
+      },
+      "charts": {
+        "incomeVsExpense": "Income vs expenses",
+        "incomeLegend": "Income",
+        "expenseLegend": "Expenses",
+        "monthExpenses": "Monthly expenses",
+        "noMonthExpenses": "No expenses this month"
+      },
+      "cards": {
+        "accounts": "Accounts",
+        "recentTransactions": "Recent transactions",
+        "budgets": "Budgets"
+      },
+      "empty": {
+        "accounts": "No accounts",
+        "recentTransactions": "No recent transactions",
+        "budgets": "No budgets"
+      },
+      "buttons": {
+        "viewAll": "View all",
+        "createBudget": "Create budget"
+      }
+    }
   },
   "accounts": {
     "title": "My Accounts",
@@ -206,7 +387,15 @@
       "BANK": "Bank",
       "OTHER": "Other"
     },
-    "deleteConfirm": "Are you sure you want to delete this account?"
+    "deleteConfirm": "Are you sure you want to delete this account?",
+    "adjustBalance": "Adjust balance",
+    "default": "Default",
+    "reapplyRule": "Reapply rule",
+    "ruleReapplied": "Rule reapplied.",
+    "ruleReapplyError": "Could not reapply the rule.",
+    "ruleReappliedNoChanges": "No transactions were updated.",
+    "ruleTransactionsUpdated_one": "{{count}} transaction updated.",
+    "ruleTransactionsUpdated_other": "{{count}} transactions updated."
   },
   "accountsPage": {
     "totalNetWorth": "Total Net Worth",
@@ -335,8 +524,16 @@
     "navHorizontal": "Horizontal (Top)",
     "language": "Language",
     "langDesc": "Select your preferred interface language.",
+    "languageNames": {
+      "en": "English",
+      "es": "Spanish",
+      "gl": "Galician"
+    },
     "savePreferences": "Save Preferences",
     "resetChanges": "Reset Changes",
+    "preferredCurrency": "Preferred Currency",
+    "currencyDesc": "Choose the default currency for dashboard and analytics.",
+    "currencyUpdated": "Preferred currency updated",
     "dangerZone": "Danger Zone",
     "dangerDesc": "Once you delete your account, there is no going back. Please be certain.",
     "deleteAccount": "Delete Account",
@@ -397,8 +594,10 @@
       "linkedCategoriesDesc": "Transactions in these categories will be counted automatically.",
       "searchCategory": "Search category...",
       "transactions": "Transactions",
+      "allBudgetTransactions": "Budget transactions",
       "noTransactions": "No transactions in this period",
       "addTransaction": "Add Transaction",
+      "removeFromCategory": "Remove from category",
       "manualTag": "Manual",
       "autoTag": "Auto",
       "maxCategories": "You have reached the maximum of 40 categories",
@@ -423,6 +622,8 @@
   "txPage": {
     "addExpense": "New Expense",
     "addIncome": "New Income",
+    "addEntry": "Add Entry",
+    "logGrowth": "Log Growth",
     "saveExpense": "Save Expense",
     "saveIncome": "Save Income",
     "expenseName": "Expense description",
@@ -434,11 +635,24 @@
     "searchCategory": "Search category...",
     "createCategory": "Create \"{{name}}\"",
     "affectsBalanceDesc": "Affect the selected account balance",
+    "affectsBalanceBankLocked": "For bank accounts this cannot be checked manually because balance is synced automatically",
     "filters": "Filters",
     "savedFilters": "Saved filters",
     "applyFilters": "Apply filters",
     "saveFilter": "Save filter",
     "clearFilters": "Clear",
+    "syncBanks": "Sync banks",
+    "syncingBanks": "Syncing banks...",
+    "filterTransactions": "Filter transactions",
+    "addFilterTab": "Add filter to tabs",
+    "removeFilterTabAria": "Remove {{name}}",
+    "noMoreFilters": "No more filters",
+    "autoSyncWithImported": "Automatic sync: {{count}} new transactions.",
+    "autoSyncDone": "Automatic sync completed.",
+    "syncNoLinkedAccounts": "No linked bank accounts to sync.",
+    "syncDoneNoNew": "Synced {{accounts}} accounts and there were no new movements.",
+    "syncDoneWithImported": "Synced {{accounts}} accounts and imported {{imported}} new transactions.",
+    "syncErrorNow": "Could not sync right now.",
     "filterNamePlaceholder": "Filter name",
     "allTypes": "All types",
     "allAccounts": "All accounts",
@@ -468,8 +682,15 @@
     "clearLooseDates": "Clear loose dates",
     "singleDate": "Day",
     "dateRange": "Range",
+    "differentCurrency": "Different currency",
+    "originalCurrency": "Currency",
+    "exchangeRate": "Exchange rate",
     "makeRecurring": "Make recurring",
-    "recurringDesc": "Create this transaction automatically on a schedule"
+    "recurringDesc": "Create this transaction automatically on a schedule",
+    "editTransaction": "Edit transaction",
+    "saveChanges": "Save changes",
+    "deleteTransaction": "Delete transaction",
+    "actions": "Actions"
   },
   "scheduled": {
     "title": "Scheduled Transactions",
@@ -544,5 +765,280 @@
     "formatHint": "Accepted formats: App CSV (Date, Name, Amount, Category) or tab-separated bank CSV",
     "exportingAccount": "Exporting transactions...",
     "noTransactionsToExport": "This account has no transactions to export"
+  },
+  "rules": {
+    "title": "Rules",
+    "description": "Define rules to batch-modify transactions. Changes are applied directly and rules are not saved.",
+    "ruleLabel": "Rule {{n}}",
+    "filters": "Filters (which transactions to affect)",
+    "nameContains": "Name contains",
+    "nameContainsPlaceholder": "E.g.: Grocery, Salary...",
+    "typeFilter": "Transaction type",
+    "allTypes": "All types",
+    "categoryFilter": "Categories",
+    "allCategories": "No filter — applies to all categories",
+    "noCategories": "No categories available",
+    "dateHint": "Leave empty to not limit dates",
+    "startDate": "From",
+    "endDate": "To",
+    "actions": "Actions (what to change)",
+    "newName": "New name",
+    "newNamePlaceholder": "Leave empty to keep current",
+    "newCategory": "New category",
+    "keepCategory": "Keep current category",
+    "addRule": "Add another rule",
+    "apply": "Apply rules",
+    "close": "Close",
+    "result": "{{count}} transactions updated"
+  },
+  "analysis": {
+    "title": "Analysis",
+    "subtitle": "Create, preview and arrange your widgets using the same filters you use in transactions.",
+    "loading": "Loading analysis...",
+    "actions": {
+      "sync": "Sync",
+      "syncing": "Syncing...",
+      "editDashboard": "Edit dashboard",
+      "exitEdit": "Exit edit",
+      "addWidget": "Add widget"
+    },
+    "toasts": {
+      "dashboardSaved": "Dashboard changes saved.",
+      "dashboardSynced": "Dashboard synchronized. Widgets have been recalculated.",
+      "syncError": "Could not synchronize now. Please try again.",
+      "previewRefreshError": "Could not refresh the preview.",
+      "filterLoadError": "Could not load the selected filter.",
+      "filterIncompatible": "Saved filter has an incompatible format.",
+      "filterImported": "Filter \"{{name}}\" imported to the widget.",
+      "widgetTitleRequired": "The widget must have a name.",
+      "widgetSaveError": "Could not save the widget.",
+      "widgetUpdateError": "Could not update the widget.",
+      "widgetDeleteError": "Could not delete the widget."
+    },
+    "board": {
+      "editModeHintPrefix": "Edit mode:",
+      "drag": "drag",
+      "editModeHintMiddle": "to reorder,",
+      "corners": "corners",
+      "editModeHintSuffix": "to resize",
+      "expand": "Expand",
+      "edit": "Edit",
+      "delete": "Delete",
+      "expandedDialogDescription": "Expanded view of the selected widget."
+    },
+    "widgetTypes": {
+      "kpi": { "label": "KPI", "description": "Quick summary of a metric." },
+      "table": { "label": "Table", "description": "Aggregated list by category or account." },
+      "bar": { "label": "Bars", "description": "Compare amounts by category." },
+      "line": { "label": "Line/Area", "description": "Time evolution of incomes and expenses." },
+      "donut": { "label": "Donut", "description": "Relative weight of each category." },
+      "stackedBar": { "label": "Stacked Bars", "description": "Compare segments across periods." },
+      "heatmap": { "label": "Heatmap", "description": "Detect concentration by days." },
+      "comparison": { "label": "Comparison", "description": "Current period vs previous." }
+    },
+    "configurator": {
+      "title": "Widget configurator",
+      "editHintPrefix": "Click a chart to edit it. Use",
+      "editHintSuffix": "for size.",
+      "noCharts": "No charts yet.",
+      "inDashboard": "In dashboard",
+      "outDashboard": "Out of dashboard (below)",
+      "removeFromDashboard": "Remove from dashboard",
+      "addToDashboard": "Add to dashboard",
+      "remove": "Remove",
+      "add": "Add",
+      "delete": "Delete",
+      "noActiveCharts": "No active charts in the dashboard.",
+      "allChartsActive": "All charts are active.",
+      "startHint": "Choose the chart type to start. Then you can refine filters, dates and format.",
+      "importSavedFilter": "Import saved filter",
+      "selectFilter": "Select a filter",
+      "selectType": "Select type",
+      "selectSize": "Select size",
+      "selectMetric": "Select metric",
+      "selectGroup": "Select group",
+      "selectValue": "Select value",
+      "selectMode": "Select mode",
+      "selectCriteria": "Select criteria",
+      "selectComparison": "Select comparison",
+      "all": "All",
+      "noAccounts": "No accounts",
+      "noCategories": "No categories",
+      "accountsCount": "accounts",
+      "categoriesCount": "categories",
+      "noQuickRange": "No quick range",
+      "uncategorized": "Uncategorized",
+      "colorPerBar": "Color per bar",
+      "colorsAndLegend": "Colors and legend",
+      "gradientFill": "Gradient fill",
+      "blurFill": "Gradient fill area",
+      "neonGlow": "Neon glow",
+      "heatmapColor": "Heatmap color",
+      "heatmapBaseColor": "Base color",
+      "saveChart": "Save chart",
+      "updateChart": "Update chart",
+      "preview": "Preview",
+      "reload": "Reload",
+      "expandedPreview": "Expanded preview",
+      "expandedPreviewDescription": "Expanded view of the chart preview being edited.",
+      "sizes": {
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large"
+      },
+      "dateRanges": {
+        "30d": "Last 30 days",
+        "90d": "Last 90 days",
+        "365d": "Last 12 months",
+        "ytd": "Year to date (YTD)"
+      },
+      "transactionTypeOptions": {
+        "income": "Income",
+        "expense": "Expenses"
+      },
+      "fields": {
+        "title": "Title",
+        "titlePlaceholder": "E.g. Expenses by category",
+        "description": "Description",
+        "descriptionPlaceholder": "E.g. Monthly comparison of your expenses",
+        "type": "Type",
+        "size": "Size",
+        "quickRange": "Quick range",
+        "transactionType": "Movement type",
+        "account": "Account",
+        "searchName": "Search name",
+        "searchNamePlaceholder": "E.g. rent, salary...",
+        "amountMin": "Minimum amount",
+        "amountMax": "Maximum amount",
+        "categories": "Categories",
+        "kpiMetric": "KPI metric",
+        "groupBy": "Group by",
+        "value": "Value",
+        "barMode": "Bar mode",
+        "yAxis": "Y axis",
+        "lineMode": "Line mode",
+        "lineVisualization": "Line style",
+        "lineSeries": "Line series",
+        "donutMode": "Donut mode",
+        "stackBy": "Stack by",
+        "comparison": "Comparison"
+      },
+      "kpiOptions": {
+        "income": "Income",
+        "expense": "Expenses",
+        "balance": "Balance",
+        "savingsRate": "Savings rate"
+      },
+      "groupByOptions": {
+        "category": "Category",
+        "account": "Account"
+      },
+      "valueOptions": {
+        "amount": "Amount",
+        "count": "Transaction count"
+      },
+      "barModeOptions": {
+        "expensesByCategory": "By category",
+        "expensesByAccount": "By account",
+        "incomeByMonth": "By month"
+      },
+      "lineModeOptions": {
+        "balanceTrend": "Balance trend",
+        "incomeVsExpense": "Income vs expenses",
+        "byCategory": "By category",
+        "byAccount": "By account"
+      },
+      "lineVisualizationOptions": {
+        "line": "Line",
+        "area": "Area"
+      },
+      "donutModeOptions": {
+        "expensesByCategory": "By category",
+        "expensesByAccount": "By account"
+      },
+      "stackByOptions": {
+        "type": "Type (income/expense)",
+        "account": "Account",
+        "category": "Category"
+      },
+      "comparisonOptions": {
+        "weekVsPrevious": "Current week vs previous",
+        "monthVsPrevious": "Current month vs previous",
+        "quarterVsPrevious": "Current quarter vs previous",
+        "yearVsPrevious": "Current year vs previous"
+      }
+    },
+    "templates": {
+      "tpl-kpi-balance": {
+        "label": "KPI: Net balance",
+        "description": "Income - expenses in the selected period."
+      },
+      "tpl-table-category": {
+        "label": "Table by category",
+        "description": "Top categories by amount."
+      },
+      "tpl-bar-expenses": {
+        "label": "Expense bars",
+        "description": "Distribution of expenses by category."
+      },
+      "tpl-line-trend": {
+        "label": "Balance line",
+        "description": "Evolution of accumulated balance."
+      },
+      "tpl-donut": {
+        "label": "Expenses donut",
+        "description": "Weight of each category in your expenses."
+      },
+      "tpl-stacked": {
+        "label": "Stacked bars",
+        "description": "Income and expense by account and month."
+      },
+      "tpl-heatmap": {
+        "label": "Heatmap",
+        "description": "Concentration of daily expenses."
+      },
+      "tpl-comparison": {
+        "label": "Period comparison",
+        "description": "Current period vs previous."
+      }
+    },
+    "registry": {
+      "transactionsCount": "{{count}} transactions",
+      "series": "Series",
+      "showLegend": "Show legend",
+      "hideLegend": "Hide legend",
+      "legend": "Legend",
+      "outOfRange": "Out of range",
+      "uncategorized": "Uncategorized",
+      "incomeShort": "income",
+      "expenseShort": "expense",
+      "basedOnTransactions": "Based on {{count}} transactions",
+      "weekdays": {
+        "mon": "M",
+        "tue": "T",
+        "wed": "W",
+        "thu": "T",
+        "fri": "F",
+        "sat": "S",
+        "sun": "S"
+      },
+      "period": {
+        "current": "Current",
+        "previous": "Previous"
+      },
+      "kpiType": {
+        "income": "Income",
+        "expense": "Expenses",
+        "balance": "Balance",
+        "savingsRate": "Savings rate"
+      },
+      "table": {
+        "name": "Name",
+        "amount": "Amount",
+        "category": "Category",
+        "account": "Account",
+        "transactions": "Transactions"
+      }
+    }
   }
 }

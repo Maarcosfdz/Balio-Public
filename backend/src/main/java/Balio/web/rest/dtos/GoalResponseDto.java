@@ -8,6 +8,8 @@ public class GoalResponseDto {
     private String name;
     private BigDecimal targetAmount;
     private BigDecimal currentAmount;
+    private String iconName;
+    private String iconBgColor;
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -20,4 +22,10 @@ public class GoalResponseDto {
 
     public BigDecimal getCurrentAmount() { return currentAmount; }
     public void setCurrentAmount(BigDecimal currentAmount) { this.currentAmount = currentAmount; }
+
+    public String getIconName() { return iconName; }
+    public void setIconName(String iconName) { this.iconName = iconName; }
+
+    public String getIconBgColor() { return iconBgColor; }
+    public void setIconBgColor(String iconBgColor) { this.iconBgColor = iconBgColor; }
 }

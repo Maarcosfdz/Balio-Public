@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Building2, Link2, Loader2, RefreshCw, Search, X } from "lucide-react";
 import { bankService, type BankInstitution } from "@/backend/bankService";
 import type { BankConnectionDto } from "@/types";
+import SingleSelectDropdown from "@/components/ui/SelectDropdown";
 
 interface BankConnectionPanelProps {
   accountId: string;
@@ -14,6 +15,7 @@ export default function BankConnectionPanel({ accountId, onSynced }: BankConnect
   const [syncing, setSyncing] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [syncResult, setSyncResult] = useState<number | null>(null);
+  const [lookBackDays, setLookBackDays] = useState(90);
 
   // Institution picker state
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -68,7 +70,7 @@ export default function BankConnectionPanel({ accountId, onSynced }: BankConnect
     setSyncing(true);
     setSyncResult(null);
     try {
-      const result = await bankService.sync(accountId);
+      const result = await bankService.sync(accountId, lookBackDays);
       setSyncResult(result.imported);
       onSynced?.();
       const newStatus = await bankService.getStatus(accountId);
@@ -127,15 +129,27 @@ export default function BankConnectionPanel({ accountId, onSynced }: BankConnect
 
           {isLinked ? (
             <div className="flex items-center gap-1.5">
+              <SingleSelectDropdown
+                value={String(lookBackDays)}
+                onChange={(v) => setLookBackDays(Number(v))}
+                options={[
+                  { value: "90", label: "90 días" },
+                  { value: "365", label: "1 año" },
+                  { value: "730", label: "2 años" },
+                  { value: "1095", label: "3 años" },
+                ]}
+                disabled={syncing}
+                buttonClassName="h-7 rounded-lg border border-slate-200 bg-white px-1.5 text-[11px] text-slate-600 outline-none"
+              />
               <button
                 onClick={handleSync}
                 disabled={syncing}
-                className="flex shrink-0 items-center gap-1 rounded-lg bg-sky-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-600 disabled:opacity-60"
+                className="accounts-sync-btn flex shrink-0 items-center gap-1 rounded-lg bg-sky-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-600 disabled:opacity-60"
               >
                 {syncing ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <RefreshCw className="h-3.5 w-3.5" />
+                  <RefreshCw className="accounts-sync-btn__icon h-3.5 w-3.5" />
                 )}
                 Sincronizar
               </button>

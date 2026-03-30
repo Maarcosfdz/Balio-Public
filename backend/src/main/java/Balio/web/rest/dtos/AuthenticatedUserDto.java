@@ -7,16 +7,19 @@ public class AuthenticatedUserDto {
     private String email;
     private String accessToken;
     private String refreshToken;
+    private String preferredCurrency;
 
     public AuthenticatedUserDto() {}
 
     public AuthenticatedUserDto(String id, String nickname, String email,
-                                String accessToken, String refreshToken) {
+                                String accessToken, String refreshToken,
+                                String preferredCurrency) {
         this.id = id;
         this.nickname = nickname;
         this.email = email;
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
+        this.preferredCurrency = preferredCurrency;
     }
 
     public String getId() { return id; }
@@ -33,4 +36,7 @@ public class AuthenticatedUserDto {
 
     public String getRefreshToken() { return refreshToken; }
     public void setRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
+
+    public String getPreferredCurrency() { return preferredCurrency; }
+    public void setPreferredCurrency(String preferredCurrency) { this.preferredCurrency = preferredCurrency; }
 }

@@ -132,9 +132,10 @@ public class BankController {
 
     @PostMapping("/accounts/{accountId}/sync")
     public BankSyncResultDto syncTransactions(@RequestAttribute UUID userId,
-                                              @PathVariable UUID accountId)
+                                              @PathVariable UUID accountId,
+                                              @RequestParam(defaultValue = "90") int lookBackDays)
             throws InstanceNotFoundException {
-        int imported = bankService.syncTransactions(userId, accountId);
+        int imported = bankService.syncTransactions(userId, accountId, lookBackDays);
         return new BankSyncResultDto(imported, 1);
     }
 

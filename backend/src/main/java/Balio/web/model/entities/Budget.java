@@ -38,6 +38,12 @@ public class Budget {
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 
+    @Column(name = "icon_name", length = 60)
+    private String iconName;
+
+    @Column(name = "icon_bg_color", length = 20)
+    private String iconBgColor;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt = OffsetDateTime.now();
 
@@ -52,10 +58,17 @@ public class Budget {
     protected Budget() {}
 
     public Budget(String name, BudgetPeriodicity periodicity, LocalDate startDate, User user) {
+        this(name, periodicity, startDate, user, null, null);
+    }
+
+    public Budget(String name, BudgetPeriodicity periodicity, LocalDate startDate, User user,
+                  String iconName, String iconBgColor) {
         this.name = name;
         this.periodicity = periodicity;
         this.startDate = startDate;
         this.user = user;
+        this.iconName = iconName;
+        this.iconBgColor = iconBgColor;
     }
 
     public UUID getId() { return id; }
@@ -68,6 +81,12 @@ public class Budget {
 
     public LocalDate getStartDate() { return startDate; }
     public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+
+    public String getIconName() { return iconName; }
+    public void setIconName(String iconName) { this.iconName = iconName; }
+
+    public String getIconBgColor() { return iconBgColor; }
+    public void setIconBgColor(String iconBgColor) { this.iconBgColor = iconBgColor; }
 
     public OffsetDateTime getCreatedAt() { return createdAt; }
 

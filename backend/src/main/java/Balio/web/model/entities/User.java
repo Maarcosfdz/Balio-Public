@@ -31,6 +31,9 @@ public class User {
     @JoinColumn(name = "default_account_id")
     private Account defaultAccount;
 
+    @Column(name = "preferred_currency", nullable = false, length = 3)
+    private String preferredCurrency = "EUR";
+
     protected User() {}
 
     public User(String nickname, String email, String password) {
@@ -74,5 +77,8 @@ public class User {
     public void setDefaultAccount(Account defaultAccount) {
         this.defaultAccount = defaultAccount;
     }
+
+    public String getPreferredCurrency() { return preferredCurrency; }
+    public void setPreferredCurrency(String preferredCurrency) { this.preferredCurrency = preferredCurrency; }
 
 }

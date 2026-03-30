@@ -1,6 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { CalendarClock, CalendarDays, Check, ChevronDown, DollarSign, X } from "lucide-react";
+import { ArrowRightLeft, CalendarClock, CalendarDays, Check, ChevronDown, DollarSign, Loader2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
@@ -15,13 +15,17 @@ import { transactionService } from "@/backend/transactionService";
 import { scheduledTransactionService } from "@/backend/scheduledTransactionService";
 import { accountService } from "@/backend/accountService";
 import { categoryService } from "@/backend/categoryService";
+import { exchangeRateService } from "@/backend/exchangeRateService";
 import CategoryCombobox from "@/components/ui/CategoryCombobox";
+import { GradientButton } from "@/components/ui/gradient-button";
 
 interface AddTransactionModalProps {
   type: TransactionType;
   open: boolean;
   onClose: () => void;
   onCreated: (tx: TransactionResponseDto) => void;
+  /** When provided, the modal opens in edit mode with pre-filled data */
+  editTransaction?: TransactionResponseDto;
 }
 
 // ── Shared helpers for subcomponents ──────────────────────────────────
@@ -240,9 +244,11 @@ export default function AddTransactionModal({
   open,
   onClose,
   onCreated,
+  editTransaction,
 }: AddTransactionModalProps) {
   const { t } = useTranslation();
   const isExpense = type === "EXPENSE";
+  const isEditMode = !!editTransaction;
 
   // ── Data lists ──
   const [accounts, setAccounts] = useState<AccountSummaryDto[]>([]);
@@ -264,6 +270,45 @@ export default function AddTransactionModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  // ── FX state ──
+  const [fxEnabled, setFxEnabled] = useState(false);
+  const [originalCurrency, setOriginalCurrency] = useState("");
+  const [exchangeRate, setExchangeRate] = useState("");
+  const [fxLoading, setFxLoading] = useState(false);
+
+  const selectedAccount = useMemo(
+    () => accounts.find((a) => a.id === accountId),
+    [accounts, accountId],
+  );
+
+  // Derive account currency from selected account
+  const accountCurrency = selectedAccount?.currency ?? "EUR";
+  const isBankAccount = selectedAccount?.type === "BANK";
+
+  // Auto-fetch exchange rate when currency pair changes
+  useEffect(() => {
+    if (!fxEnabled || !originalCurrency || originalCurrency === accountCurrency) {
+      return;
+    }
+    let cancelled = false;
+    setFxLoading(true);
+    exchangeRateService
+      .getRate(originalCurrency, accountCurrency)
+      .then((r) => {
+        if (!cancelled && r.available) setExchangeRate(String(r.rate));
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setFxLoading(false); });
+    return () => { cancelled = true; };
+  }, [fxEnabled, originalCurrency, accountCurrency]);
+
+  // Computed converted amount for preview
+  const convertedAmount = useMemo(() => {
+    if (!fxEnabled || !amount || !exchangeRate) return null;
+    const val = parseFloat(amount) * parseFloat(exchangeRate);
+    return Number.isFinite(val) ? val.toFixed(2) : null;
+  }, [fxEnabled, amount, exchangeRate]);
+
   // ── Scheduling state ──
   const [isRecurring, setIsRecurring] = useState(false);
   const [freqYears, setFreqYears] = useState(0);
@@ -271,36 +316,62 @@ export default function AddTransactionModal({
   const [freqWeeks, setFreqWeeks] = useState(0);
   const [freqDays, setFreqDays] = useState(0);
 
-  // Reset on open
+  // Reset on open (or pre-fill in edit mode)
   useEffect(() => {
     if (open) {
-      setName("");
-      setAmount("");
-      setDate(todayISO());
-      setAccountId("");
-      setCategoryId(null);
-      setAffectsBalance(true);
+      if (editTransaction) {
+        setName(editTransaction.name);
+        setAmount(String(editTransaction.originalAmount ?? editTransaction.amount));
+        setDate(editTransaction.date);
+        setAccountId(editTransaction.accountId ?? "");
+        setCategoryId(editTransaction.categoryId ?? null);
+        setAffectsBalance(editTransaction.affectsBalance);
+        // Pre-fill FX fields if cross-currency
+        if (editTransaction.originalCurrency && editTransaction.accountCurrency &&
+            editTransaction.originalCurrency !== editTransaction.accountCurrency) {
+          setFxEnabled(true);
+          setOriginalCurrency(editTransaction.originalCurrency);
+          setExchangeRate(String(editTransaction.exchangeRate ?? ""));
+        }
+      } else {
+        setName("");
+        setAmount("");
+        setDate(todayISO());
+        setAccountId("");
+        setCategoryId(null);
+        setAffectsBalance(true);
+      }
       setError("");
+      setFxEnabled(false);
+      setOriginalCurrency("");
+      setExchangeRate("");
       setIsRecurring(false);
       setFreqYears(0); setFreqMonths(1); setFreqWeeks(0); setFreqDays(0);
     }
-  }, [open]);
+  }, [open, editTransaction]);
 
   // Auto-select the default account once per modal open session.
   // Using a ref prevents re-selecting after the user has deliberately cleared the field.
   const didAutoSelectRef = useRef(false);
   useEffect(() => { if (!open) didAutoSelectRef.current = false; }, [open]);
   useEffect(() => {
-    if (!open || didAutoSelectRef.current || accounts.length === 0) return;
+    if (!open || didAutoSelectRef.current || accounts.length === 0 || editTransaction) return;
     didAutoSelectRef.current = true;
     const defaultAcc = accounts.find((a) => a.isDefault) ?? accounts[0];
     setAccountId(defaultAcc.id);
-  }, [open, accounts]);
+  }, [open, accounts, editTransaction]);
 
   const handleAccountChange = (v: string) => {
     setAccountId(v);
-    if (!v) setAffectsBalance(false);
+    const next = accounts.find((acc) => acc.id === v);
+    if (!v || next?.type === "BANK") setAffectsBalance(false);
   };
+
+  useEffect(() => {
+    if (!accountId || isBankAccount) {
+      setAffectsBalance(false);
+    }
+  }, [accountId, isBankAccount]);
 
   // Validation: only name and amount are required
   const isValid = useMemo(
@@ -334,6 +405,13 @@ export default function AddTransactionModal({
       date,
       categoryId: categoryId ?? undefined,
       affectsBalance,
+      ...(fxEnabled && originalCurrency && exchangeRate
+        ? {
+            originalAmount: parseFloat(amount),
+            originalCurrency,
+            exchangeRate: parseFloat(exchangeRate),
+          }
+        : {}),
     };
 
     // Log request for debugging (mask sensitive data)
@@ -345,35 +423,43 @@ export default function AddTransactionModal({
     }
 
     try {
-      const created = isExpense
-        ? await transactionService.createExpense(dto)
-        : await transactionService.createIncome(dto);
+      let result: TransactionResponseDto;
 
-      // Also create scheduled transaction if recurring toggle is on
-      if (isRecurring && (freqYears + freqMonths + freqWeeks + freqDays) > 0) {
-        try {
-          await scheduledTransactionService.create({
-            name: name.trim(),
-            amount: parseFloat(amount),
-            type,
-            accountId: accountId || undefined,
-            categoryId: categoryId ?? undefined,
-            affectsBalance,
-            freqYears, freqMonths, freqWeeks, freqDays,
-            startDate: date,
-          });
-        } catch {
-          // Don't block transaction creation if schedule fails
-          if (import.meta.env.DEV) {
-            console.warn("[AddTransaction] Schedule creation failed");
+      if (editTransaction) {
+        // Edit mode — update existing transaction
+        result = await transactionService.update(editTransaction.id, { ...dto, type });
+      } else {
+        // Create mode
+        result = isExpense
+          ? await transactionService.createExpense(dto)
+          : await transactionService.createIncome(dto);
+
+        // Also create scheduled transaction if recurring toggle is on
+        if (isRecurring && (freqYears + freqMonths + freqWeeks + freqDays) > 0) {
+          try {
+            await scheduledTransactionService.create({
+              name: name.trim(),
+              amount: parseFloat(amount),
+              type,
+              accountId: accountId || undefined,
+              categoryId: categoryId ?? undefined,
+              affectsBalance,
+              freqYears, freqMonths, freqWeeks, freqDays,
+              startDate: date,
+            });
+          } catch {
+            // Don't block transaction creation if schedule fails
+            if (import.meta.env.DEV) {
+              console.warn("[AddTransaction] Schedule creation failed");
+            }
           }
         }
       }
 
       if (import.meta.env.DEV) {
-        console.log("[AddTransaction] ✓ Created:", created.id);
+        console.log(`[AddTransaction] ✓ ${editTransaction ? "Updated" : "Created"}:`, result.id);
       }
-      onCreated(created);
+      onCreated(result);
       onClose();
     } catch (err: unknown) {
       // Enhanced error logging for debugging 403/network issues
@@ -393,9 +479,7 @@ export default function AddTransactionModal({
 
   if (!open) return null;
 
-  const accentBg      = isExpense ? "bg-gradient-to-r from-rose-500 to-red-400"    : "bg-gradient-to-r from-sky-500 to-emerald-500";
   const accentText    = isExpense ? "text-rose-600"     : "text-sky-600";
-  const accentHover   = isExpense ? "hover:opacity-90"  : "hover:opacity-90";
   const accentBadgeBg = isExpense ? "bg-rose-100"       : "bg-sky-100";
 
   return (
@@ -417,7 +501,9 @@ export default function AddTransactionModal({
               <DollarSign className={`h-5 w-5 ${accentText}`} />
             </div>
             <h2 className="text-xl font-bold text-slate-900">
-              {isExpense ? t("txPage.addExpense") : t("txPage.addIncome")}
+              {isEditMode
+                ? t("txPage.editTransaction")
+                : isExpense ? t("txPage.addExpense") : t("txPage.addIncome")}
             </h2>
           </div>
           <button
@@ -475,6 +561,66 @@ export default function AddTransactionModal({
             </div>
           </div>
 
+          {/* 2b. Different currency toggle */}
+          {accountId && (
+            <div className={`rounded-lg border px-3 py-3 transition ${fxEnabled ? "border-amber-200 bg-amber-50/50" : "border-slate-200 bg-slate-50/50"}`}>
+              <label className="flex cursor-pointer items-center gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={fxEnabled}
+                  onChange={(e) => {
+                    setFxEnabled(e.target.checked);
+                    if (!e.target.checked) { setOriginalCurrency(""); setExchangeRate(""); }
+                  }}
+                  className="h-4 w-4 rounded border-slate-300 text-amber-500 focus:ring-amber-200"
+                />
+                <div className="flex items-center gap-1.5">
+                  <ArrowRightLeft className="h-3.5 w-3.5 text-amber-500" />
+                  <span className="text-sm font-medium text-slate-700">{t("txPage.differentCurrency")}</span>
+                </div>
+              </label>
+
+              {fxEnabled && (
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  {/* Original currency */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500">{t("txPage.originalCurrency")}</label>
+                    <input
+                      type="text"
+                      value={originalCurrency}
+                      onChange={(e) => setOriginalCurrency(e.target.value.toUpperCase().slice(0, 3))}
+                      placeholder="USD"
+                      maxLength={3}
+                      className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm uppercase outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                    />
+                  </div>
+                  {/* Exchange rate */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500">
+                      {t("txPage.exchangeRate")}
+                      {fxLoading && <Loader2 className="ml-1 inline h-3 w-3 animate-spin text-amber-500" />}
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      min="0"
+                      value={exchangeRate}
+                      onChange={(e) => setExchangeRate(e.target.value)}
+                      placeholder="1.00"
+                      className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                    />
+                  </div>
+                  {/* Conversion preview */}
+                  {convertedAmount && (
+                    <div className="col-span-2 rounded-md bg-amber-100/60 px-3 py-1.5 text-xs text-amber-700">
+                      {amount} {originalCurrency} ≈ <strong>{convertedAmount} {accountCurrency}</strong>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* 3. Date */}
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-slate-700">
@@ -513,26 +659,26 @@ export default function AddTransactionModal({
           </div>
 
           {/* 6. Affects balance */}
-          <label className={`flex items-center gap-2.5 ${accountId ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}>
+          <label className={`flex items-center gap-2.5 ${(accountId && !isBankAccount) ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}>
             <input
               type="checkbox"
               checked={affectsBalance}
               onChange={(e) => setAffectsBalance(e.target.checked)}
-              disabled={!accountId}
-              className="h-4.5 w-4.5 rounded border-slate-300 text-sky-500 focus:ring-sky-200"
+              disabled={!accountId || isBankAccount}
+              className="h-5 w-5 rounded-md border-emerald-200 text-emerald-400 focus:ring-emerald-100"
             />
             <div>
               <span className="text-sm font-medium text-slate-700">
                 {t("transactions.affectsBalance")}
               </span>
               <p className="text-xs text-slate-400">
-                {t("txPage.affectsBalanceDesc")}
+                {isBankAccount ? t("txPage.affectsBalanceBankLocked") : t("txPage.affectsBalanceDesc")}
               </p>
             </div>
           </label>
 
-          {/* 7. Make recurring toggle */}
-          <div className={`sched-toggle-section ${isRecurring ? "sched-toggle-active" : ""}`}>
+          {/* 7. Make recurring toggle (hidden in edit mode) */}
+          {!isEditMode && <div className={`sched-toggle-section ${isRecurring ? "sched-toggle-active" : ""}`}>
             <label className="flex cursor-pointer items-center gap-2.5">
               <input
                 type="checkbox"
@@ -608,7 +754,7 @@ export default function AddTransactionModal({
                 )}
               </div>
             )}
-          </div>
+          </div>}
 
           {error && (
             <p className="text-sm text-red-600" role="alert">
@@ -625,17 +771,20 @@ export default function AddTransactionModal({
             >
               {t("common.cancel")}
             </button>
-            <button
+            <GradientButton
               type="submit"
               disabled={!isValid || submitting}
-              className={`rounded-lg px-5 py-2 text-sm font-semibold text-white shadow-sm transition ${accentBg} ${accentHover} disabled:cursor-not-allowed disabled:opacity-50`}
+              weight="normal"
+              className="rounded-lg px-5 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting
                 ? t("common.loading")
-                : isExpense
-                  ? t("txPage.saveExpense")
-                  : t("txPage.saveIncome")}
-            </button>
+                : isEditMode
+                  ? t("txPage.saveChanges")
+                  : isExpense
+                    ? t("txPage.saveExpense")
+                    : t("txPage.saveIncome")}
+            </GradientButton>
           </div>
         </form>
       </div>

@@ -3,7 +3,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import PublicRoute from "./PublicRoute";
 import AppLayout from "@/components/layout/AppLayout";
 import { ROUTES } from "@/config/routes";
-import MainPage from "@/pages/mainPage/MainPage";
+import MainPage from "@/pages/mainPage/MainPage2";
 import AboutPage from "@/pages/mainPage/AboutPage";
 import LoginPage from "@/pages/auth/LoginPage";
 import SignUpPage from "@/pages/auth/SignUpPage";
@@ -11,12 +11,12 @@ import DashboardPage from "@/pages/dashboard/DashboardPage";
 import AnalysisPage from "@/pages/analysis/AnalysisPage";
 import AccountsPage from "@/pages/accounts/AccountsPage";
 import TransactionsPage from "@/pages/transactions/TransactionsPage";
-import CategoriesPage from "@/pages/categories/CategoriesPage";
+import CategoriesPage from "@/pages/transactions/complements/CategoriesPage";
 import GoalsPage from "@/pages/goals/GoalsPage";
 import BudgetsPage from "@/pages/budgets/BudgetsPage";
 import BudgetDetailPage from "@/pages/budgets/BudgetDetailPage";
-import ScheduledTransactionsPage from "@/pages/scheduledTransactions/ScheduledTransactionsPage";
-import FiltersPage from "@/pages/filters/FiltersPage";
+import ScheduledTransactionsPage from "@/pages/transactions/complements/ScheduledTransactionsPage";
+import FiltersPage from "@/pages/transactions/complements/FiltersPage";
 import SettingsPage from "@/pages/settings/SettingsPage";
 
 export const router = createBrowserRouter([

@@ -2,6 +2,7 @@ import api from "./api";
 import type {
   CsvImportResultDto,
   CsvImportRuleDto,
+  TransactionBatchRuleDto,
   TransactionDto,
   TransactionFilters,
   TransactionPage,
@@ -42,6 +43,10 @@ export const transactionService = {
         responseType: "blob",
       })
       .then((r) => r.data);
+  },
+
+  applyBatchRules(dto: TransactionBatchRuleDto): Promise<{ updated: number }> {
+    return api.post("/transaction/apply-rules", dto).then((r) => r.data);
   },
 
   importCsv(

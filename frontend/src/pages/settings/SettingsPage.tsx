@@ -7,6 +7,7 @@ import React, {
 import { useTranslation } from "react-i18next";
 import {
   AlignLeft,
+  CircleDollarSign,
   Eye,
   EyeOff,
   KeyRound,
@@ -20,8 +21,11 @@ import {
 } from "lucide-react";
 import { authService } from "@/backend/authService";
 import { useAuth } from "@/contexts/AuthContext";
+import { clearAllUserState } from "@/lib/session";
+import { ROUTES } from "@/config/routes";
 import { ToastBanner, type ToastBannerTone } from "@/components/ui/toast-banner";
 import { FieldError } from "@/components/ui/field-error";
+import { GradientButton } from "@/components/ui/gradient-button";
 
 // ── Small reusable components ────────────────────────────────────────────
 
@@ -125,7 +129,7 @@ function ProfileSection({ onToast }: { onToast: (t: Toast) => void }) {
         nickname: nickname.trim(),
         email: email.trim(),
       });
-      updateUser({ id: user.id, nickname: updated.nickname, email: updated.email });
+      updateUser({ id: user.id, nickname: updated.nickname, email: updated.email, preferredCurrency: user.preferredCurrency });
       setEditingField(null);
       onToast({ type: "success", message: t("settings.profileUpdated") });
     } catch (err: unknown) {
@@ -219,14 +223,14 @@ function ProfileSection({ onToast }: { onToast: (t: Toast) => void }) {
             >
               {t("common.cancel")}
             </button>
-            <button
+            <GradientButton
               type="submit"
               disabled={loading}
-              className="squishy-save-simple"
+              iconVariant={loading ? "none" : "other"}
+              icon={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             >
-              {loading ? <Loader2 className="squishy-save-icon h-4 w-4 animate-spin" /> : <Save className="squishy-save-icon h-4 w-4" />}
               {t("common.save")}
-            </button>
+            </GradientButton>
           </div>
         )}
       </form>
@@ -305,14 +309,14 @@ function PasswordSection({ onToast }: { onToast: (t: Toast) => void }) {
         </div>
 
         <div className="flex justify-end pt-1">
-          <button
+          <GradientButton
             type="submit"
             disabled={loading || !oldPwd || !newPwd || !confirmPwd}
-            className="squishy-save-simple"
+            iconVariant={loading ? "none" : "other"}
+            icon={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           >
-            {loading ? <Loader2 className="squishy-save-icon h-4 w-4 animate-spin" /> : <Save className="squishy-save-icon h-4 w-4" />}
             {t("common.save")}
-          </button>
+          </GradientButton>
         </div>
       </form>
     </SectionCard>
@@ -324,10 +328,10 @@ function PasswordSection({ onToast }: { onToast: (t: Toast) => void }) {
 type NavStyle = "vertical" | "horizontal";
 type Lang = "es" | "en" | "gl";
 
-const LANG_OPTIONS: { code: Lang; label: string; src: string }[] = [
-  { code: "en", label: "English",    src: "/banderaGB.png" },
-  { code: "es", label: "Spanish",    src: "/banderasES.png" },
-  { code: "gl", label: "Galician",   src: "/banderasGL.png" },
+const LANG_OPTIONS: { code: Lang; src: string }[] = [
+  { code: "en", src: "/banderaGB.png" },
+  { code: "es", src: "/banderasES.png" },
+  { code: "gl", src: "/banderasGL.png" },
 ];
 
 function PreferencesSection({ onToast }: { onToast: (t: Toast) => void }) {
@@ -409,30 +413,33 @@ function PreferencesSection({ onToast }: { onToast: (t: Toast) => void }) {
         desc={t("settings.langDesc")}
       >
         <div className="flex flex-wrap gap-2">
-          {LANG_OPTIONS.map(({ code, label, src }) => (
-            <button
-              key={code}
-              type="button"
-              onClick={() => setLang(code)}
-              className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition ${
-                lang === code
-                  ? "border-transparent bg-gradient-to-r from-sky-500 to-emerald-500 text-white shadow"
-                  : "border-slate-200 text-slate-600 hover:border-sky-300 hover:bg-sky-50"
-              }`}
-            >
-              <span className="overflow-hidden rounded-sm" style={{ lineHeight: 0 }}>
-                <img src={src} alt={label} className="h-5 w-auto" />
-              </span>
-              {label}
-              <span
-                className={`ml-1 flex h-4 w-4 items-center justify-center rounded-full border-2 transition ${
-                  lang === code ? "border-white bg-white/30" : "border-slate-300 bg-white"
+          {LANG_OPTIONS.map(({ code, src }) => {
+            const label = t(`settings.languageNames.${code}`);
+            return (
+              <button
+                key={code}
+                type="button"
+                onClick={() => setLang(code)}
+                className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition ${
+                  lang === code
+                    ? "border-transparent bg-gradient-to-r from-sky-500 to-emerald-500 text-white shadow"
+                    : "border-slate-200 text-slate-600 hover:border-sky-300 hover:bg-sky-50"
                 }`}
               >
-                {lang === code && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
-              </span>
-            </button>
-          ))}
+                <span className="overflow-hidden rounded-sm" style={{ lineHeight: 0 }}>
+                  <img src={src} alt={label} className="h-5 w-auto" />
+                </span>
+                {label}
+                <span
+                  className={`ml-1 flex h-4 w-4 items-center justify-center rounded-full border-2 transition ${
+                    lang === code ? "border-white bg-white/30" : "border-slate-300 bg-white"
+                  }`}
+                >
+                  {lang === code && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </SectionCard>
 
@@ -459,12 +466,90 @@ function PreferencesSection({ onToast }: { onToast: (t: Toast) => void }) {
   );
 }
 
+// ── Currency section ─────────────────────────────────────────────────────
+
+const COMMON_CURRENCIES = ["EUR", "USD", "GBP", "CHF", "JPY", "CAD", "AUD", "BRL", "MXN", "CNY"];
+
+function CurrencySection({ onToast }: { onToast: (t: Toast) => void }) {
+  const { t } = useTranslation();
+  const { user, updateUser } = useAuth();
+
+  const [currency, setCurrency] = useState(user?.preferredCurrency ?? "EUR");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => { setCurrency(user?.preferredCurrency ?? "EUR"); }, [user?.preferredCurrency]);
+
+  const dirty = currency !== (user?.preferredCurrency ?? "EUR");
+
+  const handleSave = async () => {
+    if (!user || !dirty) return;
+    setLoading(true);
+    try {
+      await authService.updatePreferredCurrency(user.id, currency);
+      updateUser({ ...user, preferredCurrency: currency });
+      onToast({ type: "success", message: t("settings.currencyUpdated") });
+    } catch {
+      onToast({ type: "error", message: t("common.error") });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <SectionCard
+      icon={<CircleDollarSign className="h-5 w-5" />}
+      title={t("settings.preferredCurrency")}
+      desc={t("settings.currencyDesc")}
+    >
+      <div className="flex flex-wrap gap-2">
+        {COMMON_CURRENCIES.map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => setCurrency(c)}
+            className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+              currency === c
+                ? "border-transparent bg-gradient-to-r from-sky-500 to-emerald-500 text-white shadow"
+                : "border-slate-200 text-slate-600 hover:border-sky-300 hover:bg-sky-50"
+            }`}
+          >
+            {c}
+          </button>
+        ))}
+      </div>
+      {dirty && (
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => setCurrency(user?.preferredCurrency ?? "EUR")}
+            className="rounded-lg border border-slate-300 px-5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+          >
+            {t("settings.resetChanges")}
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={loading}
+            className="squishy-save-btn"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {t("common.save")}
+          </button>
+        </div>
+      )}
+    </SectionCard>
+  );
+}
+
 // ── Danger Zone ──────────────────────────────────────────────────────────
 
 function DangerSection() {
   const { t, i18n } = useTranslation();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const CONFIRM_WORD = i18n.language?.startsWith("en") ? "delete" : "eliminar";
@@ -472,12 +557,15 @@ function DangerSection() {
 
   const openDialog = () => {
     setTyped("");
+    setError("");
     setOpen(true);
   };
 
   const closeDialog = () => {
+    if (loading) return;
     setOpen(false);
     setTyped("");
+    setError("");
   };
 
   useEffect(() => {
@@ -489,10 +577,18 @@ function DangerSection() {
     return () => window.clearTimeout(timeoutId);
   }, [open]);
 
-  const handleDelete = () => {
-    if (!canDelete) return;
-    // TODO: call DELETE /user/{id} when endpoint is implemented
-    closeDialog();
+  const handleDelete = async () => {
+    if (!canDelete || !user) return;
+    setLoading(true);
+    setError("");
+    try {
+      await authService.deleteAccount(user.id);
+      clearAllUserState();
+      window.location.assign(ROUTES.HOME);
+    } catch {
+      setError(t("common.error"));
+      setLoading(false);
+    }
   };
 
   return (
@@ -546,6 +642,7 @@ function DangerSection() {
               type="text"
               value={typed}
               onChange={(e) => setTyped(e.target.value)}
+              disabled={loading}
               placeholder={t("settings.deleteTypePlaceholder")}
               className={`h-10 w-full rounded-lg border px-3 text-sm outline-none transition ${
                 typed.length > 0 && !canDelete
@@ -554,10 +651,15 @@ function DangerSection() {
               }`}
             />
 
+            {error && (
+              <p className="mt-2 text-sm text-red-600">{error}</p>
+            )}
+
             <div className="mt-4 flex gap-2">
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={closeDialog}
+                disabled={loading}
                 className="btn-cancel-draw flex-1 justify-center"
               >
                 {t("common.cancel")}
@@ -565,9 +667,10 @@ function DangerSection() {
               <button
                 type="button"
                 onClick={handleDelete}
-                disabled={!canDelete}
-                className="flex-1 rounded-lg bg-red-500 py-2.5 text-sm font-bold text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={!canDelete || loading}
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-500 py-2.5 text-sm font-bold text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-40"
               >
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                 {t("settings.deleteAccount")}
               </button>
             </div>
@@ -600,6 +703,7 @@ export default function SettingsPage() {
         <ProfileSection onToast={showToast} />
         <PasswordSection onToast={showToast} />
         <PreferencesSection onToast={showToast} />
+        <CurrencySection onToast={showToast} />
         <DangerSection />
 
         <p className="pb-4 text-center text-xs text-slate-300">

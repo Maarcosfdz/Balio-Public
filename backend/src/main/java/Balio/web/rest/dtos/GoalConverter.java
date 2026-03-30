@@ -13,6 +13,8 @@ public class GoalConverter {
         dto.setName(goal.getName());
         dto.setTargetAmount(goal.getTargetAmount());
         dto.setCurrentAmount(goal.getCurrentAmount());
+        dto.setIconName(goal.getIconName());
+        dto.setIconBgColor(goal.getIconBgColor());
         return dto;
     }
 
@@ -22,6 +24,8 @@ public class GoalConverter {
         dto.setName(goal.getName());
         dto.setTargetAmount(goal.getTargetAmount());
         dto.setCurrentAmount(goal.getCurrentAmount());
+        dto.setIconName(goal.getIconName());
+        dto.setIconBgColor(goal.getIconBgColor());
         return dto;
     }
 }

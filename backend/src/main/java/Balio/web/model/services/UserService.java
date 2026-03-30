@@ -29,4 +29,8 @@ public interface UserService {
     // A user only can modify their own password
     void changePassword(UUID id, String oldRawPassword, String newRawPassword) throws InstanceNotFoundException,
                                                                                       IncorrectPasswordException;
+
+    User updatePreferredCurrency(UUID id, String currency) throws InstanceNotFoundException;
+
+    void deleteAccount(UUID id) throws InstanceNotFoundException;
 }

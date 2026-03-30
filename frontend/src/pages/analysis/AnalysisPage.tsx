@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChartNoAxesCombined, LayoutDashboard, RefreshCw } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
-import { Button } from "@/components/ui/button";
-import { ToastBanner } from "@/components/ui/toast-banner";
+import { GradientButton } from "@/components/ui/gradient-button";
+import { ToastBanner, type ToastBannerTone } from "@/components/ui/toast-banner";
 import {
   accountService,
   categoryService,
@@ -27,17 +27,21 @@ import {
   emptyDraftFromType,
   widgetTemplates,
 } from "./mocks";
-import type { AnalysisTransaction, AnalysisWidget, WidgetDraft, WidgetSize, WidgetType } from "./types";
+import { setChartCurrency } from "./registry";
+import { useAuth } from "@/contexts/AuthContext";
+import type { AnalysisTransaction, AnalysisWidget, LineWidgetConfig, WidgetDraft, WidgetSize, WidgetType } from "./types";
 import type {
   BackendChartType,
   BackendWidgetType,
   ChartWidgetResponseDto,
   ChartWidgetSummaryDto,
 } from "@/backend/chartService";
+import { useTranslation } from "react-i18next";
 
 interface FilterDefinitionLike {
   type?: "INCOME" | "EXPENSE";
   accountId?: string;
+  accountIds?: string[];
   categoryId?: string;
   categoryIds?: string[];
   startDate?: string;
@@ -103,13 +107,18 @@ function parseFilterDefinition(definition: string): FilterDefinitionLike | null 
   try {
     const parsed = JSON.parse(definition) as Record<string, unknown>;
     if (typeof parsed !== "object" || parsed === null) return null;
+    const accountIds = toStringArray(parsed.accountIds);
+    const oneAccount = typeof parsed.accountId === "string" ? parsed.accountId : undefined;
+    if (oneAccount && !accountIds.includes(oneAccount)) accountIds.unshift(oneAccount);
+
     const categoryIds = toStringArray(parsed.categoryIds);
     const oneCategory = typeof parsed.categoryId === "string" ? parsed.categoryId : undefined;
     if (oneCategory && !categoryIds.includes(oneCategory)) categoryIds.unshift(oneCategory);
 
     return {
       type: parsed.type === "INCOME" || parsed.type === "EXPENSE" ? parsed.type : undefined,
-      accountId: typeof parsed.accountId === "string" ? parsed.accountId : undefined,
+      accountId: oneAccount,
+      accountIds,
       categoryIds,
       startDate: typeof parsed.startDate === "string" ? parsed.startDate : undefined,
       endDate: typeof parsed.endDate === "string" ? parsed.endDate : undefined,
@@ -127,11 +136,14 @@ function mergeFilterIntoConfig<T extends AnalysisWidget["config"]>(
   config: T,
   filter: FilterDefinitionLike,
 ): T {
+  const mergedAccountIds = filter.accountIds ?? (filter.accountId ? [filter.accountId] : []);
+
   return {
     ...config,
     dateRange: "custom",
     transactionType: filter.type,
-    accountId: filter.accountId,
+    accountId: mergedAccountIds[0],
+    accountIds: mergedAccountIds,
     categoryIds: filter.categoryIds ?? [],
     startDate: filter.startDate,
     endDate: filter.endDate,
@@ -151,8 +163,12 @@ function mapFrontendToBackend(widget: AnalysisWidget | WidgetDraft): {
   if (widget.type === "donut") return { widgetType: "CHART", chartType: "DONUT" };
   if (widget.type === "stackedBar") return { widgetType: "CHART", chartType: "STACKED_BAR" };
   if (widget.type === "line") {
-    if ("mode" in widget.config && widget.config.mode === "balanceTrend") {
-      return { widgetType: "CHART", chartType: "AREA" };
+    const visualization = (widget.config as LineWidgetConfig).visualization;
+    if (visualization) {
+      return {
+        widgetType: "CHART",
+        chartType: visualization === "area" ? "AREA" : "LINE",
+      };
     }
     return { widgetType: "CHART", chartType: "LINE" };
   }
@@ -211,11 +227,18 @@ function buildConfiguration(
     commonFilter.type = cfg.transactionType;
   }
 
-  if (typeof cfg.accountId === "string" && cfg.accountId.length > 0) {
-    commonFilter.accountId = cfg.accountId;
-  } else {
-    const legacyAccounts = toStringArray(cfg.accountIds);
-    if (legacyAccounts[0]) commonFilter.accountId = legacyAccounts[0];
+  const selectedAccountIds = toStringArray(cfg.accountIds);
+  const mergedAccountIds = selectedAccountIds.length > 0
+    ? selectedAccountIds
+    : typeof cfg.accountId === "string" && cfg.accountId.length > 0
+      ? [cfg.accountId]
+      : [];
+
+  if (mergedAccountIds.length === 1) {
+    commonFilter.accountId = mergedAccountIds[0];
+  }
+  if (mergedAccountIds.length > 1) {
+    commonFilter.accountIds = mergedAccountIds;
   }
 
   if (categoryIds.length === 1) commonFilter.categoryId = categoryIds[0];
@@ -362,7 +385,18 @@ function mapBackendToFrontend(
       typeof widgetConfig.accountId === "string"
         ? widgetConfig.accountId
         : toStringArray(widgetConfig.accountIds)[0]
+          ?? toStringArray(rawFilter?.accountIds)[0]
           ?? (typeof rawFilter?.accountId === "string" ? rawFilter.accountId : undefined),
+    accountIds:
+      toStringArray(widgetConfig.accountIds).length > 0
+        ? toStringArray(widgetConfig.accountIds)
+        : typeof widgetConfig.accountId === "string"
+          ? [widgetConfig.accountId]
+          : toStringArray(rawFilter?.accountIds).length > 0
+            ? toStringArray(rawFilter?.accountIds)
+          : typeof rawFilter?.accountId === "string"
+            ? [rawFilter.accountId]
+            : [],
     categoryIds: Array.from(new Set(mergedCategoryIds)),
     startDate:
       typeof widgetConfig.startDate === "string"
@@ -414,7 +448,13 @@ function isLocalWidgetId(widgetId: string): boolean {
 }
 
 export default function AnalysisPage() {
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const { t } = useTranslation();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    setChartCurrency(user?.preferredCurrency ?? "EUR");
+  }, [user?.preferredCurrency]);
+  const [toast, setToast] = useState<{ message: string; tone: ToastBannerTone } | null>(null);
   const [widgets, setWidgets] = useState<AnalysisWidget[]>([]);
   const [transactions, setTransactions] = useState<AnalysisTransaction[]>([]);
   const [savedFilters, setSavedFilters] = useState<FilterSummaryDto[]>([]);
@@ -491,7 +531,7 @@ export default function AnalysisPage() {
   const toggleEditMode = () => {
     if (editMode) {
       void saveEditChanges().then(() => {
-        setToastMessage("Dashboard changes saved.");
+        setToast({ message: t("analysis.toasts.dashboardSaved"), tone: "success" });
       });
       setEditMode(false);
     } else {
@@ -499,8 +539,8 @@ export default function AnalysisPage() {
     }
   };
 
-  const loadAnalysisData = useCallback(async () => {
-    setLoading(true);
+  const loadAnalysisData = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const [txPage, backendWidgets, categories, accounts, filters] = await Promise.all([
         transactionService.getAll({}, 0, 10000),
@@ -575,21 +615,21 @@ export default function AnalysisPage() {
     setSyncing(true);
     try {
       await chartService.synchronizeCache();
-      await loadAnalysisData();
+      await loadAnalysisData(true); // silent: don't show loading overlay, keep open forms intact
       setDraftPreviewData(undefined);
-      setToastMessage("Dashboard synchronized. Widgets have been recalculated.");
+      setToast({ message: t("analysis.toasts.dashboardSynced"), tone: "success" });
     } catch {
-      setToastMessage("Could not synchronize now. Please try again.");
+      setToast({ message: t("analysis.toasts.syncError"), tone: "error" });
     } finally {
       setSyncing(false);
     }
   };
 
   useEffect(() => {
-    if (!toastMessage) return;
-    const timer = setTimeout(() => setToastMessage(null), 4000);
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 4000);
     return () => clearTimeout(timer);
-  }, [toastMessage]);
+  }, [toast]);
 
   const refreshDraftPreview = useCallback(async () => {
     if (!draft) return;
@@ -606,11 +646,11 @@ export default function AnalysisPage() {
       setDraftPreviewData(response.data);
     } catch {
       setDraftPreviewData(undefined);
-      setToastMessage("Could not refresh the preview.");
+      setToast({ message: t("analysis.toasts.previewRefreshError"), tone: "error" });
     } finally {
       setRefreshingDraftPreview(false);
     }
-  }, [draft, categoryIdsByName]);
+  }, [draft, categoryIdsByName, t]);
 
   useEffect(() => {
     setDraftPreviewData(undefined);
@@ -643,7 +683,7 @@ export default function AnalysisPage() {
     // Otherwise use template id
     const template = typeOrTemplateId
       ? widgetTemplates.find((tpl) => tpl.id === typeOrTemplateId)
-      : widgetTemplates[0];
+      : widgetTemplates.find((tpl) => tpl.type === "table") ?? widgetTemplates[0];
 
     if (!template) {
       setDraft(emptyDraftFromType("kpi"));
@@ -688,13 +728,13 @@ export default function AnalysisPage() {
     try {
       filterDetails = await filterService.getById(filterId);
     } catch {
-      setToastMessage("Could not load the selected filter.");
+      setToast({ message: t("analysis.toasts.filterLoadError"), tone: "error" });
       return;
     }
 
     const definition = parseFilterDefinition(filterDetails.definition);
     if (!definition) {
-      setToastMessage("Saved filter has an incompatible format.");
+      setToast({ message: t("analysis.toasts.filterIncompatible"), tone: "warning" });
       return;
     }
 
@@ -706,11 +746,16 @@ export default function AnalysisPage() {
         config: mergeFilterIntoConfig(prev.config, definition),
       };
     });
-    setToastMessage(`Filter "${filterDetails.name}" imported to the widget.`);
+    setToast({ message: t("analysis.toasts.filterImported", { name: filterDetails.name }), tone: "success" });
   };
 
   const saveDraft = async () => {
     if (!draft) return;
+
+    if (!draft.title.trim()) {
+      setToast({ message: t("analysis.toasts.widgetTitleRequired"), tone: "error" });
+      return;
+    }
 
     const baseWidget = draft.mode === "edit"
       ? widgets.find((widget) => widget.id === draft.baseId)
@@ -742,7 +787,7 @@ export default function AnalysisPage() {
           // No bloqueamos guardado si falla preview.
         }
       } catch {
-        setToastMessage("Could not save the widget.");
+        setToast({ message: t("analysis.toasts.widgetSaveError"), tone: "error" });
         return;
       }
     } else {
@@ -762,7 +807,7 @@ export default function AnalysisPage() {
           // No bloqueamos guardado si falla preview.
         }
       } catch {
-        setToastMessage("Could not update the widget.");
+        setToast({ message: t("analysis.toasts.widgetUpdateError"), tone: "error" });
         return;
       }
     }
@@ -780,7 +825,7 @@ export default function AnalysisPage() {
     }
 
     if (!removedRemotely && !isLocalWidgetId(widgetId)) {
-      setToastMessage("Could not delete the widget.");
+      setToast({ message: t("analysis.toasts.widgetDeleteError"), tone: "error" });
       return;
     }
 
@@ -797,40 +842,45 @@ export default function AnalysisPage() {
   };
 
   if (loading) {
-    return <div className="py-8 text-sm text-slate-500">Loading analysis...</div>;
+    return <div className="py-8 text-sm text-slate-500">{t("analysis.loading")}</div>;
   }
 
   return (
     <>
       <div className="space-y-5">
-        <PageHeader
-          left={<ChartNoAxesCombined className="h-6 w-6 text-sky-600" />}
-          title="Analysis"
-          subtitle="Create, preview and arrange your widgets using the same filters you use in transactions."
-          actions={(
-            <div className="flex gap-2">
-                <Button
-                variant="outline"
-                className="analysis-sync-btn"
-                onClick={() => {
-                  void synchronizeAndReload();
-                }}
-                disabled={syncing || loading}
-              >
-                <RefreshCw className={`mr-2 h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
-                {syncing ? "Syncing..." : "Sync"}
-              </Button>
+        <div className="analysis-hero-section">
+          <div className="analysis-hero-inner">
+            <PageHeader
+              left={<ChartNoAxesCombined className="h-6 w-6 text-sky-600" />}
+              title={t("analysis.title")}
+              subtitle={t("analysis.subtitle")}
+              actions={(
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="tx-sync-btn analysis-sync-btn"
+                    onClick={() => {
+                      void synchronizeAndReload();
+                    }}
+                    disabled={syncing || loading}
+                    title={t("analysis.actions.sync")}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
+                  </button>
 
-              <Button
-                className={`analysis-edit-btn ${editMode ? "is-active" : ""}`}
-                onClick={toggleEditMode}
-              >
-                <LayoutDashboard className="mr-2 h-4 w-4" />
-                {editMode ? "Exit edit" : "Edit dashboard"}
-              </Button>
-            </div>
-          )}
-        />
+                  <GradientButton
+                    size="sm"
+                    iconVariant="other"
+                    icon={<LayoutDashboard className="h-4 w-4" />}
+                    onClick={toggleEditMode}
+                  >
+                    {editMode ? t("analysis.actions.exitEdit") : t("analysis.actions.editDashboard")}
+                  </GradientButton>
+                </div>
+              )}
+            />
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
           <AnalysisBoard
@@ -876,11 +926,11 @@ export default function AnalysisPage() {
         </div>
       </div>
 
-      {toastMessage ? (
+      {toast ? (
         <ToastBanner
-          tone="info"
-          message={toastMessage}
-          onClose={() => setToastMessage(null)}
+          tone={toast.tone}
+          message={toast.message}
+          onClose={() => setToast(null)}
         />
       ) : null}
     </>

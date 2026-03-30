@@ -68,10 +68,15 @@ public class BankServiceImpl implements BankService {
 
     @Override
     public int syncTransactions(UUID userId, UUID accountId) throws InstanceNotFoundException {
+        return syncTransactions(userId, accountId, 90);
+    }
+
+    @Override
+    public int syncTransactions(UUID userId, UUID accountId, int lookBackDays) throws InstanceNotFoundException {
         BankConnection connection = bankConnectionDao.findByAccountIdAndUserId(accountId, userId)
                 .orElseThrow(() -> new InstanceNotFoundException("BankConnection", accountId));
 
-        return syncWithProvider(connection);
+        return enableBankingSyncService.sync(connection, lookBackDays);
     }
 
     @Override
@@ -213,6 +218,9 @@ public class BankServiceImpl implements BankService {
         validateRulePayload(namePattern, bankCategory, mappedName, mappedCategoryId);
 
         Category category = resolveCategory(mappedCategoryId, userId);
+        if (category != null && transactionType != null && category.getType() != transactionType) {
+            throw new IllegalArgumentException("Mapped category type must match rule transaction type");
+        }
         String normalizedNamePattern = normalize(namePattern);
         String normalizedBankCategory = normalize(bankCategory);
         String normalizedMappedName = normalize(mappedName);
@@ -253,8 +261,15 @@ public class BankServiceImpl implements BankService {
         if (mappedName != null) {
             rule.setMappedName(normalize(mappedName));
         }
+        Category resolvedMappedCategory = mappedCategoryId != null
+                ? resolveCategory(mappedCategoryId, userId)
+                : rule.getMappedCategory();
+        if (resolvedMappedCategory != null && transactionType != null
+                && resolvedMappedCategory.getType() != transactionType) {
+            throw new IllegalArgumentException("Mapped category type must match rule transaction type");
+        }
         if (mappedCategoryId != null) {
-            rule.setMappedCategory(resolveCategory(mappedCategoryId, userId));
+            rule.setMappedCategory(resolvedMappedCategory);
         }
 
         rule.setPriority(calculatePriority(
@@ -323,15 +338,29 @@ public class BankServiceImpl implements BankService {
     private boolean applyRules(Transaction transaction, List<BankTransactionRule> rules) {
         String originalName = transaction.getName();
         String resolvedName = originalName;
-        Category resolvedCategory = null;
+        Category resolvedCategory = transaction.getCategory();
+        if (resolvedCategory != null && resolvedCategory.getType() != transaction.getType()) {
+            // Clean up legacy invalid category assignments (EXPENSE category on INCOME tx and vice versa).
+            resolvedCategory = null;
+        }
+        boolean nameResolved = false;
+        boolean categoryResolved = false;
 
         for (BankTransactionRule rule : rules) {
             if (matchesRule(rule, originalName, transaction.getBankCategory(), transaction.getType())) {
-                if (normalize(rule.getMappedName()) != null) {
+                if (!nameResolved && normalize(rule.getMappedName()) != null) {
                     resolvedName = rule.getMappedName();
+                    nameResolved = true;
                 }
-                resolvedCategory = rule.getMappedCategory();
-                break;
+                if (!categoryResolved && rule.getMappedCategory() != null
+                        && rule.getMappedCategory().getType() == transaction.getType()) {
+                    resolvedCategory = rule.getMappedCategory();
+                    categoryResolved = true;
+                }
+                // Keep scanning lower-priority matches to resolve missing fields.
+                if (nameResolved && categoryResolved) {
+                    break;
+                }
             }
         }
 

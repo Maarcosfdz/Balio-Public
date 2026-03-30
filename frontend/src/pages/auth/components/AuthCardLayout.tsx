@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { X } from "lucide-react";
 import BalioBrand from "@/components/branding/BalioBrand";
 import { ROUTES } from "@/config/routes";
-import MainPage from "@/pages/mainPage/MainPage";
 
 interface AuthCardLayoutProps {
   title: string;
@@ -19,15 +18,26 @@ export default function AuthCardLayout({
   children,
 }: AuthCardLayoutProps) {
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-8">
-      {/* MainPage real difuminada como fondo */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-        <div className="blur-sm brightness-75 scale-[1.02] origin-center">
-          <MainPage />
-        </div>
-      </div>
-      {/* Capa de oscurecimiento encima del fondo */}
-      <div className="absolute inset-0 bg-white/30 backdrop-blur-[2px]" />
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-8 bg-gradient-to-br from-sky-50 via-white to-emerald-50">
+      {/* Dot grid */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-40"
+        aria-hidden
+        style={{
+          backgroundImage:
+            "radial-gradient(circle, rgba(15,23,42,0.06) 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
+        }}
+      />
+      {/* Glow orbs */}
+      <div
+        className="pointer-events-none absolute -top-40 -left-40 h-96 w-96 rounded-full bg-sky-300/25 blur-[120px]"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-emerald-300/20 blur-[120px]"
+        aria-hidden
+      />
 
       <Link
         to={ROUTES.HOME}

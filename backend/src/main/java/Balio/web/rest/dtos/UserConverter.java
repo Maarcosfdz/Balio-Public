@@ -13,7 +13,8 @@ public class UserConverter {
                 user.getNickname(),
                 user.getEmail(),
                 accessToken,
-                refreshToken
+                refreshToken,
+                user.getPreferredCurrency()
         );
     }
 

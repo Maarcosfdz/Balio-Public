@@ -31,6 +31,11 @@ public class TransactionDto {
 
     private TransactionType type; // usado en update
 
+    // ── Currency (optional, for cross-currency transactions) ──
+    private BigDecimal originalAmount;
+    private String originalCurrency;
+    private BigDecimal exchangeRate;
+
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
@@ -51,4 +56,13 @@ public class TransactionDto {
 
     public TransactionType getType() { return type; }
     public void setType(TransactionType type) { this.type = type; }
+
+    public BigDecimal getOriginalAmount() { return originalAmount; }
+    public void setOriginalAmount(BigDecimal originalAmount) { this.originalAmount = originalAmount; }
+
+    public String getOriginalCurrency() { return originalCurrency; }
+    public void setOriginalCurrency(String originalCurrency) { this.originalCurrency = originalCurrency; }
+
+    public BigDecimal getExchangeRate() { return exchangeRate; }
+    public void setExchangeRate(BigDecimal exchangeRate) { this.exchangeRate = exchangeRate; }
 }

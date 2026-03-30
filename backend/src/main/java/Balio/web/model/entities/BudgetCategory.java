@@ -32,6 +32,12 @@ public class BudgetCategory {
     @Column(name = "display_order", nullable = false)
     private int displayOrder;
 
+    @Column(name = "icon_name", length = 120)
+    private String iconName;
+
+    @Column(name = "icon_bg_color", length = 20)
+    private String iconBgColor;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "budget_id")
     private Budget budget;
@@ -55,10 +61,17 @@ public class BudgetCategory {
     protected BudgetCategory() {}
 
     public BudgetCategory(String name, BigDecimal maxAmount, int displayOrder, Budget budget) {
+        this(name, maxAmount, displayOrder, budget, null, null);
+    }
+
+    public BudgetCategory(String name, BigDecimal maxAmount, int displayOrder, Budget budget,
+                          String iconName, String iconBgColor) {
         this.name = name;
         this.maxAmount = maxAmount;
         this.displayOrder = displayOrder;
         this.budget = budget;
+        this.iconName = iconName;
+        this.iconBgColor = iconBgColor;
     }
 
     public UUID getId() { return id; }
@@ -71,6 +84,12 @@ public class BudgetCategory {
 
     public int getDisplayOrder() { return displayOrder; }
     public void setDisplayOrder(int displayOrder) { this.displayOrder = displayOrder; }
+
+    public String getIconName() { return iconName; }
+    public void setIconName(String iconName) { this.iconName = iconName; }
+
+    public String getIconBgColor() { return iconBgColor; }
+    public void setIconBgColor(String iconBgColor) { this.iconBgColor = iconBgColor; }
 
     public Budget getBudget() { return budget; }
 

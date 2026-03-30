@@ -4,6 +4,7 @@ import Balio.web.enums.TransactionType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -54,9 +55,28 @@ public interface TransactionDao extends JpaRepository<Transaction, UUID> {
                                         @Param("endDate") LocalDate endDate,
                                         Pageable pageable);
 
+    // ── BATCH RULES ─────────────────────────────────────────────────────
+
+    @Query("SELECT t FROM Transaction t WHERE t.user.id = :userId " +
+           "AND (:type IS NULL OR t.type = :type) " +
+           "AND (:categoryId IS NULL OR t.category.id = :categoryId) " +
+           "AND (:nameLike IS NULL OR LOWER(t.name) LIKE :nameLike) " +
+           "AND (CAST(:startDate AS date) IS NULL OR t.date >= :startDate) " +
+           "AND (CAST(:endDate AS date) IS NULL OR t.date <= :endDate)")
+    List<Transaction> findForBatchRule(@Param("userId") UUID userId,
+                                      @Param("type") TransactionType type,
+                                      @Param("categoryId") UUID categoryId,
+                                      @Param("nameLike") String nameLike,
+                                      @Param("startDate") LocalDate startDate,
+                                      @Param("endDate") LocalDate endDate);
+
     // ── BANK SYNC ────────────────────────────────────────────────────────
 
     boolean existsByAccountIdAndExternalId(UUID accountId, String externalId);
+
+    @Modifying
+    @Query("DELETE FROM Transaction t WHERE t.user.id = :userId")
+    void deleteAllByUserId(@Param("userId") UUID userId);
 
     // ── BUDGET ──────────────────────────────────────────────────────────
 

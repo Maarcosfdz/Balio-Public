@@ -81,4 +81,14 @@ public interface AccountService {
      */
     UUID getDefaultAccountId(UUID userId);
 
+    /**
+     * Directly sets the balance of a CASH or OTHER account.
+     * BANK account balances are managed automatically via bank sync and cannot be modified manually.
+     *
+     * @throws InstanceNotFoundException if the account does not exist or does not belong to the user
+     * @throws Balio.web.model.Exceptions.AccountInvalidException if the account type is BANK
+     */
+    Account adjustBalance(UUID userId, UUID accountId, java.math.BigDecimal newBalance)
+            throws InstanceNotFoundException;
+
 }

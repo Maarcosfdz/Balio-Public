@@ -1,6 +1,8 @@
 package Balio.web;
 
 import Balio.web.rest.common.JwtGenerator;
+import Balio.web.model.entities.User;
+import Balio.web.model.entities.UserDao;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,14 +42,17 @@ class SecurityIT {
 
     @Autowired MockMvc mockMvc;
     @Autowired JwtGenerator jwtGenerator;
+    @Autowired UserDao userDao;
 
     private String validToken;
 
     @BeforeEach
     void setUp() {
-        // Any UUID is sufficient — JwtFilter only validates the token signature,
-        // it does not check if the user exists in the database.
-        validToken = jwtGenerator.generateAccessToken(UUID.randomUUID());
+        User user = userDao.save(new User(
+                "security-test-user",
+                "security-" + UUID.randomUUID() + "@test.local",
+                "encodedPassword"));
+        validToken = jwtGenerator.generateAccessToken(user.getId());
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -186,4 +191,3 @@ class SecurityIT {
     }
 
 }
-

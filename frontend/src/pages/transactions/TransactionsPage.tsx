@@ -5,37 +5,60 @@ import {
   ArrowDownCircle,
   ArrowLeftRight,
   ArrowUpCircle,
-  Bookmark,
   CalendarClock,
+  ListChecks,
   Loader2,
+  Pencil,
   Plus,
   RefreshCw,
+  Search,
+  SlidersHorizontal,
   Tag,
+  Trash2,
   X,
   } from "lucide-react";
-import PageHeader from "@/components/layout/PageHeader";
 import type {
+  CategorySummaryDto,
   FilterResponseDto,
   FilterSummaryDto,
   TransactionFilters,
+  TransactionResponseDto,
   TransactionSummaryDto,
   TransactionType,
 } from "@/types";
 import { transactionService } from "@/backend/transactionService";
 import { bankService } from "@/backend/bankService";
 import { filterService } from "@/backend/filterService";
+import { categoryService } from "@/backend/categoryService";
+import "@/styles/pages/transactions.css";
+import { ToastBanner } from "@/components/ui/toast-banner";
 import AddTransactionModal from "@/components/transactions/AddTransactionModal";
+import ApplyRulesModal from "./components/ApplyRulesModal";
 import Pagination from "@/components/ui/Pagination";
 import FilterPanel, {
   type ActiveFilters,
 } from "./components/FilterPanel";
 import { ROUTES } from "@/config/routes";
+import { IconAvatar } from "@/components/icons/IconAvatar";
 
 const PAGE_SIZE = 20;
-const AUTO_REFRESH_INTERVAL = 30_000; // 30 seconds
+const AUTO_REFRESH_INTERVAL = 3_600_000; // 1 hour
+const AUTO_SYNC_THROTTLE_MS = 3_600_000; // 1 hour
+const LAST_AUTO_SYNC_KEY = "balio_tx_last_auto_sync_ms";
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  EUR: "€",
+  USD: "$",
+  JPY: "¥",
+  GBP: "£",
+};
 
 function normalize(s: string) {
   return s.toLowerCase().replace(/\s+/g, "");
+}
+
+function currencyLabel(code?: string) {
+  const upper = (code ?? "EUR").toUpperCase();
+  return CURRENCY_SYMBOLS[upper] ?? upper;
 }
 
 export default function TransactionsPage() {
@@ -52,6 +75,7 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [syncingAll, setSyncingAll] = useState(false);
   const [syncSummary, setSyncSummary] = useState<string | null>(null);
+  const [categories, setCategories] = useState<CategorySummaryDto[]>([]);
 
   // ── Filters — pre-populate from navigation state ──
   const [filters, setFilters] = useState<ActiveFilters>(() =>
@@ -64,6 +88,8 @@ export default function TransactionsPage() {
   // ── Modals ──
   const [expenseOpen, setExpenseOpen] = useState(false);
   const [incomeOpen, setIncomeOpen] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const [editingTx, setEditingTx] = useState<TransactionResponseDto | null>(null);
 
   // ── Pagination ──
   const [page, setPage] = useState(1);
@@ -84,10 +110,12 @@ export default function TransactionsPage() {
   const [allSavedFilters, setAllSavedFilters] = useState<FilterSummaryDto[]>([]);
   const [showAddPicker, setShowAddPicker] = useState(false);
   const addPickerRef = useRef<HTMLDivElement>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch all saved filters for the add-to-tabs picker
   useEffect(() => {
     filterService.getAll().then(setAllSavedFilters).catch(() => {});
+    categoryService.getAll().then(setCategories).catch(() => {});
   }, []);
 
   // Close picker on outside click + refresh list when picker opens
@@ -103,6 +131,7 @@ export default function TransactionsPage() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [showAddPicker]);
+
 
   // Persist pinned filters
   useEffect(() => {
@@ -170,18 +199,28 @@ export default function TransactionsPage() {
 
   const syncStaleIfNeeded = useCallback(async () => {
     try {
+      const now = Date.now();
+      const lastRaw = localStorage.getItem(LAST_AUTO_SYNC_KEY);
+      const lastSync = lastRaw ? Number(lastRaw) : 0;
+      if (Number.isFinite(lastSync) && now - lastSync < AUTO_SYNC_THROTTLE_MS) {
+        return;
+      }
+
+      // Registramos intento para evitar auto-sync repetido al reabrir la página.
+      localStorage.setItem(LAST_AUTO_SYNC_KEY, String(now));
+
       const result = await bankService.syncStale(15);
       if (result.syncedAccounts > 0) {
         setSyncSummary(
           result.imported > 0
-            ? `Sincronización automática: ${result.imported} transacción${result.imported !== 1 ? "es" : ""} nueva${result.imported !== 1 ? "s" : ""}.`
-            : "Sincronización automática completada.",
+            ? t("txPage.autoSyncWithImported", { count: result.imported })
+            : t("txPage.autoSyncDone"),
         );
       }
     } catch {
       // ignore auto-sync errors here; page data still loads afterwards
     }
-  }, []);
+  }, [t]);
 
   // Initial / per-navigation load.
   // location.key changes on every navigation event so this runs whenever the
@@ -253,8 +292,10 @@ export default function TransactionsPage() {
   const displayedTransactions = useMemo(() => {
     let list = [...transactions];
 
-    if (filters.nameQuery) {
-      const q = normalize(filters.nameQuery);
+    // Search bar query (toolbar) takes priority, then filter panel's nameQuery
+    const query = searchQuery || filters.nameQuery;
+    if (query) {
+      const q = normalize(query);
       list = list.filter((tx) => normalize(tx.name).includes(q));
     }
     if (filters.amountMin != null) {
@@ -278,6 +319,7 @@ export default function TransactionsPage() {
     return list;
   }, [
     transactions,
+    searchQuery,
     filters.nameQuery,
     filters.amountMin,
     filters.amountMax,
@@ -296,6 +338,11 @@ export default function TransactionsPage() {
   const maxTxAmount = useMemo(
     () => transactions.reduce((m, tx) => Math.max(m, tx.amount), 0),
     [transactions]
+  );
+
+  const categoryMap = useMemo(
+    () => new Map(categories.map((c) => [c.id, c])),
+    [categories],
   );
 
   // ── Handlers ──
@@ -336,17 +383,21 @@ export default function TransactionsPage() {
     setSyncSummary(null);
     try {
       const result = await bankService.syncAll();
+      localStorage.setItem(LAST_AUTO_SYNC_KEY, String(Date.now()));
       setSyncSummary(
         result.syncedAccounts === 0
-          ? "No hay cuentas bancarias enlazadas para sincronizar."
+          ? t("txPage.syncNoLinkedAccounts")
           : result.imported === 0
-            ? `Se sincronizaron ${result.syncedAccounts} cuenta${result.syncedAccounts !== 1 ? "s" : ""} y no había movimientos nuevos.`
-            : `Se sincronizaron ${result.syncedAccounts} cuenta${result.syncedAccounts !== 1 ? "s" : ""} y entraron ${result.imported} transacción${result.imported !== 1 ? "es" : ""} nueva${result.imported !== 1 ? "s" : ""}.`,
+            ? t("txPage.syncDoneNoNew", { accounts: result.syncedAccounts })
+            : t("txPage.syncDoneWithImported", {
+              accounts: result.syncedAccounts,
+              imported: result.imported,
+            }),
       );
       const cp = isServerPagedRef.current ? pageRef.current - 1 : 0;
       await fetchTransactions(filtersRef.current, false, cp);
     } catch {
-      setSyncSummary("No se pudo sincronizar ahora mismo.");
+      setSyncSummary(t("txPage.syncErrorNow"));
     } finally {
       setSyncingAll(false);
     }
@@ -355,8 +406,29 @@ export default function TransactionsPage() {
   const handleTransactionCreated = () => {
     setExpenseOpen(false);
     setIncomeOpen(false);
+    setEditingTx(null);
     const cp = isServerPagedRef.current ? pageRef.current - 1 : 0;
     fetchTransactions(filtersRef.current, false, cp);
+  };
+
+  const handleEditTransaction = async (tx: TransactionSummaryDto) => {
+    try {
+      const full = await transactionService.getById(tx.id);
+      setEditingTx(full);
+    } catch {
+      // Fallback: can't fetch full details
+    }
+  };
+
+  const handleDeleteTransaction = async (tx: TransactionSummaryDto) => {
+    if (!window.confirm(t("transactions.deleteConfirm"))) return;
+    try {
+      await transactionService.remove(tx.id, true);
+      const cp = isServerPagedRef.current ? pageRef.current - 1 : 0;
+      fetchTransactions(filtersRef.current, false, cp);
+    } catch {
+      // Fail silently
+    }
   };
 
   const handleRemoveTab = (id: string) => {
@@ -384,227 +456,226 @@ export default function TransactionsPage() {
     });
   };
 
-  const formatAmount = (amount: number, type: TransactionType) => {
-    const sign = type === "EXPENSE" ? "-" : "+";
-    return `${sign}${amount.toFixed(2)} €`;
+  const formatAmount = (tx: TransactionSummaryDto) => {
+    const sign = tx.type === "EXPENSE" ? "-" : "+";
+    const currency = tx.currency ?? "EUR";
+    const main = `${sign}${tx.amount.toFixed(2)} ${currencyLabel(currency)}`;
+    if (tx.originalCurrency && tx.originalCurrency !== currency && tx.originalAmount != null) {
+      return `${main} (${sign}${tx.originalAmount.toFixed(2)} ${currencyLabel(tx.originalCurrency)})`;
+    }
+    return main;
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       {syncSummary && (
-        <div className="rounded-xl border border-sky-200 bg-sky-50 px-5 py-3 text-sm font-semibold text-sky-700">
-          {syncSummary}
-        </div>
+        <ToastBanner
+          tone="info"
+          message={syncSummary}
+          onClose={() => setSyncSummary(null)}
+        />
       )}
 
-      {/* ── Header ── */}
-      <div className="rounded-xl bg-white px-5 py-4">
-        <PageHeader
-          left={<ArrowLeftRight className="h-8 w-8 text-sky-500" />}
-          title={t("transactions.title")}
-          actions={
-            <div className="flex flex-wrap items-center gap-3 page-header-actions">
+      {/* ── Hero Header — full-width background ── */}
+      <div className="tx-hero-section">
+        <div className="tx-hero-inner">
+          <div className="tx-hero-title">
+            <ArrowLeftRight className="h-7 w-7 text-teal-600" />
+            <h1>{t("transactions.title")}</h1>
+            <button
+              className="tx-sync-btn"
+              onClick={handleSyncAll}
+              disabled={syncingAll}
+              title={syncingAll ? t("txPage.syncingBanks") : t("txPage.syncBanks")}
+            >
+              {syncingAll ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+            </button>
+          </div>
+
+          <div className="tx-hero-row">
+            <div className="tx-bento-grid">
+              {/* Expense card */}
               <button
+                className="tx-bento-card tx-bento-expense"
+                onClick={() => setExpenseOpen(true)}
+              >
+                <div className="tx-bento-icon">
+                  <ArrowDownCircle className="h-6 w-6 text-rose-500" />
+                </div>
+                <div className="tx-bento-text">
+                  <p className="tx-bento-card-label">{t("txPage.addEntry")}</p>
+                  <p className="tx-bento-card-title">{t("txPage.addExpense")}</p>
+                </div>
+              </button>
+
+              {/* Income card */}
+              <button
+                className="tx-bento-card tx-bento-income"
+                onClick={() => setIncomeOpen(true)}
+              >
+                <div className="tx-bento-income-bg" />
+                <div className="tx-bento-icon" style={{ position: "relative", zIndex: 1 }}>
+                  <ArrowUpCircle className="h-6 w-6 text-white" />
+                </div>
+                <div className="tx-bento-text" style={{ position: "relative", zIndex: 1 }}>
+                  <p className="tx-bento-card-label">{t("txPage.logGrowth")}</p>
+                  <p className="tx-bento-card-title">{t("txPage.addIncome")}</p>
+                </div>
+              </button>
+            </div>
+
+            {/* Action buttons — on the right */}
+            <div className="tx-hero-actions">
+              <button
+                className="tx-action-pill"
                 onClick={() => navigate(ROUTES.CATEGORIES)}
-                title={t("nav.categories")}
-                className="group tx-outline-hover-btn self-center"
               >
-                <svg
-                  className="tx-outline-hover-border"
-                  viewBox="0 0 100 36"
-                  preserveAspectRatio="none"
-                  aria-hidden="true"
-                >
-                  <rect className="tx-outline-hover-bg" x="1" y="1" width="98" height="34" rx="10" />
-                  <rect className="tx-outline-hover-hl" x="1" y="1" width="98" height="34" rx="10" />
-                </svg>
-                <Tag className="relative z-10 h-4 w-4 text-slate-400 transition-colors duration-200 group-hover:text-sky-500" />
-                <span className="relative z-10 hidden sm:inline">{t("nav.categories")}</span>
+                <Tag className="h-4 w-4" />
+                {t("nav.categories")}
               </button>
-
               <button
+                className="tx-action-pill"
                 onClick={() => navigate(ROUTES.SCHEDULED_TRANSACTIONS)}
-                title={t("scheduled.title")}
-                className="group tx-outline-hover-btn self-center"
               >
-                <svg
-                  className="tx-outline-hover-border"
-                  viewBox="0 0 100 36"
-                  preserveAspectRatio="none"
-                  aria-hidden="true"
-                >
-                  <rect className="tx-outline-hover-bg" x="1" y="1" width="98" height="34" rx="10" />
-                  <rect className="tx-outline-hover-hl" x="1" y="1" width="98" height="34" rx="10" />
-                </svg>
-                <CalendarClock className="relative z-10 h-4 w-4 text-slate-400 transition-colors duration-200 group-hover:text-amber-500" />
-                <span className="relative z-10 hidden sm:inline">{t("scheduled.title")}</span>
+                <CalendarClock className="h-4 w-4" />
+                {t("scheduled.title")}
               </button>
-
               <button
+                className="tx-action-pill"
+                onClick={() => setRulesOpen(true)}
+              >
+                <ListChecks className="h-4 w-4" />
+                {t("rules.title")}
+              </button>
+              <button
+                className="tx-action-pill"
                 onClick={() => navigate(ROUTES.FILTERS)}
-                title={t("nav.filters")}
-                className="group tx-outline-hover-btn self-center"
               >
-                <svg
-                  className="tx-outline-hover-border"
-                  viewBox="0 0 100 36"
-                  preserveAspectRatio="none"
-                  aria-hidden="true"
-                >
-                  <rect className="tx-outline-hover-bg" x="1" y="1" width="98" height="34" rx="10" />
-                  <rect className="tx-outline-hover-hl" x="1" y="1" width="98" height="34" rx="10" />
-                </svg>
-                <Bookmark className="relative z-10 h-4 w-4 text-slate-400 transition-colors duration-200 group-hover:text-sky-500" />
-                <span className="relative z-10 hidden sm:inline">{t("nav.filters")}</span>
+                <ListChecks className="h-4 w-4" />
+                {t("txPage.savedFilters")}
               </button>
+            </div>
+          </div>
 
+          {/* ── Toolbar: underlined filter tabs + search + filter dropdown ── */}
+          <div className="tx-toolbar">
+            <div className="tx-filter-tabs">
+              {/* Base tab — always present */}
               <button
-                onClick={handleSyncAll}
-                disabled={syncingAll}
-                title="Sincronizar cuentas bancarias"
-                className="group tx-outline-hover-btn self-center disabled:opacity-60"
+                className={`tx-filter-tab ${activeTabId === null ? "tx-filter-tab--active" : ""}`}
+                onClick={() => { setActiveTabId(null); setFilters({}); fetchTransactions({}, true, 0); }}
               >
-                <svg
-                  className="tx-outline-hover-border"
-                  viewBox="0 0 100 36"
-                  preserveAspectRatio="none"
-                  aria-hidden="true"
-                >
-                  <rect className="tx-outline-hover-bg" x="1" y="1" width="98" height="34" rx="10" />
-                  <rect className="tx-outline-hover-hl" x="1" y="1" width="98" height="34" rx="10" />
-                </svg>
-                {syncingAll ? (
-                  <Loader2 className="relative z-10 h-4 w-4 animate-spin text-slate-400" />
-                ) : (
-                  <RefreshCw className="relative z-10 h-4 w-4 text-slate-400 transition-colors duration-200 group-hover:text-sky-500" />
-                )}
-                <span className="relative z-10 hidden sm:inline">Sync bancos</span>
+                {t("txPage.baseTab", "Base")}
               </button>
 
-              <div className="flex items-center gap-2.5 ml-3">
+              {pinnedFilters.map((pf) => (
+                <div key={pf.id} className="group relative flex items-center gap-1">
+                  <button
+                    className={`tx-filter-tab ${activeTabId === pf.id ? "tx-filter-tab--active" : ""}`}
+                    onClick={() => handleApplySavedFilter(pf.id)}
+                  >
+                    {pf.name}
+                  </button>
+                  <button
+                    onClick={() => handleRemoveTab(pf.id)}
+                    className="text-slate-300 opacity-0 transition group-hover:opacity-100 hover:text-slate-500"
+                    aria-label={t("txPage.removeFilterTabAria", { name: pf.name })}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+
+              {/* Add tab button */}
+              <div ref={addPickerRef} className="relative">
                 <button
-                  onClick={() => setExpenseOpen(true)}
-                  className="tx-squishy-tech tx-header-cta tx-squishy-expense"
+                  onClick={() => setShowAddPicker((v) => !v)}
+                  className="tx-add-filter-tab-btn"
+                  title={t("txPage.addFilterTab", "Añadir filtro a tabs")}
                 >
-                  <Plus className="tx-squishy-icon relative z-10 h-4 w-4" />
-                  <span className="relative z-10">{t("txPage.addExpense")}</span>
+                  <Plus className="tx-add-filter-tab-btn__icon h-3.5 w-3.5" />
                 </button>
-                <button
-                  onClick={() => setIncomeOpen(true)}
-                  className="tx-squishy-tech tx-header-cta tx-squishy-income"
-                >
-                  <Plus className="tx-squishy-icon relative z-10 h-4 w-4" />
-                  <span className="relative z-10">{t("txPage.addIncome")}</span>
-                </button>
+                {showAddPicker && (
+                  <div className="tx-filter-dropdown" style={{ left: 0, right: "auto" }}>
+                    {allSavedFilters.filter((sf) => !pinnedFilters.some((pf) => pf.id === sf.id)).length === 0 ? (
+                      <p className="tx-filter-dropdown-empty">{t("txPage.noMoreFilters", "No hay más filtros")}</p>
+                    ) : (
+                      allSavedFilters
+                        .filter((sf) => !pinnedFilters.some((pf) => pf.id === sf.id))
+                        .map((sf) => (
+                          <button
+                            key={sf.id}
+                            className="tx-filter-dropdown-item"
+                            onClick={() => {
+                              setPinnedFilters((prev) => [...prev, sf]);
+                              setShowAddPicker(false);
+                            }}
+                          >
+                            {sf.name}
+                          </button>
+                        ))
+                    )}
+                  </div>
+                )}
               </div>
             </div>
-          }
-        />
+
+            <div className="tx-toolbar-right">
+              <div className="tx-search-wrapper">
+                <Search className="h-4 w-4" />
+                <input
+                  type="text"
+                  className="tx-search-input"
+                  placeholder={t("txPage.searchPlaceholder", "Search transactions...")}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              {/* Filter toggle button — opens/closes the filter panel */}
+              <button
+                className={`tx-filter-dropdown-btn ${filtersOpen ? "tx-filter-dropdown-btn--active" : ""}`}
+                onClick={() => setFiltersOpen((v) => !v)}
+                title={t("txPage.filterTransactions")}
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+          {/* Filters — inside hero so gradient covers it */}
+          <FilterPanel
+            key={stateEditFilterId ?? "default"}
+            open={filtersOpen}
+            onToggle={() => setFiltersOpen((v) => !v)}
+            hideToggleButton
+            onApply={handleApplyFilters}
+            defaultAccountId={stateAccountId}
+            maxTransactionAmount={maxTxAmount || undefined}
+            initialFilters={editInitialFilters}
+            editFilterId={stateEditFilterId}
+            editFilterName={stateFilterName}
+            onUpdated={() => navigate(ROUTES.FILTERS)}
+          />
       </div>
 
-      {/* Filters */}
-      <FilterPanel
-        key={stateEditFilterId ?? "default"}
-        open={filtersOpen}
-        onToggle={() => setFiltersOpen((v) => !v)}
-        onApply={handleApplyFilters}
-        defaultAccountId={stateAccountId}
-        maxTransactionAmount={maxTxAmount || undefined}
-        initialFilters={editInitialFilters}
-        editFilterId={stateEditFilterId}
-        editFilterName={stateFilterName}
-        onUpdated={() => navigate(ROUTES.FILTERS)}
-      />
-
-      {/* Transaction list — browser-chrome card (tabs built in) */}
+      {/* Transaction list — pulled up into background gradient */}
+      <div className="tx-table-wrapper">
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-
-      {/* Quick Access Tab bar — sempre visible, with permanent Base tab */}
-      <div className="flex items-end border-b border-slate-200 bg-slate-200 px-3 pt-2">
-        {/* Scrollable tabs — scrollbar hidden via tx-tab-scroll */}
-        <div className="tx-tab-scroll flex flex-1 items-end gap-0 overflow-x-auto">
-          {/* Base tab — permanent, cannot be removed */}
-          <button
-            onClick={() => { setActiveTabId(null); setFilters({}); fetchTransactions({}, true, 0); }}
-            className={`flex shrink-0 items-center rounded-t-lg border-l border-r border-t px-3 py-2 text-xs font-semibold transition-all duration-200 ${
-              activeTabId === null
-                ? "border-slate-200 bg-white text-sky-600 -mb-[1px] z-10"
-                : "border-slate-200 bg-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700"
-            }`}
-          >
-            {t("txPage.baseTab", "Base")}
-          </button>
-
-          {pinnedFilters.map((pf) => (
-            <div
-              key={pf.id}
-              className={`group relative flex shrink-0 items-center gap-1.5 rounded-t-lg border-l border-r border-t px-3 py-2 text-xs font-medium transition-all duration-200 ${
-                activeTabId === pf.id
-                  ? "border-slate-200 bg-white text-sky-600 -mb-[1px] z-10"
-                  : "border-slate-200 bg-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700"
-              }`}
-            >
-              <button
-                onClick={() => handleApplySavedFilter(pf.id)}
-                className="truncate max-w-[120px]"
-              >
-                {pf.name}
-              </button>
-              <button
-                onClick={() => handleRemoveTab(pf.id)}
-                className="text-slate-300 transition hover:text-slate-500"
-                aria-label={`Quitar ${pf.name}`}
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
-        </div>
-
-        {/* Add filter to tabs button */}
-        <div ref={addPickerRef} className="relative ml-1 shrink-0 pb-1.5">
-          <button
-            onClick={() => setShowAddPicker((v) => !v)}
-            className="flex h-6 w-6 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-400 transition hover:border-sky-400 hover:text-sky-500"
-            title={t("txPage.addFilterTab", "Añadir filtro a tabs")}
-          >
-            <Plus className="h-3.5 w-3.5" />
-          </button>
-          {showAddPicker && (
-            <div className="absolute right-0 top-8 z-50 w-48 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
-              {allSavedFilters.filter((sf) => !pinnedFilters.some((pf) => pf.id === sf.id)).length === 0 ? (
-                <p className="px-3 py-2 text-xs text-slate-400">{t("txPage.noMoreFilters", "No hay más filtros")}</p>
-              ) : (
-                <ul>
-                  {allSavedFilters
-                    .filter((sf) => !pinnedFilters.some((pf) => pf.id === sf.id))
-                    .map((sf) => (
-                      <li key={sf.id}>
-                        <button
-                          className="w-full px-3 py-2 text-left text-xs text-slate-700 hover:bg-sky-50 hover:text-sky-600"
-                          onClick={() => {
-                            setPinnedFilters((prev) => [...prev, sf]);
-                            setShowAddPicker(false);
-                          }}
-                        >
-                          {sf.name}
-                        </button>
-                      </li>
-                    ))}
-                </ul>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-        {/* Table header — 6 columns: tipo, concepto, fecha, cuenta, categoría, importe */}
+        {/* Table header */}
         <div className="hidden grid-cols-12 gap-2 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 sm:grid">
           <div className="col-span-1">{t("transactions.type")}</div>
-          <div className="col-span-3">{t("txPage.name")}</div>
+          <div className="col-span-2">{t("txPage.name")}</div>
           <div className="col-span-2">{t("txPage.date")}</div>
           <div className="col-span-2">{t("transactions.account")}</div>
           <div className="col-span-2">{t("transactions.category")}</div>
           <div className="col-span-2 text-right">{t("transactions.amount")}</div>
+          <div className="col-span-1 text-right">{t("txPage.actions")}</div>
         </div>
 
         {loading ? (
@@ -620,7 +691,7 @@ export default function TransactionsPage() {
             {paged.map((tx) => (
               <li
                 key={tx.id}
-                className="grid grid-cols-12 items-center gap-2 px-5 py-3 transition-colors duration-150 hover:bg-slate-50/60"
+                className="group grid grid-cols-12 items-center gap-2 px-5 py-3 transition-colors duration-150 hover:bg-slate-50/60"
               >
                 {/* 1. Type icon */}
                 <div className="col-span-1 flex items-center">
@@ -632,8 +703,23 @@ export default function TransactionsPage() {
                 </div>
 
                 {/* 2. Concepto */}
-                <div className="col-span-3 truncate text-sm font-medium text-slate-700">
-                  {tx.name}
+                <div className="col-span-2 flex items-center gap-2 min-w-0">
+                  {(() => {
+                    const cat = tx.categoryId ? categoryMap.get(tx.categoryId) : null;
+                    if (cat?.iconName || tx.categoryName) {
+                      return (
+                        <IconAvatar
+                          iconName={cat?.iconName}
+                          iconBgColor={cat?.iconBgColor}
+                          fallbackText={cat?.name ?? tx.categoryName}
+                          className="tx-cat-icon flex-shrink-0"
+                          iconClassName="text-[11px]"
+                        />
+                      );
+                    }
+                    return null;
+                  })()}
+                  <span className="truncate text-sm font-medium text-slate-700">{tx.name}</span>
                 </div>
 
                 {/* 3. Fecha */}
@@ -657,13 +743,32 @@ export default function TransactionsPage() {
                     tx.type === "EXPENSE" ? "text-red-500" : "text-emerald-500"
                   }`}
                 >
-                  {formatAmount(tx.amount, tx.type)}
+                  {formatAmount(tx)}
+                </div>
+
+                {/* 7. Actions */}
+                <div className="col-span-1 flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <button
+                    onClick={() => handleEditTransaction(tx)}
+                    className="rounded-md p-1.5 text-slate-400 transition hover:bg-sky-50 hover:text-sky-500"
+                    title={t("txPage.editTransaction")}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteTransaction(tx)}
+                    className="rounded-md p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+                    title={t("txPage.deleteTransaction")}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </li>
             ))}
           </ul>
         )}
       </div>
+      </div>{/* /tx-table-wrapper */}
 
       {/* Pagination */}
       <Pagination
@@ -684,6 +789,23 @@ export default function TransactionsPage() {
         open={incomeOpen}
         onClose={() => setIncomeOpen(false)}
         onCreated={handleTransactionCreated}
+      />
+      {editingTx && (
+        <AddTransactionModal
+          type={editingTx.type as TransactionType}
+          open={!!editingTx}
+          onClose={() => setEditingTx(null)}
+          onCreated={handleTransactionCreated}
+          editTransaction={editingTx}
+        />
+      )}
+      <ApplyRulesModal
+        open={rulesOpen}
+        onClose={() => setRulesOpen(false)}
+        onApplied={() => {
+          const cp = isServerPagedRef.current ? pageRef.current - 1 : 0;
+          fetchTransactions(filtersRef.current, false, cp);
+        }}
       />
     </div>
   );

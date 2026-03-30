@@ -5,6 +5,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { ROUTES } from "@/config/routes";
+import { GradientButton } from "@/components/ui/gradient-button";
 import AuthCardLayout from "./components/AuthCardLayout";
 import { getApiErrorPayload, isValidEmail, mapBackendFieldErrors } from "./authFormUtils";
 
@@ -109,14 +110,9 @@ export default function LoginPage() {
         </div>
 
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <label htmlFor="password" className="text-sm font-semibold text-slate-700">
-              {t("auth.password")}
-            </label>
-            <span className="text-xs font-medium text-blue-600">
-              {t("auth.forgotPassword")}
-            </span>
-          </div>
+          <label htmlFor="password" className="text-sm font-semibold text-slate-700">
+            {t("auth.password")}
+          </label>
           <div className="relative">
             <input
               id="password"
@@ -143,13 +139,14 @@ export default function LoginPage() {
           {errors.password ? <p className="text-sm text-red-600">{errors.password}</p> : null}
         </div>
 
-        <button
+        <GradientButton
           type="submit"
           disabled={isDisabled}
-          className="mt-2 h-12 w-full rounded-lg bg-gradient-to-r from-blue-600 to-emerald-500 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+          weight="normal"
+          className="mt-2 h-12 w-full rounded-lg text-sm"
         >
           {isSubmitting ? t("auth.submitting") : t("auth.login")}
-        </button>
+        </GradientButton>
 
         {errors.form ? <p className="text-sm text-red-600">{errors.form}</p> : null}
       </form>

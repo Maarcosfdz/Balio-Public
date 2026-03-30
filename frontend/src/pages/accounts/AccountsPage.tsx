@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { AlertCircle, CheckCircle2, Wallet, Loader2 } from "lucide-react";
-import PageHeader from "@/components/layout/PageHeader";
+import { AlertCircle, Loader2 } from "lucide-react";
+import { ToastBanner } from "@/components/ui/toast-banner";
 import type { AccountSummaryDto } from "@/types";
 import { accountService } from "@/backend/accountService";
+import { transactionService } from "@/backend/transactionService";
 
 import AccountCard from "./components/AccountCard";
 import EmptyAccountCard from "./components/EmptyAccountCard";
@@ -39,9 +40,10 @@ export default function AccountsPage() {
     if (showLoading) setLoading(true);
     try {
       const raw = await accountService.getAll();
-      // Normalize: ensure at most one default (keep first found)
-      const firstDefault = raw.find((a) => a.isDefault)?.id ?? null;
-      const normalized = raw.map((a) => ({ ...a, isDefault: firstDefault ? a.id === firstDefault : !!a.isDefault }));
+      // Normalize: ensure exactly one visual default when there are accounts.
+      // If backend returns none marked, fallback to the first account.
+      const firstDefault = raw.find((a) => a.isDefault)?.id ?? raw[0]?.id ?? null;
+      const normalized = raw.map((a) => ({ ...a, isDefault: firstDefault ? a.id === firstDefault : false }));
       setAccounts(normalized);
     } catch {
       setAccounts([]);
@@ -141,6 +143,22 @@ export default function AccountsPage() {
     try { await accountService.clearDefault(); fetchAccounts(); } catch { /* ignore */ }
   };
 
+  const handleExportAll = async () => {
+    for (const a of accounts) {
+      try {
+        const blob = await transactionService.exportCsv(a.id);
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${a.name.replace(/[^a-zA-Z0-9]/g, "_")}_transactions.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } catch { /* ignore */ }
+    }
+  };
+
   const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
 
   const defaultCurrency =
@@ -157,35 +175,33 @@ export default function AccountsPage() {
       <div className="space-y-6">
         {/* ── Linked bank account banner ── */}
         {linkedBanner && (
-          <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-emerald-700">
-            <CheckCircle2 className="h-5 w-5 shrink-0" />
-            <p className="text-sm font-semibold">¡Cuenta bancaria vinculada y sincronizada correctamente!</p>
-          </div>
+          <ToastBanner
+            tone="success"
+            message={t("accounts.linkedSynced", "¡Cuenta bancaria vinculada y sincronizada correctamente!")}
+            onClose={() => setLinkedBanner(false)}
+          />
         )}
 
         {/* ── Bank linking error banner ── */}
         {linkError && (
-          <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-red-700">
-            <AlertCircle className="h-5 w-5 shrink-0" />
-            <p className="text-sm font-semibold">Error al enlazar la cuenta bancaria. La cuenta se ha eliminado automáticamente. Inténtalo de nuevo.</p>
-          </div>
+          <ToastBanner
+            tone="error"
+            message={t(
+              "accounts.linkError",
+              "Error al enlazar la cuenta bancaria. La cuenta se ha eliminado automáticamente. Inténtalo de nuevo.",
+            )}
+            onClose={() => setLinkError(false)}
+          />
         )}
 
-        {/* ── Page header ── */}
-        <div className="rounded-xl bg-white px-5 py-4">
-          <PageHeader
-            left={<Wallet className="h-8 w-8 text-sky-500" />}
-            title={t("accounts.title")}
-          />
-        </div>
-
-        {/* ── Summary banner ── */}
+        {/* ── Hero + summary ── */}
         <AccountsSummary
           totalBalance={totalBalance}
           defaultCurrency={defaultCurrency}
           canAdd={canAdd}
           onAdd={() => { setEditTarget(null); setFormOpen(true); }}
           onImport={() => setImportOpen(true)}
+          onExport={handleExportAll}
           accountCount={accounts.length}
           maxAccounts={MAX_ACCOUNTS}
         />
@@ -206,6 +222,7 @@ export default function AccountsPage() {
                   onSetDefault={handleSetDefault}
                   onClearDefault={handleClearDefault}
                   onSynced={() => fetchAccounts(false)}
+                  onBalanceAdjusted={() => fetchAccounts(false)}
                 />
               </div>
             ))}
@@ -298,7 +315,7 @@ export default function AccountsPage() {
                 type="button"
                 onClick={closeDeleteDialog}
                 disabled={deleteState.submitting}
-                className="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+                className="btn-cancel-draw flex-1 justify-center disabled:opacity-60"
               >
                 {t("common.cancel")}
               </button>

@@ -186,6 +186,23 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    public Account adjustBalance(UUID userId, UUID accountId, BigDecimal newBalance) throws InstanceNotFoundException {
+        Account account = accountDao.findByIdAndUserId(accountId, userId)
+                .orElseThrow(() -> new InstanceNotFoundException("Account", accountId));
+
+        if (account.getType() == AccountType.BANK) {
+            throw new AccountInvalidException("Balance of BANK accounts is managed automatically via bank sync");
+        }
+        if (newBalance == null) {
+            throw new AccountInvalidException("New balance must not be null");
+        }
+
+        account.setBalance(newBalance);
+        accountDao.save(account);
+        return account;
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public UUID getDefaultAccountId(UUID userId) {
         return userDao.findById(userId)

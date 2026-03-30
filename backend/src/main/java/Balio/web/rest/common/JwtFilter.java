@@ -1,5 +1,6 @@
 package Balio.web.rest.common;
 
+import Balio.web.model.entities.UserDao;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,9 +20,11 @@ import java.util.UUID;
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtGenerator jwtGenerator;
+    private final UserDao userDao;
 
-    public JwtFilter(JwtGenerator jwtGenerator) {
+    public JwtFilter(JwtGenerator jwtGenerator, UserDao userDao) {
         this.jwtGenerator = jwtGenerator;
+        this.userDao = userDao;
     }
 
     @Override
@@ -43,6 +46,15 @@ public class JwtFilter extends OncePerRequestFilter {
                 }
 
                 UUID userId = jwtGenerator.extractUserId(token);
+
+                // Reject tokens whose user no longer exists in the database.
+                // This handles cases like an in-memory DB reset where the JWT is still
+                // cryptographically valid but the user record is gone.
+                if (!userDao.existsById(userId)) {
+                    SecurityContextHolder.clearContext();
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    return;
+                }
 
                 request.setAttribute("userId", userId);
 

@@ -58,12 +58,23 @@ public class EnableBankingSyncService {
     }
 
     /**
-     * Synchronizes transactions and balance for an Enable Banking connection.
+     * Synchronizes transactions and balance for an Enable Banking connection (last 90 days).
      *
      * @return number of new transactions imported
      */
     @Transactional
     public int sync(BankConnection connection) {
+        return sync(connection, 90);
+    }
+
+    /**
+     * Synchronizes transactions and balance for an Enable Banking connection.
+     *
+     * @param lookBackDays how many days back to fetch transactions
+     * @return number of new transactions imported
+     */
+    @Transactional
+    public int sync(BankConnection connection, int lookBackDays) {
         String ebAccountId = connection.getExternalAccountId();
         Account account = connection.getAccount();
         User user = connection.getUser();
@@ -82,7 +93,7 @@ public class EnableBankingSyncService {
             userId, account.getId());
 
         // ── Fetch and import transactions ────────────────────────────────
-        JsonNode txRoot = enableBankingClient.fetchTransactions(ebAccountId);
+        JsonNode txRoot = enableBankingClient.fetchTransactions(ebAccountId, lookBackDays);
         log.info("Enable Banking transactions raw response: {}", txRoot);
         // Enable Banking returns: { transactions: [ ... ] }
         JsonNode transactions = txRoot.path("transactions");
@@ -153,16 +164,27 @@ public class EnableBankingSyncService {
         String bankCategory = txNode.path("proprietary_bank_transaction_code").asText(null);
         LocalDate date = parseDate(txNode.path("booking_date").asText(null));
 
-        // Apply mapping rules (first match wins, ordered by priority desc)
+        // Apply mapping rules (ordered by priority desc). Name and category can be
+        // resolved by different rules to avoid dropping category mappings.
         String resolvedName = name;
         Category resolvedCategory = null;
+        boolean nameResolved = false;
+        boolean categoryResolved = false;
         for (BankTransactionRule rule : rules) {
             if (matches(rule, name, bankCategory, type)) {
-                if (rule.getMappedName() != null && !rule.getMappedName().isBlank()) {
+                if (!nameResolved && rule.getMappedName() != null && !rule.getMappedName().isBlank()) {
                     resolvedName = rule.getMappedName();
+                    nameResolved = true;
                 }
-                resolvedCategory = rule.getMappedCategory();
-                break;
+                if (!categoryResolved
+                        && rule.getMappedCategory() != null
+                        && rule.getMappedCategory().getType() == type) {
+                    resolvedCategory = rule.getMappedCategory();
+                    categoryResolved = true;
+                }
+                if (nameResolved && categoryResolved) {
+                    break;
+                }
             }
         }
 

@@ -9,3 +9,4 @@ export { goalService } from "./goalService";
 export { budgetService } from "./budgetService";
 export { scheduledTransactionService } from "./scheduledTransactionService";
 export { chartService } from "./chartService";
+export { exchangeRateService } from "./exchangeRateService";

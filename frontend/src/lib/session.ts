@@ -11,7 +11,7 @@ const STORAGE_KEYS = {
 } as const;
 
 export const SESSION_INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000;
-export const SESSION_WARNING_THRESHOLD_MS = 3 * 60 * 1000;
+export const SESSION_WARNING_THRESHOLD_MS = 5 * 60 * 1000;
 export const SESSION_REFRESH_THRESHOLD_MS = 2 * 60 * 1000;
 export const SESSION_CHECK_INTERVAL_MS = 30 * 1000;
 export const SESSION_ACTIVITY_THROTTLE_MS = 15 * 1000;
@@ -20,6 +20,7 @@ export interface SessionUser {
   id: string;
   nickname: string;
   email: string;
+  preferredCurrency: string;
 }
 
 export type SessionEndReason =
@@ -42,11 +43,12 @@ function emit(event: SessionEvent) {
   listeners.forEach((listener) => listener(event));
 }
 
-function toSessionUser(data: Pick<AuthenticatedUserDto, "id" | "nickname" | "email">): SessionUser {
+function toSessionUser(data: Pick<AuthenticatedUserDto, "id" | "nickname" | "email" | "preferredCurrency">): SessionUser {
   return {
     id: data.id,
     nickname: data.nickname,
     email: data.email,
+    preferredCurrency: data.preferredCurrency ?? "EUR",
   };
 }
 
@@ -107,7 +109,10 @@ export function persistSession(data: AuthenticatedUserDto) {
   localStorage.setItem(STORAGE_KEYS.accessToken, data.accessToken);
   localStorage.setItem(STORAGE_KEYS.refreshToken, data.refreshToken);
   localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(toSessionUser(data)));
-  touchSessionActivity();
+  // NOTE: intentionally NOT calling touchSessionActivity() here.
+  // Background token refreshes must not reset the inactivity timer.
+  // Callers that represent genuine user activity (login, signUp) must call
+  // touchSessionActivity() explicitly after persistSession().
 }
 
 export function clearSessionData() {
@@ -117,8 +122,28 @@ export function clearSessionData() {
   localStorage.removeItem(STORAGE_KEYS.lastActivityAt);
 }
 
-export function endSession(reason: SessionEndReason) {
+// All localStorage keys that belong to a specific user session.
+// Must be kept in sync with every page/component that writes to localStorage.
+const USER_STATE_KEYS = [
+  "balio_pinned_filters",
+  "balio_active_tab",
+  "balio_tx_last_auto_sync_ms",
+  "dashboard_quick_tools_v2",
+  "budgets.primaryId.v1",
+  "budgets.cardColors.v1",
+  "language",
+] as const;
+
+/** Clears auth tokens AND all user-specific UI state so nothing leaks to the next session. */
+export function clearAllUserState() {
   clearSessionData();
+  for (const key of USER_STATE_KEYS) {
+    localStorage.removeItem(key);
+  }
+}
+
+export function endSession(reason: SessionEndReason) {
+  clearAllUserState();
   emit({ type: "ended", reason });
 }
 

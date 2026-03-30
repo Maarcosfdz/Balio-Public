@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
+import SingleSelectDropdown from "@/components/ui/SelectDropdown";
 import type {
   AccountSummaryDto,
   CategorySummaryDto,
@@ -89,6 +90,19 @@ export default function ImportCsvModal({
 
     setLoading(true);
     setResult(null);
+
+    // Validate category type vs rule transaction type
+    for (const r of rules) {
+      if (!r.pattern.trim()) continue;
+      if (r.categoryId && r.transactionType) {
+        const cat = categories.find((c) => c.id === r.categoryId);
+        if (cat && cat.type && cat.type !== r.transactionType) {
+          setResult({ imported: 0, skipped: 0, errors: [t("csv.categoryTypeMismatch", "La categoría seleccionada no coincide con el tipo de movimiento de la regla.")] });
+          setLoading(false);
+          return;
+        }
+      }
+    }
 
     const validRules: CsvImportRuleDto[] = rules
       .filter((r) => r.pattern.trim())
@@ -187,18 +201,13 @@ export default function ImportCsvModal({
             <label className="text-xs font-semibold text-slate-500">
               {t("csv.associateAccount")}
             </label>
-            <select
+            <SingleSelectDropdown
               value={accountId}
-              onChange={(e) => setAccountId(e.target.value)}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-            >
-              <option value="">{t("csv.noAccount")}</option>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setAccountId(v)}
+              options={[{ value: "", label: t("csv.noAccount") }, ...accounts.map((a) => ({ value: a.id, label: a.name }))]}
+              placeholder={t("csv.noAccount")}
+              buttonClassName="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+            />
           </div>
 
           {/* Rules section */}
@@ -235,17 +244,16 @@ export default function ImportCsvModal({
                     placeholder={t("csv.rulePattern")}
                     className="h-8 flex-1 rounded-md border border-slate-200 bg-white px-2 text-xs outline-none focus:border-sky-400"
                   />
-                  <select
+                  <SingleSelectDropdown
                     value={rule.transactionType}
-                    onChange={(e) =>
-                      updateRule(idx, "transactionType", e.target.value)
-                    }
-                    className="h-8 w-28 rounded-md border border-slate-200 bg-white px-2 text-xs outline-none focus:border-sky-400"
-                  >
-                    <option value="">{t("csv.ruleTypeBoth")}</option>
-                    <option value="EXPENSE">{t("csv.ruleTypeExpense")}</option>
-                    <option value="INCOME">{t("csv.ruleTypeIncome")}</option>
-                  </select>
+                    onChange={(v) => updateRule(idx, "transactionType", v)}
+                    options={[
+                      { value: "", label: t("csv.ruleTypeBoth") },
+                      { value: "EXPENSE", label: t("csv.ruleTypeExpense") },
+                      { value: "INCOME", label: t("csv.ruleTypeIncome") },
+                    ]}
+                    buttonClassName="h-8 w-28 rounded-md border border-slate-200 bg-white px-2 text-xs outline-none"
+                  />
                   <button
                     type="button"
                     onClick={() => removeRule(idx)}
@@ -262,20 +270,29 @@ export default function ImportCsvModal({
                     placeholder={t("csv.ruleMappedName")}
                     className="h-8 flex-1 rounded-md border border-slate-200 bg-white px-2 text-xs outline-none focus:border-sky-400"
                   />
-                  <select
-                    value={rule.categoryId}
-                    onChange={(e) =>
-                      updateRule(idx, "categoryId", e.target.value)
-                    }
-                    className="h-8 flex-1 rounded-md border border-slate-200 bg-white px-2 text-xs outline-none focus:border-sky-400"
-                  >
-                    <option value="">{t("csv.ruleCategory")}</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+                  {(() => {
+                    const filtered = rule.transactionType
+                      ? categories.filter((c) => !c.type || c.type === rule.transactionType)
+                      : categories;
+
+                    return (
+                      <>
+                        <SingleSelectDropdown
+                          value={rule.categoryId}
+                          onChange={(v) => updateRule(idx, "categoryId", v)}
+                          options={[{ value: "", label: t("csv.ruleCategory") }, ...filtered.map((c) => ({ value: c.id, label: c.name }))]}
+                          buttonClassName="h-8 flex-1 rounded-md border border-slate-200 bg-white px-2 text-xs outline-none"
+                        />
+                        {rule.categoryId && (() => {
+                          const sel = categories.find((c) => c.id === rule.categoryId);
+                          if (sel && rule.transactionType && sel.type && sel.type !== rule.transactionType) {
+                            return <p className="mt-1 text-xs text-amber-700">{t("csv.categoryTypeMismatch", "La categoría seleccionada no coincide con el tipo de movimiento de la regla.")}</p>;
+                          }
+                          return null;
+                        })()}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             ))}
@@ -327,7 +344,7 @@ export default function ImportCsvModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+              className="btn-cancel-draw flex-1 justify-center"
             >
               {t("common.cancel")}
             </button>

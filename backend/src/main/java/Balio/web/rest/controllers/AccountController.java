@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -26,8 +27,10 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -109,6 +112,22 @@ public class AccountController {
             accountService.deleteAccount(userId, accountId);
         }
         log.info("Account deleted: accountId={}, userId={}", accountId, userId);
+    }
+
+    // ── ADJUST BALANCE (CASH / OTHER only) ───────────────────────────────
+
+    @PatchMapping("/{accountId}/balance")
+    public AccountResponseDto adjustBalance(@RequestAttribute UUID userId,
+                                            @PathVariable UUID accountId,
+                                            @RequestBody Map<String, BigDecimal> body)
+            throws InstanceNotFoundException {
+        BigDecimal newBalance = body.get("balance");
+        if (newBalance == null) {
+            throw new Balio.web.model.Exceptions.AccountInvalidException("balance is required");
+        }
+        Account account = accountService.adjustBalance(userId, accountId, newBalance);
+        log.info("Balance adjusted: accountId={}, userId={}, newBalance={}", accountId, userId, newBalance);
+        return accountConverter.toResponseDto(account);
     }
 
     // ── SET / CLEAR DEFAULT ACCOUNT ──────────────────────────────────────

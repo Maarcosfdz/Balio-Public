@@ -97,7 +97,8 @@ class CategoryControllerTest {
         @Test
         @DisplayName("201 – valid category returns created resource")
         void shouldReturn201_whenValidCategory() throws Exception {
-            when(categoryService.createCategory(eq(USER_ID), eq(VALID_NAME), eq(TransactionType.EXPENSE)))
+            when(categoryService.createCategory(
+                    eq(USER_ID), eq(VALID_NAME), eq(TransactionType.EXPENSE), isNull(), isNull()))
                     .thenReturn(testCategory);
 
             mockMvc.perform(post("/category/create")
@@ -117,7 +118,8 @@ class CategoryControllerTest {
             Category incomeCategory = new Category("Salary", TransactionType.INCOME, testUser);
             setFieldViaReflection(incomeCategory, "id", UUID.randomUUID());
 
-            when(categoryService.createCategory(eq(USER_ID), eq("Salary"), eq(TransactionType.INCOME)))
+            when(categoryService.createCategory(
+                    eq(USER_ID), eq("Salary"), eq(TransactionType.INCOME), isNull(), isNull()))
                     .thenReturn(incomeCategory);
 
             mockMvc.perform(post("/category/create")
@@ -186,7 +188,8 @@ class CategoryControllerTest {
         @Test
         @DisplayName("404 – UserNotFoundException")
         void shouldReturn404_whenUserNotFound() throws Exception {
-            when(categoryService.createCategory(eq(USER_ID), eq(VALID_NAME), eq(TransactionType.EXPENSE)))
+            when(categoryService.createCategory(
+                    eq(USER_ID), eq(VALID_NAME), eq(TransactionType.EXPENSE), isNull(), isNull()))
                     .thenThrow(new UserNotFoundException("User not found"));
 
             mockMvc.perform(post("/category/create")
@@ -200,7 +203,7 @@ class CategoryControllerTest {
         @Test
         @DisplayName("400 – CategoryInvalidException (business rule violation)")
         void shouldReturn400_whenCategoryInvalid() throws Exception {
-            when(categoryService.createCategory(eq(USER_ID), eq(VALID_NAME), isNull()))
+            when(categoryService.createCategory(eq(USER_ID), eq(VALID_NAME), isNull(), isNull(), isNull()))
                     .thenThrow(new CategoryInvalidException("Category type is required"));
 
             mockMvc.perform(post("/category/create")
@@ -227,7 +230,7 @@ class CategoryControllerTest {
             setFieldViaReflection(updated, "id", CATEGORY_ID);
 
             when(categoryService.modifyCategory(
-                    eq(USER_ID), eq(CATEGORY_ID), eq("Transport"), eq(TransactionType.INCOME)))
+                    eq(USER_ID), eq(CATEGORY_ID), eq("Transport"), eq(TransactionType.INCOME), isNull(), isNull()))
                     .thenReturn(updated);
 
             mockMvc.perform(put("/category/{categoryId}", CATEGORY_ID)
@@ -244,7 +247,7 @@ class CategoryControllerTest {
         @DisplayName("404 – category not found")
         void shouldReturn404_whenCategoryNotFound() throws Exception {
             when(categoryService.modifyCategory(
-                    eq(USER_ID), eq(CATEGORY_ID), eq(VALID_NAME), eq(TransactionType.EXPENSE)))
+                    eq(USER_ID), eq(CATEGORY_ID), eq(VALID_NAME), eq(TransactionType.EXPENSE), isNull(), isNull()))
                     .thenThrow(new InstanceNotFoundException("Category", CATEGORY_ID));
 
             mockMvc.perform(put("/category/{categoryId}", CATEGORY_ID)
@@ -303,7 +306,7 @@ class CategoryControllerTest {
         @DisplayName("400 – CategoryInvalidException on update (blank name from service)")
         void shouldReturn400_whenCategoryInvalidOnUpdate() throws Exception {
             when(categoryService.modifyCategory(
-                    eq(USER_ID), eq(CATEGORY_ID), eq(VALID_NAME), eq(TransactionType.EXPENSE)))
+                    eq(USER_ID), eq(CATEGORY_ID), eq(VALID_NAME), eq(TransactionType.EXPENSE), isNull(), isNull()))
                     .thenThrow(new CategoryInvalidException("Category name cannot be blank"));
 
             mockMvc.perform(put("/category/{categoryId}", CATEGORY_ID)

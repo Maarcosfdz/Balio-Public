@@ -9,25 +9,27 @@
 import { useTranslation } from "react-i18next";
 import {
   CheckCircle2,
-  Gem,
   Loader2,
   Minus,
   Pencil,
   Plus,
   Save,
-  Sparkles,
-  Star,
   Target,
-  TrendingUp,
   Trash2,
-  Trophy,
   X,
-  Zap,
 } from "lucide-react";
-import PageHeader from "@/components/layout/PageHeader";
 import type { GoalSummaryDto } from "@/types";
 import { goalService } from "@/backend/goalService";
 import { FieldError } from "@/components/ui/field-error";
+import { GradientButton } from "@/components/ui/gradient-button";
+import { IconAvatar } from "@/components/icons/IconAvatar";
+import { IconPicker } from "@/components/icons/IconPicker";
+import {
+  DEFAULT_ICON_BG_COLOR,
+  normalizeIconBgColor,
+  resolveEntityIconName,
+  suggestIconFromText,
+} from "@/components/icons/iconRegistry";
 
 const MAX_GOALS = 40;
 
@@ -44,7 +46,7 @@ function fmtAmt(n: number) {
 
 function pct(current: number, target: number) {
   if (target <= 0) return 0;
-  return Math.min(100, (current / target) * 100);
+  return (current / target) * 100;
 }
 
 function isCompleted(g: GoalSummaryDto) {
@@ -68,16 +70,6 @@ function progressColor(p: number): string {
   }
 }
 
-// Random-but-stable icon set per goal (seeded by id)
-const GOAL_ICONS = [Target, Star, Gem, TrendingUp, Zap, Trophy, Sparkles] as const;
-type GoalIconComponent = (typeof GOAL_ICONS)[number];
-
-function getGoalIcon(id: string): GoalIconComponent {
-  let hash = 0;
-  for (const c of id) hash = ((hash * 31) + c.charCodeAt(0)) >>> 0;
-  return GOAL_ICONS[hash % GOAL_ICONS.length];
-}
-
 // ── Circular progress ring ───────────────────────────────────────────────
 
 function CircleProgress({
@@ -91,7 +83,8 @@ function CircleProgress({
 }) {
   const r = 46;
   const circ = 2 * Math.PI * r;
-  const offset = circ - (value / 100) * circ;
+  const progress = Math.max(0, Math.min(100, value));
+  const offset = circ - (progress / 100) * circ;
 
   return (
     <div
@@ -174,15 +167,19 @@ function AdjustPopover({ direction, onConfirm, wide = false }: AdjustPopoverProp
     <div className={`relative${wide ? " flex-1" : ""}`} ref={ref}>
       <button
         onClick={() => { setOpen((v) => !v); setValue(""); setError(""); }}
-        className={wide ? "goal-adjust-wide w-full" : (isAdd ? "goal-adjust-btn-add" : "goal-adjust-btn-withdraw")}
+        className={
+          wide
+            ? `goal-adjust-wide w-full ${open ? "goal-adjust-wide-open" : ""}`
+            : (isAdd ? "goal-adjust-btn-add" : "goal-adjust-btn-withdraw")
+        }
       >
         {isAdd ? <Plus className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
       </button>
 
       {open && (
         <div
-          className={`absolute bottom-12 z-30 flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-lg ${
-            isAdd ? "right-0" : "left-0"
+          className={`goal-adjust-popover absolute bottom-12 z-30 flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-lg ${
+            isAdd ? "right-0 goal-adjust-popover-right" : "left-0 goal-adjust-popover-left"
           }`}
           style={{ width: 148 }}
         >
@@ -235,6 +232,12 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
   const [targetAmount, setTargetAmount] = useState(
     initial ? String(initial.targetAmount) : ""
   );
+  const [iconName, setIconName] = useState<string>(
+    resolveEntityIconName(initial?.iconName, initial?.name ?? "goal"),
+  );
+  const [iconBgColor, setIconBgColor] = useState<string>(
+    normalizeIconBgColor(initial?.iconBgColor, DEFAULT_ICON_BG_COLOR),
+  );
   const [loading, setLoading] = useState(false);
   const [nameError, setNameError] = useState("");
   const [amountError, setAmountError] = useState("");
@@ -244,11 +247,15 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
     if (open) {
       setName(initial?.name ?? "");
       setTargetAmount(initial ? String(initial.targetAmount) : "");
+      setIconName(resolveEntityIconName(initial?.iconName, initial?.name ?? "goal"));
+      setIconBgColor(normalizeIconBgColor(initial?.iconBgColor, DEFAULT_ICON_BG_COLOR));
       setNameError("");
       setAmountError("");
       setFormError("");
     }
   }, [open, initial]);
+
+  const defaultIconName = useMemo(() => suggestIconFromText(name || initial?.name || "goal"), [name, initial?.name]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -261,9 +268,19 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
     setLoading(true);
     try {
       if (isEdit && initial) {
-        await goalService.update(initial.id, { name: name.trim(), targetAmount: amount });
+        await goalService.update(initial.id, {
+          name: name.trim(),
+          targetAmount: amount,
+          iconName,
+          iconBgColor,
+        });
       } else {
-        await goalService.create({ name: name.trim(), targetAmount: amount });
+        await goalService.create({
+          name: name.trim(),
+          targetAmount: amount,
+          iconName,
+          iconBgColor,
+        });
       }
       onSaved();
     } catch {
@@ -303,6 +320,17 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
             <FieldError message={nameError} />
           </div>
 
+          <IconPicker
+            iconName={iconName}
+            iconBgColor={iconBgColor}
+            defaultIconName={defaultIconName}
+            defaultIconBgColor={DEFAULT_ICON_BG_COLOR}
+            onChange={(value) => {
+              setIconName(value.iconName);
+              setIconBgColor(value.iconBgColor);
+            }}
+          />
+
           <div className="space-y-1">
             <label className="text-xs font-semibold text-slate-500">{t("goals.targetAmount")}</label>
             <div className="relative">
@@ -331,14 +359,15 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
             >
               {t("common.cancel")}
             </button>
-            <button
+            <GradientButton
               type="submit"
               disabled={loading}
-              className="squishy-save-simple flex-1 justify-center"
+              iconVariant={loading ? "none" : "other"}
+              icon={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              className="flex-1 justify-center"
             >
-              {loading ? <Loader2 className="squishy-save-icon h-4 w-4 animate-spin" /> : <Save className="squishy-save-icon h-4 w-4" />}
               {t("common.save")}
-            </button>
+            </GradientButton>
           </div>
         </form>
       </div>
@@ -360,7 +389,8 @@ function GoalCard({ goal, onEdit, onDelete, onUpdated }: GoalCardProps) {
   const progress = pct(goal.currentAmount, goal.targetAmount);
   const completed = isCompleted(goal);
   const color = progressColor(progress);
-  const Icon: GoalIconComponent = getGoalIcon(goal.id);
+  const iconName = resolveEntityIconName(goal.iconName, goal.name);
+  const iconBgColor = normalizeIconBgColor(goal.iconBgColor, DEFAULT_ICON_BG_COLOR);
 
   const ringLabel = completed ? t("goals.completed").toUpperCase() : "SAVED";
 
@@ -386,17 +416,13 @@ function GoalCard({ goal, onEdit, onDelete, onUpdated }: GoalCardProps) {
         {/* Header: icon + name + buttons */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            {/* Random icon colored by progress */}
-            <div
-              className="flex h-10 w-10 items-center justify-center rounded-xl"
-              style={{
-                backgroundColor: `${color}22`,
-                color,
-                transition: "background-color 1.2s ease, color 1.2s ease",
-              }}
-            >
-              <Icon className="h-5 w-5" />
-            </div>
+            <IconAvatar
+              iconName={iconName}
+              iconBgColor={iconBgColor}
+              fallbackText={goal.name}
+              className="h-10 w-10 rounded-xl"
+              iconClassName="h-5 w-5"
+            />
             <div>
               <p className="font-bold text-slate-800">{goal.name}</p>
               {completed && (
@@ -471,9 +497,9 @@ function EmptyGoalCard({ onAdd }: { onAdd: () => void }) {
   return (
     <button
       onClick={onAdd}
-      className="flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-slate-200 bg-white py-12 text-slate-400 transition hover:border-sky-300 hover:bg-sky-50/50 hover:text-sky-500"
+      className="app-add-dashed flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-slate-200 bg-white py-12 text-slate-400 transition hover:border-sky-300 hover:bg-sky-50/50 hover:text-sky-500"
     >
-      <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-current">
+      <div className="app-add-dashed-ring flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-current">
         <Plus className="h-7 w-7" />
       </div>
       <div className="text-center">
@@ -577,53 +603,56 @@ export default function GoalsPage() {
       </svg>
 
       <div className="space-y-6">
-        {/* ── Cabecera ── */}
-        <div className="rounded-xl bg-white px-5 py-4">
-          <PageHeader
-            left={<Target className="h-8 w-8 text-sky-500" />}
-            title={t("goals.title")}
-            subtitle={(
-              <div className="flex flex-wrap items-center gap-x-2">
-                <p className="text-sm text-slate-400">{t("goals.subtitle")}</p>
-                {goals.length > 0 && (
-                  <>
-                    <span className="text-slate-300" aria-hidden>·</span>
-                    <span className="inline-flex items-center gap-2 rounded-2xl bg-slate-800 px-3 py-1 text-sm font-semibold text-white shadow-sm">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{t("goals.totalSaved")}</span>
-                      <span className="tabular-nums">{fmtAmt(totalSaved)}</span>
-                    </span>
-                    <span className="text-slate-300" aria-hidden>·</span>
-                    <span className="text-xs text-slate-400">{goals.length}/{MAX_GOALS} {t("goals.goalsCount")}</span>
-                  </>
-                )}
-              </div>
-            )}
-            actions={(
-              <div className="flex items-center gap-3 page-header-actions">
-              {/* Pills con efecto gooey */}
-              <div style={{ filter: "url('#goal-goo')", display: "flex", gap: "0.5rem" }}>
-                <div className="goal-pill goal-pill-active">
-                  <span>{t("goals.tabActive")}</span>
-                  <span className="goal-pill-badge">{activeGoals.length}</span>
+        {/* ── Cabecera hero ── */}
+        <div className="goals-hero-section">
+          <div className="goals-hero-inner">
+            <div className="goals-hero-header">
+              <div className="goals-hero-title-wrap">
+                <div className="goals-hero-title">
+                  <Target className="h-8 w-8 text-sky-500" />
+                  <h1>{t("goals.title")}</h1>
                 </div>
-                <div className="goal-pill goal-pill-completed">
-                  <span>{t("goals.tabCompleted")}</span>
-                  <span className="goal-pill-badge">{completedGoals.length}</span>
+                <div className="goals-hero-subtitle">
+                  <span>{t("goals.subtitle")}</span>
+                  {goals.length > 0 && (
+                    <>
+                      <span className="mx-2 text-slate-300" aria-hidden>·</span>
+                      <span className="goals-total-pill">
+                        <span className="goals-total-pill-label">{t("goals.totalSaved")}</span>
+                        <span className="tabular-nums">{fmtAmt(totalSaved)}</span>
+                      </span>
+                      <span className="mx-2 text-slate-300" aria-hidden>·</span>
+                      <span className="text-xs text-slate-400">{goals.length}/{MAX_GOALS} {t("goals.goalsCount")}</span>
+                    </>
+                  )}
                 </div>
               </div>
+              <div className="goals-hero-actions">
+                {/* Pills con efecto gooey */}
+                <div style={{ filter: "url('#goal-goo')", display: "flex", gap: "0.5rem" }}>
+                  <div className="goal-pill goal-pill-active">
+                    <span>{t("goals.tabActive")}</span>
+                    <span className="goal-pill-badge">{activeGoals.length}</span>
+                  </div>
+                  <div className="goal-pill goal-pill-completed">
+                    <span>{t("goals.tabCompleted")}</span>
+                    <span className="goal-pill-badge">{completedGoals.length}</span>
+                  </div>
+                </div>
 
-              {/* Botón nueva meta */}
-              <button
-                onClick={() => { setEditTarget(null); setFormOpen(true); }}
-                disabled={!canAdd}
-                className="goal-new-btn"
-              >
-                <Plus className="goal-new-icon h-4 w-4" />
-                {t("goals.create")}
-              </button>
+                {/* Botón nueva meta */}
+                <GradientButton
+                  onClick={() => { setEditTarget(null); setFormOpen(true); }}
+                  disabled={!canAdd}
+                  size="sm"
+                  iconVariant="plus"
+                  icon={<Plus className="h-4 w-4" />}
+                >
+                  {t("goals.create")}
+                </GradientButton>
+              </div>
             </div>
-            )}
-          />
+          </div>
         </div>
 
         {/* ── Grid de metas ── */}
@@ -644,7 +673,7 @@ export default function GoalsPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => setDeleteConfirm(null)}
-                        className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
+                        className="btn-cancel-draw px-4 py-1.5 text-sm"
                       >
                         {t("common.cancel")}
                       </button>

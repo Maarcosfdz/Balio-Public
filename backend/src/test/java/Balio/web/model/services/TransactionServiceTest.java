@@ -762,6 +762,56 @@ class TransactionServiceTest {
         }
     }
 
+            /* ═══════════════════════════════════════════════════════════
+             *  applyBatchRule
+             * ═══════════════════════════════════════════════════════════ */
+
+            @Nested
+            @DisplayName("applyBatchRule")
+            class ApplyBatchRuleTests {
+
+            @Test
+            @DisplayName("should apply target category only to transactions with matching type")
+            void shouldApplyCategoryOnlyToMatchingType() {
+                Transaction expenseTx = new Transaction("Cafe", new BigDecimal("10.00"), VALID_DATE,
+                    TransactionType.EXPENSE, user);
+                setFieldViaReflection(expenseTx, "id", UUID.randomUUID());
+
+                Transaction incomeTx = new Transaction("Salary", new BigDecimal("1000.00"), VALID_DATE,
+                    TransactionType.INCOME, user);
+                setFieldViaReflection(incomeTx, "id", UUID.randomUUID());
+
+                when(categoryDao.findByIdAndUserId(CATEGORY_ID, USER_ID)).thenReturn(Optional.of(category));
+                when(transactionDao.findForBatchRule(USER_ID, null, null, null, null, null))
+                    .thenReturn(List.of(expenseTx, incomeTx));
+
+                int updated = transactionService.applyBatchRule(
+                    USER_ID, null, null, null, null, null, null, CATEGORY_ID);
+
+                assertEquals(1, updated);
+                assertEquals(category, expenseTx.getCategory());
+                assertNull(incomeTx.getCategory());
+            }
+
+            @Test
+            @DisplayName("should skip category assignment when filter type mismatches target category type")
+            void shouldSkipWhenFilterTypeMismatchesTargetCategory() {
+                Transaction incomeTx = new Transaction("Salary", new BigDecimal("1200.00"), VALID_DATE,
+                    TransactionType.INCOME, user);
+                setFieldViaReflection(incomeTx, "id", UUID.randomUUID());
+
+                when(categoryDao.findByIdAndUserId(CATEGORY_ID, USER_ID)).thenReturn(Optional.of(category));
+                when(transactionDao.findForBatchRule(USER_ID, TransactionType.INCOME, null, null, null, null))
+                    .thenReturn(List.of(incomeTx));
+
+                int updated = transactionService.applyBatchRule(
+                    USER_ID, TransactionType.INCOME, null, null, null, null, null, CATEGORY_ID);
+
+                assertEquals(0, updated);
+                assertNull(incomeTx.getCategory());
+            }
+            }
+
     /* ═══════════════════════════════════════════════════════════
      *  Balance adjustment (applyBalance via integration through public methods)
      * ═══════════════════════════════════════════════════════════ */

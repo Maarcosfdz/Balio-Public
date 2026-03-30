@@ -15,7 +15,7 @@ import { bankService } from "@/backend/bankService";
 import { ROUTES } from "@/config/routes";
 import { ToastBanner } from "@/components/ui/toast-banner";
 import {
-  clearSessionData,
+  clearAllUserState,
   endSession,
   getAccessToken,
   getLastActivityAt,
@@ -41,6 +41,7 @@ interface User {
   id: string;
   nickname: string;
   email: string;
+  preferredCurrency: string;
 }
 
 interface AuthState {
@@ -58,12 +59,12 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function toUser(data: Pick<AuthenticatedUserDto, "id" | "nickname" | "email">): User {
-  return { id: data.id, nickname: data.nickname, email: data.email };
+function toUser(data: Pick<AuthenticatedUserDto, "id" | "nickname" | "email" | "preferredCurrency">): User {
+  return { id: data.id, nickname: data.nickname, email: data.email, preferredCurrency: data.preferredCurrency ?? "EUR" };
 }
 
 function fromSessionUser(user: SessionUser | null): User | null {
-  return user ? { id: user.id, nickname: user.nickname, email: user.email } : null;
+  return user ? { id: user.id, nickname: user.nickname, email: user.email, preferredCurrency: user.preferredCurrency ?? "EUR" } : null;
 }
 
 function SessionToast({
@@ -114,7 +115,7 @@ function SessionToast({
       action={{
         label: t("auth.sessionWarningAction"),
         onClick: onStayActive,
-        className: "btn-login-hover !mt-3 !rounded-lg !px-4 !py-2 !text-sm !font-semibold",
+        className: "app-gradient-btn app-gradient-btn--sm !mt-3 !rounded-lg !px-4 !py-2 !text-sm !font-semibold",
       }}
       onClose={onClose}
     />
@@ -221,6 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (params: LoginParamsDto) => {
     const data = await authService.login(params);
     persistSession(data);
+    touchSessionActivity(); // fresh login = genuine user activity, start inactivity timer now
     setSessionNoticeReason(null);
     setWarningDismissed(false);
     setWarningVisible(false);
@@ -231,6 +233,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = useCallback(async (params: UserDto) => {
     const data = await authService.signUp(params);
     persistSession(data);
+    touchSessionActivity(); // fresh sign-up = genuine user activity, start inactivity timer now
     setSessionNoticeReason(null);
     setWarningDismissed(false);
     setWarningVisible(false);
@@ -243,7 +246,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // Ignore logout errors (token expired, etc.)
     } finally {
-      clearSessionData();
+      clearAllUserState(); // wipes auth tokens + all user-specific UI state
       setSessionNoticeReason(null);
       setWarningDismissed(false);
       setWarningVisible(false);
@@ -455,7 +458,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
   if (!ctx) {

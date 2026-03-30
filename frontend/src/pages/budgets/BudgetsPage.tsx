@@ -3,25 +3,58 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
   Loader2,
+  Palette,
   Pencil,
   PiggyBank,
   Plus,
   Save,
+  Star,
   Trash2,
+  TrendingUp,
   X,
 } from "lucide-react";
-import PageHeader from "@/components/layout/PageHeader";
 import { FieldError } from "@/components/ui/field-error";
 import type { BudgetSummaryDto, BudgetPeriodicity } from "@/types";
 import { budgetService } from "@/backend/budgetService";
+import { IconAvatar } from "@/components/icons/IconAvatar";
+import { IconPicker } from "@/components/icons/IconPicker";
+import DateRangePicker from "@/components/ui/DateRangePicker";
+import { GradientButton } from "@/components/ui/gradient-button";
+import SingleSelectDropdown from "@/components/ui/SelectDropdown";
+import {
+  DEFAULT_ICON_BG_COLOR,
+  normalizeIconBgColor,
+  resolveEntityIconName,
+  suggestIconFromText,
+} from "@/components/icons/iconRegistry";
 
 const MAX_BUDGETS = 10;
+const PRIMARY_BUDGET_STORAGE_KEY = "budgets.primaryId.v1";
+const CARD_COLORS_STORAGE_KEY = "budgets.cardColors.v1";
+
+// ── Card accent colors ───────────────────────────────────────────────
+interface CardColor {
+  id: string;
+  bar: string;
+  tint: string;
+  label: string;
+}
+
+const CARD_COLORS: CardColor[] = [
+  { id: "default", bar: "#64748b", tint: "", label: "Default" },
+  { id: "sky",     bar: "#0ea5e9", tint: "budget-card-tint-sky",     label: "Sky" },
+  { id: "violet",  bar: "#8b5cf6", tint: "budget-card-tint-violet",  label: "Violet" },
+  { id: "emerald", bar: "#10b981", tint: "budget-card-tint-emerald", label: "Emerald" },
+  { id: "amber",   bar: "#f59e0b", tint: "budget-card-tint-amber",   label: "Amber" },
+  { id: "rose",    bar: "#f43f5e", tint: "budget-card-tint-rose",    label: "Rose" },
+];
 
 const PERIODICITIES: BudgetPeriodicity[] = [
   "WEEKLY", "MONTHLY", "QUARTERLY", "FOUR_MONTHLY", "BIANNUAL", "ANNUAL",
@@ -37,12 +70,12 @@ function fmtAmt(n: number) {
 }
 
 // ── Usage color helper ──────────────────────────────────────────────
-function usageColor(pct: number): { text: string; bar: string; bg: string; label: string } {
-  if (pct <= 20) return { text: "text-blue-500", bar: "budget-bar-blue", bg: "budget-bg-blue", label: "blue" };
-  if (pct <= 45) return { text: "text-emerald-500", bar: "budget-bar-green", bg: "budget-bg-green", label: "green" };
-  if (pct <= 65) return { text: "text-yellow-500", bar: "budget-bar-yellow", bg: "budget-bg-yellow", label: "yellow" };
-  if (pct <= 85) return { text: "text-orange-500", bar: "budget-bar-orange", bg: "budget-bg-orange", label: "orange" };
-  return { text: "text-red-500", bar: "budget-bar-red", bg: "budget-bg-red", label: "red" };
+function usageColor(pct: number): { text: string; bar: string; label: string } {
+  if (pct <= 20) return { text: "text-blue-500",    bar: "budget-bar-blue",   label: "blue" };
+  if (pct <= 45) return { text: "text-emerald-500", bar: "budget-bar-green",  label: "green" };
+  if (pct <= 65) return { text: "text-yellow-500",  bar: "budget-bar-yellow", label: "yellow" };
+  if (pct <= 85) return { text: "text-orange-500",  bar: "budget-bar-orange", label: "orange" };
+  return           { text: "text-red-500",       bar: "budget-bar-red",    label: "red" };
 }
 
 function formatDate(d: string) {
@@ -69,6 +102,12 @@ function BudgetFormDialog({ open, initial, onClose, onSaved }: BudgetFormDialogP
     initial?.periodicity ?? "MONTHLY"
   );
   const [startDate, setStartDate] = useState(initial?.startDate ?? "");
+  const [iconName, setIconName] = useState<string>(
+    resolveEntityIconName(initial?.iconName, initial?.name ?? "budget"),
+  );
+  const [iconBgColor, setIconBgColor] = useState<string>(
+    normalizeIconBgColor(initial?.iconBgColor, DEFAULT_ICON_BG_COLOR),
+  );
   const [loading, setLoading] = useState(false);
   const [nameError, setNameError] = useState("");
   const [formError, setFormError] = useState("");
@@ -83,10 +122,27 @@ function BudgetFormDialog({ open, initial, onClose, onSaved }: BudgetFormDialogP
       setName(initial?.name ?? "");
       setPeriodicity(initial?.periodicity ?? "MONTHLY");
       setStartDate(initial?.startDate ?? defaultStartDate);
+      setIconName(resolveEntityIconName(initial?.iconName, initial?.name ?? "budget"));
+      setIconBgColor(normalizeIconBgColor(initial?.iconBgColor, DEFAULT_ICON_BG_COLOR));
       setNameError("");
       setFormError("");
     }
-  }, [open, initial]);
+  }, [open, initial, defaultStartDate]);
+
+  const defaultIconName = useMemo(() => {
+    return suggestIconFromText(name || initial?.name || "budget");
+  }, [name, initial?.name]);
+
+  const periodicityOptions = useMemo(
+    () => PERIODICITIES.map((p) => ({
+      value: p,
+      label: t(`budgets.periodicities.${p}`),
+    })),
+    [t],
+  );
+
+  const ignoreEndDate = useCallback(() => {}, []);
+  const ignoreSpecificDates = useCallback(() => {}, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -103,12 +159,16 @@ function BudgetFormDialog({ open, initial, onClose, onSaved }: BudgetFormDialogP
           name: name.trim(),
           periodicity,
           startDate,
+          iconName,
+          iconBgColor,
         });
       } else {
         await budgetService.create({
           name: name.trim(),
           periodicity,
           startDate,
+          iconName,
+          iconBgColor,
         });
       }
       onSaved();
@@ -149,31 +209,36 @@ function BudgetFormDialog({ open, initial, onClose, onSaved }: BudgetFormDialogP
             <FieldError message={nameError} />
           </div>
 
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-500">{t("budgets.periodicity")}</label>
-            <select
-              value={periodicity}
-              onChange={(e) => setPeriodicity(e.target.value as BudgetPeriodicity)}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-            >
-              {PERIODICITIES.map((p) => (
-                <option key={p} value={p}>
-                  {t(`budgets.periodicities.${p}`)}
-                </option>
-              ))}
-            </select>
-          </div>
+          <IconPicker
+            iconName={iconName}
+            iconBgColor={iconBgColor}
+            defaultIconName={defaultIconName}
+            defaultIconBgColor={DEFAULT_ICON_BG_COLOR}
+            onChange={(value) => {
+              setIconName(value.iconName);
+              setIconBgColor(value.iconBgColor);
+            }}
+          />
 
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-500">{t("budgets.startDate")}</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-              required
-            />
-          </div>
+          <SingleSelectDropdown
+            value={periodicity}
+            onChange={(v) => setPeriodicity(v as BudgetPeriodicity)}
+            options={periodicityOptions}
+            label={t("budgets.periodicity")}
+            buttonClassName="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+          />
+
+          <DateRangePicker
+            startDate={startDate}
+            endDate={startDate}
+            onChangeStart={setStartDate}
+            onChangeEnd={ignoreEndDate}
+            specificDates={[]}
+            onChangeSpecificDates={ignoreSpecificDates}
+            label={t("budgets.startDate")}
+            allowLooseDates={false}
+            singleOnly
+          />
 
           {formError && <FieldError message={formError} />}
 
@@ -185,14 +250,16 @@ function BudgetFormDialog({ open, initial, onClose, onSaved }: BudgetFormDialogP
             >
               {t("common.cancel")}
             </button>
-            <button
+            <GradientButton
               type="submit"
               disabled={loading}
-              className="squishy-save-simple flex-1 justify-center"
+              weight="normal"
+              iconVariant={loading ? "none" : "other"}
+              icon={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              className="flex-1 justify-center"
             >
-              {loading ? <Loader2 className="squishy-save-icon h-4 w-4 animate-spin" /> : <Save className="squishy-save-icon h-4 w-4" />}
               {t("common.save")}
-            </button>
+            </GradientButton>
           </div>
         </form>
       </div>
@@ -200,132 +267,389 @@ function BudgetFormDialog({ open, initial, onClose, onSaved }: BudgetFormDialogP
   );
 }
 
-// ── Budget card ─────────────────────────────────────────────────────
+// ── Delete overlay ───────────────────────────────────────────────────
 
-interface BudgetCardProps {
+function DeleteBudgetOverlay({
+  message, cancelLabel, deleteLabel, onCancel, onDelete,
+}: {
+  message: string; cancelLabel: string; deleteLabel: string;
+  onCancel: () => void; onDelete: () => void;
+}) {
+  return (
+    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white/95 p-4 backdrop-blur-sm">
+      <p className="text-center text-sm font-semibold text-slate-700">{message}</p>
+      <div className="flex gap-2">
+        <button onClick={onCancel} className="btn-cancel-draw px-4 py-1.5 text-sm">
+          {cancelLabel}
+        </button>
+        <button onClick={onDelete} className="budget-delete-confirm-btn">
+          {deleteLabel}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Color palette picker ─────────────────────────────────────────────
+
+function ColorPalettePicker({
+  currentColorId,
+  onSelect,
+}: {
+  currentColorId: string;
+  onSelect: (colorId: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative" onClick={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white/80 text-slate-400 backdrop-blur-sm transition hover:border-slate-300 hover:text-slate-600"
+        aria-label="Change card color"
+      >
+        <Palette className="h-3.5 w-3.5" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-9 z-30 flex gap-1.5 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+          {CARD_COLORS.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => { onSelect(c.id); setOpen(false); }}
+              className={`h-5 w-5 rounded-full transition hover:scale-110 ${currentColorId === c.id ? "ring-2 ring-offset-1 ring-slate-400" : ""}`}
+              style={{ background: c.bar }}
+              title={c.label}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Primary (hero) budget card ───────────────────────────────────────
+
+interface PrimaryCardProps {
   budget: BudgetSummaryDto;
+  colorId: string;
+  isColorSwapping: boolean;
   onEdit: (b: BudgetSummaryDto) => void;
   onDelete: (b: BudgetSummaryDto) => void;
   onClick: (b: BudgetSummaryDto) => void;
+  onColorChange: (budgetId: string, colorId: string) => void;
+  showDeleteOverlay: boolean;
+  onCancelDelete: () => void;
+  onConfirmDelete: () => void;
 }
 
-function BudgetCard({ budget, onEdit, onDelete, onClick }: BudgetCardProps) {
+function PrimaryBudgetCard({
+  budget, colorId, isColorSwapping, onEdit, onDelete, onClick, onColorChange,
+  showDeleteOverlay, onCancelDelete, onConfirmDelete,
+}: PrimaryCardProps) {
   const { t } = useTranslation();
   const colors = usageColor(budget.usagePercent);
-  const pct = Math.min(100, Math.max(0, budget.usagePercent));
+  const rawPct = Math.max(0, budget.usagePercent);
+  const progressPct = Math.min(100, rawPct);
+  const iconName = resolveEntityIconName(budget.iconName, budget.name);
+  const iconBgColor = normalizeIconBgColor(budget.iconBgColor, DEFAULT_ICON_BG_COLOR);
+  const accent = CARD_COLORS.find((c) => c.id === colorId) ?? CARD_COLORS[0];
 
   return (
     <div
-      className="relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md cursor-pointer"
+      className={`budget-card relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md cursor-pointer ${accent.tint} ${isColorSwapping ? "budget-card-color-swap" : ""}`}
+      style={{ minHeight: "22rem" }}
       onClick={() => onClick(budget)}
     >
-      {/* Color stripe */}
-      <div className={`h-1.5 w-full ${colors.bar}`} />
+      {/* Top accent bar */}
+      <div className="budget-card-accent absolute left-0 right-0 top-0 h-1.5 rounded-t-2xl" style={{ background: accent.id === "default" ? undefined : accent.bar }} />
+      {accent.id === "default" && <div className={`budget-card-accent absolute left-0 right-0 top-0 h-1.5 rounded-t-2xl ${colors.bar}`} />}
 
-      <div className="flex flex-1 flex-col px-5 pb-5 pt-4">
-        {/* Header */}
-        <div className="flex items-start justify-between">
+      {showDeleteOverlay && (
+        <DeleteBudgetOverlay
+          message={t("budgets.deleteConfirm")}
+          cancelLabel={t("common.cancel")}
+          deleteLabel={t("common.delete")}
+          onCancel={onCancelDelete}
+          onDelete={onConfirmDelete}
+        />
+      )}
+
+      <div className="flex flex-1 flex-col p-6 pt-8">
+        {/* Header row */}
+        <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${colors.bg}`}>
-              <PiggyBank className={`h-5 w-5 ${colors.text}`} />
-            </div>
-            <div>
-              <p className="font-bold text-slate-800">{budget.name}</p>
-              <p className="text-[11px] text-slate-400">
+            <IconAvatar
+              iconName={iconName}
+              iconBgColor={iconBgColor}
+              fallbackText={budget.name}
+              className="h-14 w-14 rounded-2xl shadow-sm"
+              iconClassName="h-7 w-7"
+            />
+            <div className="min-w-0">
+              <p className="truncate text-2xl font-extrabold text-slate-900">{budget.name}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
                 {t(`budgets.periodicities.${budget.periodicity}`)}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+          {/* Action buttons */}
+          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+            <ColorPalettePicker currentColorId={colorId} onSelect={(c) => onColorChange(budget.id, c)} />
             <button
               onClick={() => onEdit(budget)}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-sky-50 hover:text-sky-600"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white/80 text-slate-400 backdrop-blur-sm transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-600"
+              aria-label={t("common.edit")}
             >
-              <Pencil className="btn-edit-icon h-4 w-4" />
+              <Pencil className="btn-edit-icon h-3.5 w-3.5" />
             </button>
             <button
               onClick={() => onDelete(budget)}
-              className="tx-squishy-tech tx-squishy-expense p-1.5 ml-1"
+              className="btn-delete-icon"
+              aria-label={t("common.delete")}
             >
-              <Trash2 className="tx-squishy-icon relative z-10 h-4 w-4" />
+              <Trash2 className="btn-delete-icon__icon h-3.5 w-3.5" />
             </button>
           </div>
         </div>
 
-        {/* Progress bar */}
-        <div className="mt-4 mb-1">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className={`text-xs font-bold ${colors.text}`}>
-              {pct.toFixed(1)}% {t("budgets.usagePercent")}
+        {/* Big amount */}
+        <div className="mt-5">
+          <p className="text-5xl font-extrabold tabular-nums text-slate-900 leading-none">
+            {fmtAmt(budget.totalSpent)}
+          </p>
+          <p className="mt-1 text-sm text-slate-400">
+            {t("budgets.detail.of")} {fmtAmt(budget.totalBudget)}
+          </p>
+        </div>
+
+        {/* Progress */}
+        <div className="mt-5">
+          <div className="mb-2 flex items-center justify-between">
+            <span className={`text-sm font-bold ${colors.text}`}>
+              {rawPct.toFixed(1)}% {t("budgets.usagePercent")}
             </span>
-            <span className="text-[10px] text-slate-400">
-              {budget.categoryCount} {t("budgets.categoryCount")}
+            <span className="text-xs text-slate-400">
+              {budget.categoryCount} {t("budgets.categoryCount")} · {formatDate(budget.periodEnd)}
             </span>
           </div>
-          <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+          <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100">
             <div
-              className={`h-full rounded-full transition-all duration-700 ${colors.bar}`}
-              style={{ width: `${Math.min(100, pct)}%` }}
+              className={`h-full rounded-full transition-all duration-700 ${accent.id === "default" ? colors.bar : ""}`}
+              style={{
+                width: `${progressPct}%`,
+                background: accent.id !== "default" ? accent.bar : undefined,
+              }}
             />
           </div>
         </div>
 
-        {/* Amounts */}
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          <div>
+        {/* Stats row */}
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="rounded-xl bg-slate-50 px-3 py-2.5">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
               {t("budgets.totalSpent")}
             </p>
-            <p className="text-lg font-extrabold tabular-nums text-slate-800">
+            <p className="text-base font-extrabold tabular-nums text-slate-800">
               {fmtAmt(budget.totalSpent)}
             </p>
           </div>
-          <div className="text-right">
+          <div className="rounded-xl bg-slate-50 px-3 py-2.5 text-right">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
               {t("budgets.totalRemaining")}
             </p>
-            <p className={`text-lg font-extrabold tabular-nums ${budget.totalRemaining >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+            <p className={`text-base font-extrabold tabular-nums ${budget.totalRemaining >= 0 ? "text-emerald-600" : "text-red-500"}`}>
               {fmtAmt(budget.totalRemaining)}
             </p>
           </div>
         </div>
 
-        {/* Period info */}
-        <div className="mt-3 flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
-          <span className="text-[10px] text-slate-400">
-            {formatDate(budget.periodStart)} — {formatDate(budget.periodEnd)}
-          </span>
-          <span className="text-[10px] font-semibold text-slate-500">
-            {t("budgets.prevSpent")}: {fmtAmt(budget.prevTotalSpent)}
-          </span>
+        {/* View Deep Analysis button */}
+        <div className="mt-auto pt-4" onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            className="budget-deep-analysis-btn"
+            onClick={() => onClick(budget)}
+          >
+            <TrendingUp className="budget-deep-analysis-icon h-4 w-4" />
+            <span className="budget-deep-analysis-text">{t("budgets.viewDetails")}</span>
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-// ── Empty budget card ───────────────────────────────────────────────
+// ── Secondary (compact) budget card ─────────────────────────────────
+
+interface SecondaryCardProps {
+  budget: BudgetSummaryDto;
+  colorId: string;
+  isColorSwapping: boolean;
+  isPrimary: boolean;
+  onEdit: (b: BudgetSummaryDto) => void;
+  onDelete: (b: BudgetSummaryDto) => void;
+  onClick: (b: BudgetSummaryDto) => void;
+  onSetPrimary: (budgetId: string) => void;
+  onColorChange: (budgetId: string, colorId: string) => void;
+  showDeleteOverlay: boolean;
+  onCancelDelete: () => void;
+  onConfirmDelete: () => void;
+}
+
+function SecondaryBudgetCard({
+  budget, colorId, isColorSwapping, onEdit, onDelete, onClick, onSetPrimary, onColorChange,
+  showDeleteOverlay, onCancelDelete, onConfirmDelete,
+}: SecondaryCardProps) {
+  const { t } = useTranslation();
+  const colors = usageColor(budget.usagePercent);
+  const rawPct = Math.max(0, budget.usagePercent);
+  const progressPct = Math.min(100, rawPct);
+  const iconName = resolveEntityIconName(budget.iconName, budget.name);
+  const iconBgColor = normalizeIconBgColor(budget.iconBgColor, DEFAULT_ICON_BG_COLOR);
+  const accent = CARD_COLORS.find((c) => c.id === colorId) ?? CARD_COLORS[0];
+
+  return (
+    <div
+      className={`budget-card relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md cursor-pointer ${accent.tint} ${isColorSwapping ? "budget-card-color-swap" : ""}`}
+      style={{ minHeight: "13rem" }}
+      onClick={() => onClick(budget)}
+    >
+      {/* Top accent bar */}
+      {accent.id === "default"
+        ? <div className={`budget-card-accent absolute left-0 right-0 top-0 h-1 rounded-t-2xl ${colors.bar}`} />
+        : <div className="budget-card-accent absolute left-0 right-0 top-0 h-1 rounded-t-2xl" style={{ background: accent.bar }} />
+      }
+
+      {showDeleteOverlay && (
+        <DeleteBudgetOverlay
+          message={t("budgets.deleteConfirm")}
+          cancelLabel={t("common.cancel")}
+          deleteLabel={t("common.delete")}
+          onCancel={onCancelDelete}
+          onDelete={onConfirmDelete}
+        />
+      )}
+
+      <div className="flex flex-1 flex-col p-4 pt-5">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <IconAvatar
+              iconName={iconName}
+              iconBgColor={iconBgColor}
+              fallbackText={budget.name}
+              className="h-9 w-9 rounded-xl"
+              iconClassName="h-4 w-4"
+            />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-slate-800">{budget.name}</p>
+              <p className="text-[10px] text-slate-400">
+                {t(`budgets.periodicities.${budget.periodicity}`)}
+              </p>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => onSetPrimary(budget.id)}
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-300 transition hover:bg-amber-50 hover:text-amber-400"
+              title="Set as primary"
+            >
+              <Star className="h-3.5 w-3.5" />
+            </button>
+            <ColorPalettePicker currentColorId={colorId} onSelect={(c) => onColorChange(budget.id, c)} />
+            <button
+              onClick={() => onEdit(budget)}
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-sky-50 hover:text-sky-600"
+              aria-label={t("common.edit")}
+            >
+              <Pencil className="btn-edit-icon h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => onDelete(budget)}
+              className="btn-delete-icon"
+              aria-label={t("common.delete")}
+            >
+              <Trash2 className="btn-delete-icon__icon h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Amount */}
+        <p className="mt-3 text-2xl font-extrabold tabular-nums text-slate-900">
+          {fmtAmt(budget.totalSpent)}
+        </p>
+        <p className="text-xs text-slate-400">
+          {t("budgets.totalBudget")}: {fmtAmt(budget.totalBudget)}
+        </p>
+
+        {/* Progress */}
+        <div className="mt-3 flex items-center justify-between text-xs">
+          <span className={`font-semibold ${colors.text}`}>{rawPct.toFixed(0)}%</span>
+          <span className="text-slate-400">{formatDate(budget.periodEnd)}</span>
+        </div>
+        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+          <div
+            className={`h-full rounded-full transition-all duration-700 ${accent.id === "default" ? colors.bar : ""}`}
+            style={{
+              width: `${progressPct}%`,
+              background: accent.id !== "default" ? accent.bar : undefined,
+            }}
+          />
+        </div>
+
+        {/* Deep analysis tab */}
+        <div className="mt-auto pt-3" onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            className="budget-deep-analysis-btn budget-deep-analysis-btn-sm"
+            onClick={() => onClick(budget)}
+          >
+            <TrendingUp className="budget-deep-analysis-icon h-3.5 w-3.5" />
+            <span className="budget-deep-analysis-text">{t("budgets.viewDetails")}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Empty card ──────────────────────────────────────────────────────
 
 function EmptyBudgetCard({ onAdd }: { onAdd: () => void }) {
   const { t } = useTranslation();
   return (
     <button
       onClick={onAdd}
-      className="flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-slate-200 bg-white py-12 text-slate-400 transition hover:border-sky-300 hover:bg-sky-50/50 hover:text-sky-500"
+      className="app-add-dashed flex min-h-[13rem] flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-200 bg-white text-slate-400 transition hover:border-sky-300 hover:bg-sky-50/50 hover:text-sky-500"
     >
-      <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-current">
-        <Plus className="h-7 w-7" />
+      <div className="app-add-dashed-ring flex h-12 w-12 items-center justify-center rounded-full border-2 border-dashed border-current">
+        <Plus className="h-6 w-6" />
       </div>
       <div className="text-center">
-        <p className="font-semibold">{t("budgets.createNew")}</p>
+        <p className="text-sm font-semibold">{t("budgets.createNew")}</p>
         <p className="mt-0.5 text-xs">{t("budgets.createNewDesc")}</p>
       </div>
     </button>
   );
 }
 
-// ── Main page ───────────────────────────────────────────────────────
+// ── Main page ────────────────────────────────────────────────────────
 
 export default function BudgetsPage() {
   const { t } = useTranslation();
@@ -336,6 +660,14 @@ export default function BudgetsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<BudgetSummaryDto | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  // Primary budget id
+  const [primaryId, setPrimaryId] = useState<string | null>(null);
+
+  // Card colors: budgetId -> colorId
+  const [cardColors, setCardColors] = useState<Record<string, string>>({});
+  const [colorSwapBudgetId, setColorSwapBudgetId] = useState<string | null>(null);
+  const colorSwapTimerRef = useRef<number | null>(null);
 
   const fetchBudgets = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -361,6 +693,58 @@ export default function BudgetsPage() {
     };
   }, [fetchBudgets]);
 
+  // Load primary id from localStorage
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(PRIMARY_BUDGET_STORAGE_KEY);
+      if (raw) setPrimaryId(raw);
+    } catch { /* ignore */ }
+  }, []);
+
+  // Load card colors from localStorage
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(CARD_COLORS_STORAGE_KEY);
+      if (raw) setCardColors(JSON.parse(raw) as Record<string, string>);
+    } catch { /* ignore */ }
+  }, []);
+
+  // Persist primary id
+  useEffect(() => {
+    if (primaryId == null) return;
+    try { window.localStorage.setItem(PRIMARY_BUDGET_STORAGE_KEY, primaryId); } catch { /* ignore */ }
+  }, [primaryId]);
+
+  // Persist card colors
+  useEffect(() => {
+    try { window.localStorage.setItem(CARD_COLORS_STORAGE_KEY, JSON.stringify(cardColors)); } catch { /* ignore */ }
+  }, [cardColors]);
+
+  useEffect(() => {
+    return () => {
+      if (colorSwapTimerRef.current !== null) {
+        window.clearTimeout(colorSwapTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Ensure primary id is valid
+  const resolvedPrimaryId = useMemo(() => {
+    if (budgets.length === 0) return null;
+    if (primaryId && budgets.some((b) => b.id === primaryId)) return primaryId;
+    return budgets[0].id;
+  }, [budgets, primaryId]);
+
+  const primaryBudget = useMemo(
+    () => budgets.find((b) => b.id === resolvedPrimaryId) ?? null,
+    [budgets, resolvedPrimaryId],
+  );
+
+  const secondaryBudgets = useMemo(
+    () => budgets.filter((b) => b.id !== resolvedPrimaryId),
+    [budgets, resolvedPrimaryId],
+  );
+
   const handleSaved = () => {
     setFormOpen(false);
     setEditTarget(null);
@@ -383,108 +767,157 @@ export default function BudgetsPage() {
     navigate(`/budgets/${b.id}`);
   };
 
+  const handleSetPrimary = useCallback((budgetId: string) => {
+    setPrimaryId(budgetId);
+  }, []);
+
+  const handleColorChange = useCallback((budgetId: string, colorId: string) => {
+    setCardColors((prev) => ({ ...prev, [budgetId]: colorId }));
+    setColorSwapBudgetId(budgetId);
+
+    if (colorSwapTimerRef.current !== null) {
+      window.clearTimeout(colorSwapTimerRef.current);
+    }
+    colorSwapTimerRef.current = window.setTimeout(() => {
+      setColorSwapBudgetId((current) => (current === budgetId ? null : current));
+      colorSwapTimerRef.current = null;
+    }, 520);
+  }, []);
+
+  const getCardColorId = useCallback((budgetId: string) => {
+    return cardColors[budgetId] ?? "default";
+  }, [cardColors]);
+
   const canAdd = budgets.length < MAX_BUDGETS;
 
   // Summary stats
-  const totalBudgeted = useMemo(
-    () => budgets.reduce((s, b) => s + b.totalBudget, 0), [budgets]);
-  const totalSpent = useMemo(
-    () => budgets.reduce((s, b) => s + b.totalSpent, 0), [budgets]);
+  const totalBudgeted = useMemo(() => budgets.reduce((s, b) => s + b.totalBudget, 0), [budgets]);
+  const totalSpent = useMemo(() => budgets.reduce((s, b) => s + b.totalSpent, 0), [budgets]);
+  const rawGlobalUsagePct = totalBudgeted > 0 ? (totalSpent / totalBudgeted) * 100 : 0;
+  const progressGlobalUsagePct = Math.min(100, Math.max(0, rawGlobalUsagePct));
 
   return (
     <>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="rounded-xl bg-white px-5 py-4">
-          <PageHeader
-            left={<PiggyBank className="h-8 w-8 text-sky-500" />}
-            title={t("budgets.title")}
-            subtitle={(
-              <div className="flex flex-wrap items-center gap-x-2">
-                <p className="text-sm text-slate-400">{t("budgets.subtitle")}</p>
-                {budgets.length > 0 && (
-                  <>
-                    <span className="text-slate-300" aria-hidden>·</span>
-                    <span className="inline-flex items-center gap-2 rounded-2xl bg-slate-800 px-3 py-1 text-sm font-semibold text-white shadow-sm">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{t("budgets.totalSpent")}</span>
-                      <span className="tabular-nums">{fmtAmt(totalSpent)}</span>
-                      <span className="text-slate-500">/</span>
-                      <span className="tabular-nums text-slate-300">{fmtAmt(totalBudgeted)}</span>
-                    </span>
-                    <span className="text-slate-300" aria-hidden>·</span>
-                    <span className="text-xs text-slate-400">{budgets.length}/{MAX_BUDGETS} {t("budgets.budgetsCount")}</span>
-                  </>
-                )}
-              </div>
-            )}
-            actions={(
-              <div className="flex items-center gap-3 page-header-actions">
-                <div className="budget-pill">
-                  <span>{t("budgets.title")}</span>
-                  <span className="budget-pill-badge">{budgets.length}</span>
+      <div className="budgets-page-shell space-y-5">
+        {/* ── Hero header ── */}
+        <div className="budgets-hero-section">
+          <div className="budgets-hero-inner">
+            <div className="budgets-hero-header">
+              <div className="budgets-hero-title-wrap">
+                <div className="budgets-hero-title">
+                  <PiggyBank className="h-7 w-7 text-teal-600" />
+                  <h1>{t("budgets.title")}</h1>
                 </div>
-                <button
+                <p className="budgets-hero-subtitle">{t("budgets.subtitle")}</p>
+              </div>
+              <div className="budgets-hero-actions">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-slate-600 backdrop-blur-sm border border-slate-200/60">
+                  {budgets.length}/{MAX_BUDGETS} {t("budgets.budgetsCount")}
+                </span>
+                <span className="budgets-total-pill">
+                  {t("budgets.totalSpent")} {fmtAmt(totalSpent)}
+                </span>
+                <GradientButton
                   onClick={() => { setEditTarget(null); setFormOpen(true); }}
                   disabled={!canAdd}
-                  className="budget-new-btn"
+                  size="sm"
+                  weight="normal"
+                  iconVariant="plus"
+                  icon={<Plus className="h-4 w-4" />}
                 >
-                  <Plus className="budget-new-icon h-4 w-4" />
                   {t("budgets.create")}
-                </button>
+                </GradientButton>
               </div>
-            )}
-          />
+            </div>
+          </div>
         </div>
 
-        {/* Grid */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-slate-300" />
           </div>
+        ) : budgets.length === 0 ? (
+          <EmptyBudgetCard onAdd={() => { setEditTarget(null); setFormOpen(true); }} />
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {budgets.map((b) => (
-              <div key={b.id} className="relative">
-                {deleteConfirm === b.id && (
-                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white/95 backdrop-blur-sm">
-                    <p className="text-sm font-semibold text-slate-700">
-                      {t("budgets.deleteConfirm")}
-                    </p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setDeleteConfirm(null)}
-                        className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
-                      >
-                        {t("common.cancel")}
-                      </button>
-                      <button
-                        onClick={() => handleDelete(b)}
-                        className="rounded-lg bg-red-500 px-4 py-1.5 text-sm font-semibold text-white hover:bg-red-600"
-                      >
-                        {t("common.delete")}
-                      </button>
-                    </div>
+          <>
+            {/* ── Main grid ── */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              {/* Primary card — takes left 2 columns */}
+              {primaryBudget && (
+                <div className="lg:col-span-2 lg:row-span-2">
+                  <PrimaryBudgetCard
+                    budget={primaryBudget}
+                    colorId={getCardColorId(primaryBudget.id)}
+                    isColorSwapping={colorSwapBudgetId === primaryBudget.id}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onClick={handleClick}
+                    onColorChange={handleColorChange}
+                    showDeleteOverlay={deleteConfirm === primaryBudget.id}
+                    onCancelDelete={() => setDeleteConfirm(null)}
+                    onConfirmDelete={() => handleDelete(primaryBudget)}
+                  />
+                </div>
+              )}
+
+              {/* Secondary cards */}
+              {secondaryBudgets.map((budget) => (
+                <div key={budget.id} className="relative">
+                  <SecondaryBudgetCard
+                    budget={budget}
+                    colorId={getCardColorId(budget.id)}
+                    isColorSwapping={colorSwapBudgetId === budget.id}
+                    isPrimary={false}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onClick={handleClick}
+                    onSetPrimary={handleSetPrimary}
+                    onColorChange={handleColorChange}
+                    showDeleteOverlay={deleteConfirm === budget.id}
+                    onCancelDelete={() => setDeleteConfirm(null)}
+                    onConfirmDelete={() => handleDelete(budget)}
+                  />
+                </div>
+              ))}
+
+              {/* Add new card */}
+              {canAdd && (
+                <EmptyBudgetCard onAdd={() => { setEditTarget(null); setFormOpen(true); }} />
+              )}
+
+              {!canAdd && (
+                <div className="flex min-h-[13rem] flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700">{t("budgets.maxBudgets")}</p>
+                    <p className="mt-1 text-xs text-slate-400">{MAX_BUDGETS}/{MAX_BUDGETS}</p>
                   </div>
-                )}
-                <BudgetCard
-                  budget={b}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onClick={handleClick}
-                />
-              </div>
-            ))}
+                  <div className="h-2 rounded-full bg-slate-100">
+                    <div className="h-full w-full rounded-full bg-slate-700" />
+                  </div>
+                </div>
+              )}
+            </div>
 
-            {canAdd && (
-              <EmptyBudgetCard onAdd={() => { setEditTarget(null); setFormOpen(true); }} />
-            )}
-
-            {budgets.length === 0 && (
-              <div className="col-span-full py-16 text-center text-slate-400">
-                {t("budgets.noBudgets")}
+            {/* ── Global summary bar ── */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-5">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+                  {t("budgets.title")}
+                </p>
+                <span className="text-xs text-slate-400">
+                  {rawGlobalUsagePct.toFixed(1)}% {t("budgets.usagePercent")}
+                </span>
               </div>
-            )}
-          </div>
+              <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+                <div className="h-full rounded-full bg-slate-900" style={{ width: `${progressGlobalUsagePct}%` }} />
+              </div>
+              <div className="mt-3 grid grid-cols-1 gap-3 text-sm text-slate-500 sm:grid-cols-3">
+                <span>{t("budgets.totalBudget")}: <span className="font-semibold text-slate-700">{fmtAmt(totalBudgeted)}</span></span>
+                <span>{t("budgets.totalSpent")}: <span className="font-semibold text-slate-700">{fmtAmt(totalSpent)}</span></span>
+                <span>{t("budgets.totalRemaining")}: <span className={`font-semibold ${totalBudgeted - totalSpent >= 0 ? "text-emerald-600" : "text-red-500"}`}>{fmtAmt(totalBudgeted - totalSpent)}</span></span>
+              </div>
+            </div>
+          </>
         )}
       </div>
 

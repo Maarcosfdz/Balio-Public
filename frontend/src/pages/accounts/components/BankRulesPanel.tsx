@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   CircleAlert,
   HelpCircle,
   Loader2,
   Pencil,
   Plus,
+  RefreshCw,
   SlidersHorizontal,
   Tag,
   Trash2,
@@ -20,6 +22,8 @@ import {
 import { bankService } from "@/backend/bankService";
 import { categoryService } from "@/backend/categoryService";
 import { FieldError } from "@/components/ui/field-error";
+import { GradientButton } from "@/components/ui/gradient-button";
+import SingleSelectDropdown from "@/components/ui/SelectDropdown";
 
 interface BankRulesPanelProps {
   account: AccountSummaryDto;
@@ -83,6 +87,7 @@ function toRuleType(value: RuleTransactionType): TransactionType | undefined {
 }
 
 export default function BankRulesPanel({ account, open, onClose, onRulesChanged }: BankRulesPanelProps) {
+  const { t } = useTranslation();
   const [rules, setRules] = useState<BankRuleResponseDto[]>([]);
   const [categories, setCategories] = useState<CategorySummaryDto[]>([]);
   const [loading, setLoading] = useState(false);
@@ -155,6 +160,38 @@ export default function BankRulesPanel({ account, open, onClose, onRulesChanged 
     setSuccess("");
   };
 
+  const [reapplyingId, setReapplyingId] = useState<string | null>(null);
+
+  const handleReapplyRule = async (rule: BankRuleResponseDto, windowDays = 0) => {
+    if (reapplyingId) return;
+    setReapplyingId(rule.id);
+    setError("");
+    setSuccess("");
+    try {
+      const payload: BankRuleDto = {
+        namePattern: rule.namePattern ?? undefined,
+        bankCategory: rule.bankCategory ?? undefined,
+        transactionType: rule.transactionType ?? undefined,
+        mappedName: rule.mappedName ?? undefined,
+        mappedCategoryId: rule.mappedCategoryId ?? undefined,
+        applyToExisting: true,
+        applyWindowDays: windowDays,
+      };
+
+      const saved = await bankService.updateRule(account.id, rule.id, payload);
+      setRules((prev) => prev.map((r) => (r.id === saved.id ? saved : r)));
+      const appliedText = saved.appliedTransactions > 0
+        ? ` ${t("accounts.ruleTransactionsUpdated", { count: saved.appliedTransactions })}`
+        : ` ${t("accounts.ruleReappliedNoChanges")}`;
+      setSuccess(`${t("accounts.ruleReapplied")}${appliedText}`);
+      onRulesChanged?.();
+    } catch (err) {
+      setError(errorMessage(err, t("accounts.ruleReapplyError")));
+    } finally {
+      setReapplyingId(null);
+    }
+  };
+
   const applyActionLabel = editingId
     ? "Reaplicar también a transacciones ya importadas"
     : "Aplicar también a transacciones ya importadas";
@@ -184,6 +221,14 @@ export default function BankRulesPanel({ account, open, onClose, onRulesChanged 
     if (!mappedName.trim() && !mappedCategoryId) {
       setError("La regla debe cambiar el nombre o asignar una categoría.");
       return false;
+    }
+
+    if (mappedCategoryId) {
+      const sel = categories.find((c) => c.id === mappedCategoryId);
+      if (transactionType !== "ANY" && sel && sel.type && sel.type !== transactionType) {
+        setError("La categoría seleccionada no coincide con el tipo de la regla.");
+        return false;
+      }
     }
 
     return true;
@@ -303,7 +348,20 @@ export default function BankRulesPanel({ account, open, onClose, onRulesChanged 
                               className="rounded-lg p-1.5 text-slate-400 transition hover:bg-sky-100 hover:text-sky-700"
                               title="Editar regla"
                             >
-                              <Pencil className="h-4 w-4" />
+                              <Pencil className="btn-edit-icon h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleReapplyRule(rule)}
+                              disabled={reapplyingId === rule.id}
+                              className="rounded-lg p-1.5 text-slate-400 transition hover:bg-sky-100 hover:text-sky-700"
+                              title={t("accounts.reapplyRule")}
+                            >
+                              {reapplyingId === rule.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <RefreshCw className="h-4 w-4" />
+                              )}
                             </button>
                             <button
                               type="button"
@@ -363,24 +421,48 @@ export default function BankRulesPanel({ account, open, onClose, onRulesChanged 
             </div>
 
             {success && (
-              <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-                {success}
+              <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 flex items-start justify-between">
+                <div className="min-w-0">{success}</div>
+                <button
+                  type="button"
+                  onClick={() => setSuccess("")}
+                  className="ml-4 rounded-full p-0.5 text-slate-400 transition hover:bg-slate-200/70 hover:text-slate-600"
+                  aria-label={t("common.close") ?? "Cerrar"}
+                  title={t("common.close") ?? "Cerrar"}
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
             )}
-            {error && <div className="mb-4"><FieldError message={error} /></div>}
+
+            {error && (
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 flex items-start justify-between">
+                <div className="min-w-0"><FieldError message={error} /></div>
+                <button
+                  type="button"
+                  onClick={() => setError("")}
+                  className="ml-4 rounded-full p-0.5 text-slate-400 transition hover:bg-slate-200/70 hover:text-slate-600"
+                  aria-label={t("common.close") ?? "Cerrar"}
+                  title={t("common.close") ?? "Cerrar"}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
 
             <div className="grid gap-4 overflow-y-auto pr-1">
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-slate-500">Tipo de movimiento</label>
-                <select
-                  value={transactionType}
-                  onChange={(e) => setTransactionType(e.target.value as RuleTransactionType)}
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-                >
-                  <option value="ANY">Cualquiera</option>
-                  <option value={TransactionType.EXPENSE}>Solo gastos</option>
-                  <option value={TransactionType.INCOME}>Solo ingresos</option>
-                </select>
+                <SingleSelectDropdown
+                  value={String(transactionType)}
+                  onChange={(v) => setTransactionType(v as RuleTransactionType)}
+                  options={[
+                    { value: "ANY", label: "Cualquiera" },
+                    { value: TransactionType.EXPENSE, label: "Solo gastos" },
+                    { value: TransactionType.INCOME, label: "Solo ingresos" },
+                  ]}
+                  buttonClassName="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                />
               </div>
 
               <div className="space-y-1">
@@ -426,18 +508,32 @@ export default function BankRulesPanel({ account, open, onClose, onRulesChanged 
 
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-slate-500">Asignar categoría</label>
-                <select
-                  value={mappedCategoryId}
-                  onChange={(e) => setMappedCategoryId(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-                >
-                  <option value="">Sin categoría</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
+                {(() => {
+                  const filteredCategories =
+                    transactionType === "ANY"
+                      ? categories
+                      : categories.filter((c) => !c.type || c.type === transactionType);
+
+                  return (
+                    <>
+                      <SingleSelectDropdown
+                        value={mappedCategoryId}
+                        onChange={(v) => setMappedCategoryId(v)}
+                        options={[{ value: "", label: "Sin categoría" }, ...filteredCategories.map((c) => ({ value: c.id, label: c.name }))]}
+                        buttonClassName="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                      />
+                      {mappedCategoryId && (() => {
+                        const sel = categories.find((c) => c.id === mappedCategoryId);
+                        if (sel && transactionType !== "ANY" && sel.type && sel.type !== transactionType) {
+                          return (
+                            <p className="mt-1 text-xs text-amber-700">La categoría seleccionada no coincide con el tipo de movimiento de la regla.</p>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </>
+                  );
+                })()}
               </div>
 
               <>
@@ -462,16 +558,17 @@ export default function BankRulesPanel({ account, open, onClose, onRulesChanged 
                 {applyToExisting && (
                   <div className="space-y-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                     <label className="text-xs font-semibold text-slate-500">Límite temporal</label>
-                    <select
+                    <SingleSelectDropdown
                       value={applyWindow}
-                      onChange={(e) => setApplyWindow(e.target.value as ApplyWindow)}
-                      className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-                    >
-                      <option value="30">Últimos 30 días</option>
-                      <option value="90">Últimos 90 días</option>
-                      <option value="365">Último año</option>
-                      <option value="all">Todo el histórico</option>
-                    </select>
+                      onChange={(v) => setApplyWindow(v as ApplyWindow)}
+                      options={[
+                        { value: "30", label: "Últimos 30 días" },
+                        { value: "90", label: "Últimos 90 días" },
+                        { value: "365", label: "Último año" },
+                        { value: "all", label: "Todo el histórico" },
+                      ]}
+                      buttonClassName="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                    />
                   </div>
                 )}
               </>
@@ -493,18 +590,26 @@ export default function BankRulesPanel({ account, open, onClose, onRulesChanged 
                 </button>
               ) : (
                 <button type="button" onClick={onClose} className="btn-cancel-draw flex-1 justify-center">
-                  Cerrar
+                  Cancelar
                 </button>
               )}
-              <button
+              <GradientButton
                 type="button"
                 onClick={handleSaveRule}
                 disabled={saving}
-                className="squishy-save-simple flex-1 justify-center"
+                weight="normal"
+                iconVariant={saving ? "none" : editingId ? "other" : "plus"}
+                icon={
+                  saving
+                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                    : editingId
+                      ? <Pencil className="h-4 w-4" />
+                      : <Plus className="h-4 w-4" />
+                }
+                className="flex-1 justify-center"
               >
-                {saving ? <Loader2 className="squishy-save-icon h-4 w-4 animate-spin" /> : editingId ? <Pencil className="squishy-save-icon h-4 w-4" /> : <Plus className="squishy-save-icon h-4 w-4" />}
                 {editingId ? "Guardar cambios" : "Guardar regla"}
-              </button>
+              </GradientButton>
             </div>
           </section>
         </div>

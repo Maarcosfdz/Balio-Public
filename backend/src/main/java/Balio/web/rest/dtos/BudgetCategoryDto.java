@@ -19,6 +19,10 @@ public class BudgetCategoryDto {
     @Positive
     private BigDecimal maxAmount;
 
+    private String iconName;
+
+    private String iconBgColor;
+
     private List<UUID> linkedCategoryIds;
 
     public String getName() { return name; }
@@ -26,6 +30,12 @@ public class BudgetCategoryDto {
 
     public BigDecimal getMaxAmount() { return maxAmount; }
     public void setMaxAmount(BigDecimal maxAmount) { this.maxAmount = maxAmount; }
+
+    public String getIconName() { return iconName; }
+    public void setIconName(String iconName) { this.iconName = iconName; }
+
+    public String getIconBgColor() { return iconBgColor; }
+    public void setIconBgColor(String iconBgColor) { this.iconBgColor = iconBgColor; }
 
     public List<UUID> getLinkedCategoryIds() { return linkedCategoryIds; }
     public void setLinkedCategoryIds(List<UUID> linkedCategoryIds) { this.linkedCategoryIds = linkedCategoryIds; }

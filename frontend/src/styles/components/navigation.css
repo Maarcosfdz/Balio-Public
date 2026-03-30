@@ -1,13 +1,135 @@
-.page-header-actions > * {
-  /* Ensure no borders/shadows/rings on small action buttons */
+/* ══════════════════════════════════════════════════════════════
+ * SIDEBAR — light theme + gradient accent border
+ * ══════════════════════════════════════════════════════════════ */
+
+.nav-sidebar {
+  background: #ffffff;
+  position: relative;
+  border-right: 1px solid #e2e8f0; /* slate-200 gray separator */
 }
 
-/* Utility: hide any accidental border/ring/shadow inside header actions */
-.page-header-actions button {
-  box-shadow: none !important;
-  ring: 0 !important;
-  outline: none !important;
-  border: none !important;
+/* ── Sliding active pill ──────────────────────────────────────── */
+
+.nav-pill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-radius: 0.625rem;
+  background: linear-gradient(
+    135deg,
+    rgba(14, 165, 233, 0.09) 0%,
+    rgba(16, 185, 129, 0.09) 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+  /* Spring-eased slide */
+  transition:
+    top    400ms cubic-bezier(0.16, 1, 0.3, 1),
+    height 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Gradient left accent bar */
+.nav-pill::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 5px;
+  bottom: 5px;
+  width: 2.5px;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #0ea5e9 0%, #10b981 100%);
+}
+
+/* First render — skip the entrance transition */
+.nav-pill--instant {
+  transition: none !important;
+}
+
+/* ── Nav item ─────────────────────────────────────────────────── */
+
+.nav-item {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #94a3b8;
+  text-decoration: none;
+  transition: color 200ms ease, background-color 200ms ease;
+}
+
+.nav-item:hover:not(.nav-item--active) {
+  color: #475569;
+  background-color: rgba(0, 0, 0, 0.025);
+}
+
+.nav-item--active {
+  font-weight: 600;
+}
+
+/* ── Gradient text ─────────────────────────────────────────────── */
+
+.nav-gradient-text {
+  background: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ══════════════════════════════════════════════════════════════
+ * TOPBAR — sliding gradient underline indicator
+ * ══════════════════════════════════════════════════════════════ */
+
+.topbar-nav {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: stretch;
+  gap: 0.25rem;
+}
+
+.topbar-indicator {
+  position: absolute;
+  bottom: 0;
+  height: 2px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #0ea5e9 0%, #10b981 100%);
+  pointer-events: none;
+  transition:
+    left  400ms cubic-bezier(0.16, 1, 0.3, 1),
+    width 400ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 200ms ease;
+}
+
+.topbar-indicator--instant {
+  transition: none !important;
+}
+
+.topbar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #94a3b8;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 200ms ease, background-color 200ms ease;
+}
+
+.topbar-item:hover:not(.topbar-item--active) {
+  color: #475569;
+  background-color: rgba(0, 0, 0, 0.025);
+}
+
+.topbar-item--active {
+  font-weight: 600;
 }
 
 /* ── Global squishy-save button (save preferences, etc.) ── */
@@ -131,4 +253,3 @@
 }
 
 .squishy-save-simple:disabled { opacity: 0.45; transform: none; cursor: not-allowed; }
-

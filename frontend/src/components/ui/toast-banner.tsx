@@ -78,10 +78,10 @@ export function ToastBanner({ tone, title, message, onClose, action }: ToastBann
         <button
           type="button"
           onClick={onClose}
-          className="rounded-full p-0.5 transition hover:bg-black/10"
+          className="toast-close-btn rounded-full p-0.5 transition hover:bg-black/10"
           aria-label="Close toast"
         >
-          <X className="h-4 w-4" />
+          <X className="toast-close-icon h-4 w-4" />
         </button>
       ) : null}
     </div>

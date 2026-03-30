@@ -38,4 +38,8 @@ export const accountService = {
   clearDefault(): Promise<void> {
     return api.put("/account/clearDefault");
   },
+
+  adjustBalance(accountId: string, balance: number): Promise<AccountResponseDto> {
+    return api.patch(`/account/${accountId}/balance`, { balance }).then((r) => r.data);
+  },
 };

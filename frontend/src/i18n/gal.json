@@ -21,6 +21,90 @@
     "ctaButton": "Comezar gratis",
     "allRights": "Todos os dereitos reservados."
   },
+  "landing": {
+    "badge": "O teu xestor de finanzas persoais",
+    "heroLine1": "Toma o control das",
+    "heroHighlight": "túas finanzas",
+    "heroLine2": "con claridade.",
+    "heroSub": "Rexistra, analiza e optimiza o teu diñeiro desde un único lugar. Contas, transaccións, orzamentos e metas — todo conectado.",
+    "heroCta": "Comezar gratis",
+    "heroLogin": "Iniciar sesión",
+    "heroTrust": "Pensado para estudantes e profesionais",
+    "ticker1": "Análise visual",
+    "ticker2": "Xestión de contas",
+    "ticker3": "Rexistro de transaccións",
+    "ticker4": "Obxectivos de aforro",
+    "ticker5": "Control de orzamento",
+    "ticker6": "Multi-moeda",
+    "ticker7": "Categorías personalizadas",
+    "ticker8": "Transaccións programadas",
+    "ticker9": "Filtros avanzados",
+    "ticker10": "Balance en tempo real",
+    "sectionTitle": "Unifica as túas",
+    "sectionHighlight": "finanzas.",
+    "featuresTitle": "Todo o que necesitas",
+    "featuresHighlight": "nun lugar",
+    "featuresSub": "Balio reúne as ferramentas esenciais para xestionar as túas finanzas persoais de forma eficaz.",
+    "analysis": {
+      "label": "Análise",
+      "title": "Visualiza os teus hábitos financeiros",
+      "desc": "Gráficas interactivas de ingresos e gastos por categoría, mes a mes. Detecta tendencias e toma mellores decisións con datos reais.",
+      "p1": "Barras de ingresos vs gastos mensuais",
+      "p2": "Donut de distribución por categoría",
+      "p3": "Comparativa dos últimos 4 meses"
+    },
+    "accounts": {
+      "label": "Contas",
+      "title": "Todas as túas contas nun lugar",
+      "desc": "Xestiona efectivo, bancos e máis desde un único panel. Consulta o balance total consolidado e segue cada movemento en tempo real.",
+      "p1": "Múltiples tipos de conta",
+      "p2": "Balance total consolidado",
+      "p3": "Historial de movementos por conta"
+    },
+    "transactions": {
+      "label": "Transaccións",
+      "title": "Rexistra cada movemento",
+      "desc": "Engade ingresos e gastos con categorías e iconas personalizadas. Filtra, busca e entende exactamente en que vai o teu diñeiro cada mes.",
+      "p1": "Categorías e iconas personalizables",
+      "p2": "Busca e filtros avanzados",
+      "p3": "Transaccións programadas e recorrentes"
+    },
+    "goals": {
+      "label": "Metas",
+      "title": "Persegue os teus obxectivos de aforro",
+      "desc": "Define metas financeiras e segue o teu progreso visualmente. Desde unha viaxe ata un fondo de emerxencia, cada obxectivo activo.",
+      "p1": "Barra de progreso visual en tempo real",
+      "p2": "Data obxectivo configurable",
+      "p3": "Múltiples metas activas simultáneas"
+    },
+    "budgets": {
+      "label": "Orzamentos",
+      "title": "Gasta con intención e control",
+      "desc": "Asigna límites de gasto por categoría e visualiza canto che queda. Alertas visuais cando te achegues ao límite.",
+      "p1": "Límite configurable por categoría",
+      "p2": "Barra de progreso de gasto do mes",
+      "p3": "Alerta visual de sobrepaso"
+    },
+    "explore": "Explorar",
+    "aboutBadge": "Proxecto académico",
+    "aboutTitle": "Feito con",
+    "aboutHighlight": "propósito.",
+    "aboutDesc": "Balio naceu como un proxecto de fin de grao co obxectivo de crear unha aplicación de finanzas persoais completa, segura e moderna. Cada módulo está pensado para que calquera persoa poida entender e controlar o seu diñeiro.",
+    "aboutModules": "Módulos",
+    "aboutModulesSub": "interconectados",
+    "aboutSecurity": "Seguridade",
+    "aboutSecuritySub": "refresh token",
+    "aboutFrontend": "Frontend",
+    "aboutFrontendSub": "TypeScript · Vite",
+    "aboutBackend": "Backend",
+    "aboutBackendSub": "Boot · PostgreSQL",
+    "ctaLine1": "1 app.",
+    "ctaHighlight": "5 ferramentas.",
+    "ctaLine2": "Todo o que necesitas.",
+    "ctaSub": "Únete e comeza a entender as túas finanzas en minutos.",
+    "ctaCta": "Crear conta gratis",
+    "ctaLogin": "Xa teño conta"
+  },
   "common": {
     "save": "Gardar",
     "saved": "Preferencias gardadas",
@@ -32,6 +116,7 @@
     "loading": "Cargando...",
     "optional": "opcional",
     "noResults": "Sen resultados",
+    "noData": "Sen datos",
     "error": "Produciuse un erro",
     "success": "Operación realizada correctamente",
     "currency": "€"
@@ -90,31 +175,11 @@
   },
   "about": {
     "hero": {
-      "badge": "About",
+      "badge": "TFG · Traballo de Fin de Grao",
+      "titleLine1": "Feito con",
+      "titleHighlight": "propósito.",
       "title": "Un TFG de finanzas persoais con enfoque práctico, técnico e realista.",
-      "description": "Balio foi desenvolvido como Traballo de Fin de Grao por Marcos Romay Fernández para ofrecer unha ferramenta sinxela pero potente de xestión financeira persoal, con control de contas, transaccións, categorías, metas e análise visual.",
-      "illustration": {
-        "frontendBackend": "Frontend + backend",
-        "secureSession": "Sesión segura",
-        "visualization": "Visualización",
-        "stackTitle": "Stack usado en Balio"
-      },
-      "architecture": {
-        "items": {
-          "technical": {
-            "title": "Arquitectura técnica",
-            "description": "Frontend SPA en React con tipado estrito e backend desacoplado en Spring Boot, comunicados mediante unha API REST autenticada."
-          },
-          "security": {
-            "title": "Seguridade",
-            "description": "Autenticación baseada en JWT con refresh token rotatorio, control de sesión, peche por inactividade e rutas protexidas."
-          },
-          "persistence": {
-            "title": "Persistencia",
-            "description": "Modelo relacional orientado a usuarios, contas, transaccións, categorías, filtros e metas de aforro."
-          }
-        }
-      }
+      "description": "Balio foi desenvolvido como Traballo de Fin de Grao por Marcos Romay Fernández para ofrecer unha ferramenta sinxela pero potente de xestión financeira persoal, con control de contas, transaccións, categorías, metas e análise visual."
     },
     "project": {
       "eyebrow": "Sobre o proxecto",
@@ -171,11 +236,59 @@
     "links": {
       "title": "Máis información",
       "backHome": "Volver a inicio"
+    },
+    "stats": {
+      "modules": "Módulos",
+      "auth": "Auth",
+      "stack": "Full Stack",
+      "i18n": "Idiomas"
+    },
+    "stack": {
+      "title": "O Stack Tecnolóxico",
+      "subtitle": "Cada capa escollida pola súa fiabilidade e experiencia de desenvolvemento.",
+      "frontendLabel": "Frontend",
+      "backendLabel": "Backend",
+      "infraLabel": "Infraestrutura"
+    },
+    "architecture": {
+      "title": "Arquitectura do Sistema",
+      "subtitle": "Un deseño en tres capas — desacoplado, tipado e seguro de extremo a extremo.",
+      "fe": {
+        "title": "React SPA",
+        "p1": "React 19 + TypeScript + Vite",
+        "p2": "Context API para o estado",
+        "p3": "i18next · EN / ES / GAL"
+      },
+      "api": {
+        "title": "API Spring Boot",
+        "p1": "Endpoints RESTful protexidos con JWT",
+        "p2": "Refresh tokens rotativos",
+        "p3": "Control de sesión e rutas protexidas"
+      },
+      "db": {
+        "title": "PostgreSQL",
+        "p1": "Modelo relacional con JPA / Hibernate",
+        "p2": "Usuarios, contas, transaccións",
+        "p3": "Metas, orzamentos, categorías, filtros"
+      }
+    },
+    "author": {
+      "badge": "Autor",
+      "name": "Marcos Romay Fernández",
+      "role": "Estudante de Enxeñaría Informática",
+      "university": "Universidade da Coruña",
+      "program": "Enxeñaría Informática · 2025",
+      "description": "Balio foi desenvolvido como Traballo de Fin de Grao combinando un caso de uso real de finanzas persoais con prácticas modernas de desenvolvemento full-stack."
+    },
+    "cta": {
+      "title": "Queres velo en acción?",
+      "description": "Explora a aplicación completa ou conecta co autor en LinkedIn ou GitHub.",
+      "button": "Comezar"
     }
   },
   "nav": {
     "dashboard": "Panel",
-    "analysis": "Analise",
+    "analysis": "Análise",
     "transactions": "Transaccións",
     "accounts": "Contas",
     "budgets": "Orzamentos",
@@ -186,10 +299,78 @@
   },
   "dashboard": {
     "title": "Panel principal",
-    "totalBalance": "Saldo total",
-    "recentTransactions": "Transaccións recentes",
-    "expensesByCategory": "Gastos por categoría",
-    "monthlyOverview": "Resumo mensual"
+    "greetingMorning": "Bos días,",
+    "greetingAfternoon": "Boas tardes,",
+    "greetingEvening": "Boas noites,",
+    "editDashboard": "Editar",
+    "doneEditing": "Listo",
+    "addWidget": "Engadir widget",
+    "removeWidget": "Quitar",
+    "emptySlot": "Preme para engadir un widget",
+    "pickerTitle": "Elixe un widget",
+    "pickerCharts": "Gráficos",
+    "pickerBudgets": "Orzamentos",
+    "pickerGoals": "Obxectivos",
+    "pickerAccounts": "Contas",
+    "pickerQuick": "Resumo rápido",
+    "netWorth": "Patrimonio neto",
+    "recentActivity": "Actividade recente",
+    "noCharts": "Aínda non tes gráficos. Crea algúns en Análise.",
+    "noBudgets": "Aínda non tes orzamentos",
+    "noGoals": "Aínda non tes obxectivos",
+    "noAccounts": "Aínda non tes contas",
+    "spent": "gastado",
+    "of": "de",
+    "remaining": "restante",
+    "saved": "aforrado",
+    "balance": "Saldo",
+    "viewAll": "Ver todo",
+    "noRecentTx": "Sen transaccións recentes",
+    "uncategorized": "Outros",
+    "defaultBadge": "Por defecto",
+    "page": {
+      "hero": {
+        "welcomeBack": "Benvido de novo",
+        "userFallback": "Usuario",
+        "totalBalance": "Balance total"
+      },
+      "actions": {
+        "addIncome": "Engadir ingreso",
+        "addExpense": "Engadir gasto"
+      },
+      "quickTools": {
+        "title": "Accesos rápidos",
+        "addAccess": "Engadir acceso",
+        "picker": {
+          "title": "Configurar acceso rápido",
+          "goal": "Obxectivo",
+          "budget": "Orzamento",
+          "filter": "Filtro",
+          "empty": "Sen elementos"
+        }
+      },
+      "charts": {
+        "incomeVsExpense": "Ingresos vs gastos",
+        "incomeLegend": "Ingresos",
+        "expenseLegend": "Gastos",
+        "monthExpenses": "Gastos do mes",
+        "noMonthExpenses": "Sen gastos este mes"
+      },
+      "cards": {
+        "accounts": "Contas",
+        "recentTransactions": "Transaccións recentes",
+        "budgets": "Orzamentos"
+      },
+      "empty": {
+        "accounts": "Sen contas",
+        "recentTransactions": "Sen transaccións recentes",
+        "budgets": "Sen orzamentos"
+      },
+      "buttons": {
+        "viewAll": "Ver todos",
+        "createBudget": "Crear orzamento"
+      }
+    }
   },
   "accounts": {
     "title": "As miñas contas",
@@ -206,7 +387,9 @@
       "BANK": "Banco",
       "OTHER": "Outro"
     },
-    "deleteConfirm": "¿Seguro que queres eliminar esta conta?"
+    "deleteConfirm": "¿Seguro que queres eliminar esta conta?",
+    "adjustBalance": "Axustar saldo",
+    "default": "Predeterminada"
   },
   "accountsPage": {
     "totalNetWorth": "Patrimonio neto total",
@@ -335,8 +518,16 @@
     "navHorizontal": "Horizontal (Superior)",
     "language": "Idioma",
     "langDesc": "Selecciona o idioma da interface.",
+    "languageNames": {
+      "en": "Ingles",
+      "es": "Espanol",
+      "gl": "Galego"
+    },
     "savePreferences": "Gardar preferencias",
     "resetChanges": "Restablecer",
+    "preferredCurrency": "Moeda preferida",
+    "currencyDesc": "Escolle a moeda predeterminada para o panel e as estatísticas.",
+    "currencyUpdated": "Moeda preferida actualizada",
     "dangerZone": "Zona de risco",
     "dangerDesc": "Unha vez que elimines a túa conta, non hai volta atrás. Por favor, actúa con cautela.",
     "deleteAccount": "Eliminar conta",
@@ -397,8 +588,10 @@
       "linkedCategoriesDesc": "As transaccións destas categorías contaranse automaticamente.",
       "searchCategory": "Buscar categoría...",
       "transactions": "Transaccións",
+      "allBudgetTransactions": "Transaccións do orzamento",
       "noTransactions": "Sen transaccións neste periodo",
       "addTransaction": "Engadir transacción",
+      "removeFromCategory": "Quitar da categoría",
       "manualTag": "Manual",
       "autoTag": "Auto",
       "maxCategories": "Alcancaches o máximo de 40 categorías",
@@ -423,6 +616,8 @@
   "txPage": {
     "addExpense": "Novo gasto",
     "addIncome": "Novo ingreso",
+    "addEntry": "Novo apunte",
+    "logGrowth": "Rexistrar ingreso",
     "saveExpense": "Gardar gasto",
     "saveIncome": "Gardar ingreso",
     "expenseName": "Concepto do gasto",
@@ -434,11 +629,24 @@
     "searchCategory": "Buscar categoría...",
     "createCategory": "Crear \"{{name}}\"",
     "affectsBalanceDesc": "Afectar ao saldo da conta seleccionada",
+    "affectsBalanceBankLocked": "Nas contas bancarias non se pode marcar manualmente porque o saldo se sincroniza automaticamente",
     "filters": "Filtros",
     "savedFilters": "Filtros gardados",
     "applyFilters": "Aplicar filtros",
     "saveFilter": "Gardar filtro",
     "clearFilters": "Limpar",
+    "syncBanks": "Sincronizar bancos",
+    "syncingBanks": "Sincronizando bancos...",
+    "filterTransactions": "Filtrar transaccións",
+    "addFilterTab": "Engadir filtro a lapelas",
+    "removeFilterTabAria": "Quitar {{name}}",
+    "noMoreFilters": "Non hai máis filtros",
+    "autoSyncWithImported": "Sincronización automática: {{count}} transaccións novas.",
+    "autoSyncDone": "Sincronización automática completada.",
+    "syncNoLinkedAccounts": "Non hai contas bancarias ligadas para sincronizar.",
+    "syncDoneNoNew": "Sincronizáronse {{accounts}} contas e non había movementos novos.",
+    "syncDoneWithImported": "Sincronizáronse {{accounts}} contas e entraron {{imported}} transaccións novas.",
+    "syncErrorNow": "Non se puido sincronizar agora mesmo.",
     "filterNamePlaceholder": "Nome do filtro",
     "allTypes": "Todos os tipos",
     "allAccounts": "Todas as contas",
@@ -468,8 +676,15 @@
     "clearLooseDates": "Limpar datas soltas",
     "singleDate": "Día",
     "dateRange": "Rango",
+    "differentCurrency": "Moeda diferente",
+    "originalCurrency": "Moeda",
+    "exchangeRate": "Tipo de cambio",
     "makeRecurring": "Facer recorrente",
-    "recurringDesc": "Crear esta transacción automaticamente de forma periódica"
+    "recurringDesc": "Crear esta transacción automaticamente de forma periódica",
+    "editTransaction": "Editar transacción",
+    "saveChanges": "Gardar cambios",
+    "deleteTransaction": "Eliminar transacción",
+    "actions": "Accións"
   },
   "scheduled": {
     "title": "Transaccións programadas",
@@ -544,5 +759,280 @@
     "formatHint": "Formatos aceptados: CSV da app (Date, Name, Amount, Category) ou CSV bancario separado por tabuladores",
     "exportingAccount": "Exportando transaccións...",
     "noTransactionsToExport": "Esta conta non ten transaccións para exportar"
+  },
+  "rules": {
+    "title": "Regras",
+    "description": "Define regras para modificar transaccións en lote. Os cambios aplícanse directamente e as regras non se gardan.",
+    "ruleLabel": "Regra {{n}}",
+    "filters": "Filtros (a que transaccións aplicar)",
+    "nameContains": "O nome contén",
+    "nameContainsPlaceholder": "Ex: Supermercado, Nómina...",
+    "typeFilter": "Tipo de transacción",
+    "allTypes": "Todos os tipos",
+    "categoryFilter": "Categorías",
+    "allCategories": "Sen filtro — aplícase a todas as categorías",
+    "dateHint": "Deixao vacío para non poñer límite de data",
+    "noCategories": "Non hai categorías dispoñibles",
+    "startDate": "Desde",
+    "endDate": "Ata",
+    "actions": "Accións (que cambiar)",
+    "newName": "Novo nome",
+    "newNamePlaceholder": "Deixar baleiro para non cambiar",
+    "newCategory": "Nova categoría",
+    "keepCategory": "Non cambiar categoría",
+    "addRule": "Engadir outra regra",
+    "apply": "Aplicar regras",
+    "close": "Pechar",
+    "result": "Actualizáronse {{count}} transaccións"
+  },
+  "analysis": {
+    "title": "Análise",
+    "subtitle": "Crea, previsualiza e organiza os teus widgets usando os mesmos filtros ca en transaccións.",
+    "loading": "Cargando análise...",
+    "actions": {
+      "sync": "Sincronizar",
+      "syncing": "Sincronizando...",
+      "editDashboard": "Editar dashboard",
+      "exitEdit": "Saír da edición",
+      "addWidget": "Engadir widget"
+    },
+    "toasts": {
+      "dashboardSaved": "Cambios do dashboard gardados.",
+      "dashboardSynced": "Dashboard sincronizado. Recalculáronse os widgets.",
+      "syncError": "Non se puido sincronizar agora. Téntao de novo.",
+      "previewRefreshError": "Non se puido actualizar a previsualización.",
+      "filterLoadError": "Non se puido cargar o filtro seleccionado.",
+      "filterIncompatible": "O filtro gardado ten un formato incompatible.",
+      "filterImported": "Filtro \"{{name}}\" importado ao widget.",
+      "widgetTitleRequired": "O widget debe ter un nome.",
+      "widgetSaveError": "Non se puido gardar o widget.",
+      "widgetUpdateError": "Non se puido actualizar o widget.",
+      "widgetDeleteError": "Non se puido eliminar o widget."
+    },
+    "board": {
+      "editModeHintPrefix": "Modo edición:",
+      "drag": "arrastra",
+      "editModeHintMiddle": "para reordenar,",
+      "corners": "esquinas",
+      "editModeHintSuffix": "para redimensionar",
+      "expand": "Expandir",
+      "edit": "Editar",
+      "delete": "Borrar",
+      "expandedDialogDescription": "Vista ampliada do widget seleccionado."
+    },
+    "widgetTypes": {
+      "kpi": { "label": "KPI", "description": "Resumo rápido dunha métrica." },
+      "table": { "label": "Táboa", "description": "Listado agregado por categoría ou conta." },
+      "bar": { "label": "Barras", "description": "Compara importes por categoría." },
+      "line": { "label": "Liña/Área", "description": "Evolución temporal de ingresos e gastos." },
+      "donut": { "label": "Donut", "description": "Peso relativo de cada categoría." },
+      "stackedBar": { "label": "Barras apiladas", "description": "Compara segmentos entre períodos." },
+      "heatmap": { "label": "Heatmap", "description": "Detecta concentracións por días." },
+      "comparison": { "label": "Comparación", "description": "Período actual vs anterior." }
+    },
+    "configurator": {
+      "title": "Configurador de widgets",
+      "editHintPrefix": "Preme nun gráfico para editalo. Usa",
+      "editHintSuffix": "para o tamaño.",
+      "noCharts": "Aínda non hai gráficos.",
+      "inDashboard": "No dashboard",
+      "outDashboard": "Fóra do dashboard (abaixo)",
+      "removeFromDashboard": "Quitar do dashboard",
+      "addToDashboard": "Engadir ao dashboard",
+      "remove": "Quitar",
+      "add": "Engadir",
+      "delete": "Borrar",
+      "noActiveCharts": "Non hai gráficos activos no dashboard.",
+      "allChartsActive": "Todos os gráficos están activos.",
+      "startHint": "Elixe o tipo de gráfico para comezar. Despois poderás axustar filtros, datas e formato.",
+      "importSavedFilter": "Importar filtro gardado",
+      "selectFilter": "Selecciona un filtro",
+      "selectType": "Selecciona tipo",
+      "selectSize": "Selecciona tamaño",
+      "selectMetric": "Selecciona métrica",
+      "selectGroup": "Selecciona grupo",
+      "selectValue": "Selecciona valor",
+      "selectMode": "Selecciona modo",
+      "selectCriteria": "Selecciona criterio",
+      "selectComparison": "Selecciona comparación",
+      "all": "Todos",
+      "noAccounts": "Non hai contas",
+      "noCategories": "Non hai categorías",
+      "accountsCount": "contas",
+      "categoriesCount": "categorías",
+      "noQuickRange": "Sen rango rápido",
+      "uncategorized": "Sen categoría",
+      "colorPerBar": "Cor por barra",
+      "colorsAndLegend": "Cores e lenda",
+      "gradientFill": "Recheo degradado",
+      "blurFill": "Degradado de recheo",
+      "neonGlow": "Brillo neón",
+      "heatmapColor": "Cor do mapa de calor",
+      "heatmapBaseColor": "Cor base",
+      "saveChart": "Gardar gráfico",
+      "updateChart": "Actualizar gráfico",
+      "preview": "Previsualización",
+      "reload": "Recargar",
+      "expandedPreview": "Previsualización ampliada",
+      "expandedPreviewDescription": "Vista ampliada da previsualización do gráfico en edición.",
+      "sizes": {
+        "small": "Pequeno",
+        "medium": "Mediano",
+        "large": "Grande"
+      },
+      "dateRanges": {
+        "30d": "Últimos 30 días",
+        "90d": "Últimos 90 días",
+        "365d": "Últimos 12 meses",
+        "ytd": "Ano actual (YTD)"
+      },
+      "transactionTypeOptions": {
+        "income": "Ingresos",
+        "expense": "Gastos"
+      },
+      "fields": {
+        "title": "Título",
+        "titlePlaceholder": "Ex. Gastos por categoría",
+        "description": "Descrición",
+        "descriptionPlaceholder": "Ex. Comparativa mensual dos teus gastos",
+        "type": "Tipo",
+        "size": "Tamaño",
+        "quickRange": "Rango rápido",
+        "transactionType": "Tipo movemento",
+        "account": "Conta",
+        "searchName": "Buscar nome",
+        "searchNamePlaceholder": "Ex. alugueiro, nómina...",
+        "amountMin": "Importe mínimo",
+        "amountMax": "Importe máximo",
+        "categories": "Categorías",
+        "kpiMetric": "Métrica KPI",
+        "groupBy": "Agrupar por",
+        "value": "Valor",
+        "barMode": "Modo barras",
+        "yAxis": "Eixe Y",
+        "lineMode": "Modo liña",
+        "lineVisualization": "Estilo de liña",
+        "lineSeries": "Series de liña",
+        "donutMode": "Modo donut",
+        "stackBy": "Apilar por",
+        "comparison": "Comparación"
+      },
+      "kpiOptions": {
+        "income": "Ingresos",
+        "expense": "Gastos",
+        "balance": "Balance",
+        "savingsRate": "Taxa de aforro"
+      },
+      "groupByOptions": {
+        "category": "Categoría",
+        "account": "Conta"
+      },
+      "valueOptions": {
+        "amount": "Importe",
+        "count": "Conta de transaccións"
+      },
+      "barModeOptions": {
+        "expensesByCategory": "Por categoría",
+        "expensesByAccount": "Por conta",
+        "incomeByMonth": "Por mes"
+      },
+      "lineModeOptions": {
+        "balanceTrend": "Tendencia de balance",
+        "incomeVsExpense": "Ingresos vs gastos",
+        "byCategory": "Por categoría",
+        "byAccount": "Por conta"
+      },
+      "lineVisualizationOptions": {
+        "line": "Liña",
+        "area": "Área"
+      },
+      "donutModeOptions": {
+        "expensesByCategory": "Por categoría",
+        "expensesByAccount": "Por conta"
+      },
+      "stackByOptions": {
+        "type": "Tipo (ingreso/gasto)",
+        "account": "Conta",
+        "category": "Categoría"
+      },
+      "comparisonOptions": {
+        "weekVsPrevious": "Semana actual vs anterior",
+        "monthVsPrevious": "Mes actual vs anterior",
+        "quarterVsPrevious": "Trimestre actual vs anterior",
+        "yearVsPrevious": "Ano actual vs anterior"
+      }
+    },
+    "templates": {
+      "tpl-kpi-balance": {
+        "label": "KPI: Balance neto",
+        "description": "Ingresos - gastos no período seleccionado."
+      },
+      "tpl-table-category": {
+        "label": "Táboa por categoría",
+        "description": "Top categorías por importe."
+      },
+      "tpl-bar-expenses": {
+        "label": "Barras de gasto",
+        "description": "Distribución de gastos por categoría."
+      },
+      "tpl-line-trend": {
+        "label": "Liña de balance",
+        "description": "Evolución do balance acumulado."
+      },
+      "tpl-donut": {
+        "label": "Donut de gastos",
+        "description": "Peso de cada categoría nos teus gastos."
+      },
+      "tpl-stacked": {
+        "label": "Barras apiladas",
+        "description": "Ingresos e gastos por conta e mes."
+      },
+      "tpl-heatmap": {
+        "label": "Heatmap",
+        "description": "Concentración de gastos diarios."
+      },
+      "tpl-comparison": {
+        "label": "Comparación de períodos",
+        "description": "Período actual vs anterior."
+      }
+    },
+    "registry": {
+      "transactionsCount": "{{count}} transaccións",
+      "series": "Serie",
+      "showLegend": "Mostrar lenda",
+      "hideLegend": "Ocultar lenda",
+      "legend": "Lenda",
+      "outOfRange": "Fóra de rango",
+      "uncategorized": "Sen categoría",
+      "incomeShort": "ingreso",
+      "expenseShort": "gasto",
+      "basedOnTransactions": "Baseado en {{count}} movementos",
+      "weekdays": {
+        "mon": "L",
+        "tue": "M",
+        "wed": "X",
+        "thu": "J",
+        "fri": "V",
+        "sat": "S",
+        "sun": "D"
+      },
+      "period": {
+        "current": "Actual",
+        "previous": "Anterior"
+      },
+      "kpiType": {
+        "income": "Ingresos",
+        "expense": "Gastos",
+        "balance": "Balance",
+        "savingsRate": "Taxa de aforro"
+      },
+      "table": {
+        "name": "Nome",
+        "amount": "Importe",
+        "category": "Categoría",
+        "account": "Conta",
+        "transactions": "Transaccións"
+      }
+    }
   }
 }

@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useState } from "react";
 import { Bookmark, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { GradientButton } from "@/components/ui/gradient-button";
 
 interface SaveFilterDialogProps {
   open: boolean;
@@ -72,13 +73,15 @@ export default function SaveFilterDialog({ open, onClose, onSave }: SaveFilterDi
             >
               {t("common.cancel")}
             </button>
-            <button
+            <GradientButton
               type="submit"
               disabled={!name.trim()}
-              className="btn-login-hover !rounded-lg !px-4 !py-2 !text-sm !font-semibold disabled:opacity-50"
+              size="sm"
+              iconVariant="other"
+              className="rounded-lg px-4 py-2 text-sm font-semibold"
             >
               {t("common.save")}
-            </button>
+            </GradientButton>
           </div>
         </form>
       </div>

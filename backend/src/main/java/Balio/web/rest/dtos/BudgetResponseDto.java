@@ -12,6 +12,8 @@ public class BudgetResponseDto {
     private String name;
     private BudgetPeriodicity periodicity;
     private LocalDate startDate;
+    private String iconName;
+    private String iconBgColor;
 
     // Current period
     private LocalDate periodStart;
@@ -38,6 +40,12 @@ public class BudgetResponseDto {
 
     public LocalDate getStartDate() { return startDate; }
     public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+
+    public String getIconName() { return iconName; }
+    public void setIconName(String iconName) { this.iconName = iconName; }
+
+    public String getIconBgColor() { return iconBgColor; }
+    public void setIconBgColor(String iconBgColor) { this.iconBgColor = iconBgColor; }
 
     public LocalDate getPeriodStart() { return periodStart; }
     public void setPeriodStart(LocalDate periodStart) { this.periodStart = periodStart; }

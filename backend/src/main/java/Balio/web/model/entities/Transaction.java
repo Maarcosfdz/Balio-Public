@@ -35,6 +35,17 @@ public class Transaction {
     @Column(nullable = false)
     private boolean affectsBalance = true;
 
+    // -------- CURRENCY --------
+
+    @Column(name = "original_amount", nullable = false, precision = 14, scale = 2)
+    private BigDecimal originalAmount;
+
+    @Column(name = "original_currency", nullable = false, length = 3)
+    private String originalCurrency = "EUR";
+
+    @Column(name = "exchange_rate", nullable = false, precision = 18, scale = 8)
+    private BigDecimal exchangeRate = BigDecimal.ONE;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private TransactionType type; // EXPENSE / INCOME
@@ -67,6 +78,9 @@ public class Transaction {
     public Transaction(String name, BigDecimal amount, LocalDate date, TransactionType type, User user) {
         this.name = name;
         this.amount = amount;
+        this.originalAmount = amount;
+        this.originalCurrency = "EUR";
+        this.exchangeRate = BigDecimal.ONE;
         this.date = date;
         this.type = type;
         this.user = user;
@@ -141,6 +155,15 @@ public class Transaction {
     public void setCategory(Category category) {
         this.category = category;
     }
+
+    public BigDecimal getOriginalAmount() { return originalAmount; }
+    public void setOriginalAmount(BigDecimal originalAmount) { this.originalAmount = originalAmount; }
+
+    public String getOriginalCurrency() { return originalCurrency; }
+    public void setOriginalCurrency(String originalCurrency) { this.originalCurrency = originalCurrency; }
+
+    public BigDecimal getExchangeRate() { return exchangeRate; }
+    public void setExchangeRate(BigDecimal exchangeRate) { this.exchangeRate = exchangeRate; }
 
     public String getBankCategory() { return bankCategory; }
     public void setBankCategory(String bankCategory) { this.bankCategory = bankCategory; }
