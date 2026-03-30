@@ -272,6 +272,43 @@
   transform: translateY(1px);
 }
 
+.goal-adjust-wide-open {
+  filter: brightness(1.04) saturate(1.05);
+  transform: translateY(-1px);
+}
+
+.goal-adjust-popover {
+  animation: goal-adjust-popover-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
+
+.goal-adjust-popover-right {
+  transform-origin: right bottom;
+}
+
+.goal-adjust-popover-left {
+  transform-origin: left bottom;
+}
+
+@keyframes goal-adjust-popover-in {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+    filter: blur(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .goal-adjust-popover {
+    animation: none;
+  }
+}
+
 /* ── Round buttons (fallback, for use without wide) ──────────────── */
 .goal-adjust-btn-add {
   display: flex; align-items: center; justify-content: center;

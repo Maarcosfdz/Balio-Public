@@ -167,15 +167,19 @@ function AdjustPopover({ direction, onConfirm, wide = false }: AdjustPopoverProp
     <div className={`relative${wide ? " flex-1" : ""}`} ref={ref}>
       <button
         onClick={() => { setOpen((v) => !v); setValue(""); setError(""); }}
-        className={wide ? "goal-adjust-wide w-full" : (isAdd ? "goal-adjust-btn-add" : "goal-adjust-btn-withdraw")}
+        className={
+          wide
+            ? `goal-adjust-wide w-full ${open ? "goal-adjust-wide-open" : ""}`
+            : (isAdd ? "goal-adjust-btn-add" : "goal-adjust-btn-withdraw")
+        }
       >
         {isAdd ? <Plus className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
       </button>
 
       {open && (
         <div
-          className={`absolute bottom-12 z-30 flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-lg ${
-            isAdd ? "right-0" : "left-0"
+          className={`goal-adjust-popover absolute bottom-12 z-30 flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-lg ${
+            isAdd ? "right-0 goal-adjust-popover-right" : "left-0 goal-adjust-popover-left"
           }`}
           style={{ width: 148 }}
         >

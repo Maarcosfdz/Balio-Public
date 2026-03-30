@@ -524,6 +524,11 @@
     "navHorizontal": "Horizontal (Top)",
     "language": "Language",
     "langDesc": "Select your preferred interface language.",
+    "languageNames": {
+      "en": "English",
+      "es": "Spanish",
+      "gl": "Galician"
+    },
     "savePreferences": "Save Preferences",
     "resetChanges": "Reset Changes",
     "preferredCurrency": "Preferred Currency",
