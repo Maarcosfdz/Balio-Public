@@ -583,18 +583,18 @@ export default function MainPage2() {
   const ctaR = useReveal();
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="m2-page flex min-h-screen flex-col">
       <PublicHeader sticky={false} />
 
       {/* All slices in a single relative container —
           each sticky section covers the previous one */}
-      <div className="relative">
+      <div className="m2-slices relative">
 
         {/* ═══════════════════════════════════════════════════════
             SLICE 1 — HERO  (sticky, dark)
             Stagger in: badge → title → subtitle → CTAs → trust → mockup
             ═══════════════════════════════════════════════════════ */}
-        <section className="sticky top-0 z-[1] min-h-screen overflow-hidden bg-gradient-to-br from-sky-50/70 via-white to-emerald-50/60 flex items-center relative">
+        <section className="m2-slice sticky top-0 z-[1] min-h-screen w-full overflow-hidden bg-gradient-to-br from-sky-50/70 via-white to-emerald-50/60 flex items-center relative">
           {/* Video background */}
           <video
             ref={videoRef}
@@ -709,7 +709,7 @@ export default function MainPage2() {
             Center items appear first (inside → outside).
             ═══════════════════════════════════════════════════════ */}
         <div ref={zoomSectionRef} className="relative z-[2]" style={{ height: "250vh" }}>
-          <div className="m2-zoom-sticky sticky top-0 h-screen bg-gradient-to-br from-sky-50/60 via-white to-emerald-50/40 overflow-hidden">
+          <div className="m2-sticky-frame m2-zoom-sticky sticky top-0 h-screen w-full bg-gradient-to-br from-sky-50/60 via-white to-emerald-50/40 overflow-hidden">
             <div className="m2-grid-pattern pointer-events-none absolute inset-0 opacity-50" />
             <div className="m2-zoom-grid mx-auto px-6">
               {ZOOM_ITEMS.map((item, i) => (
@@ -755,7 +755,7 @@ export default function MainPage2() {
             500vh gives one full viewport of scroll per feature.
             ═══════════════════════════════════════════════════════ */}
         <div ref={featureIntroRef} className="relative z-[3]" style={{ height: `${FEATURES.length * 100}vh` }}>
-          <div className="sticky top-0 h-screen bg-white flex flex-col items-center justify-center overflow-hidden">
+          <div className="m2-sticky-frame sticky top-0 h-screen w-full bg-white flex flex-col items-center justify-center overflow-hidden">
             <div className="m2-grid-pattern pointer-events-none absolute inset-0 opacity-35" />
 
             {/* All 5 names layered absolutely — scroll-driven opacity+translate */}
@@ -804,7 +804,7 @@ export default function MainPage2() {
           className="relative z-[4]"
           style={{ height: `${FEATURE_COUNT * 100}vh` }}
         >
-          <div className="sticky top-0 h-screen bg-white flex items-center overflow-hidden">
+          <div className="m2-sticky-frame sticky top-0 h-screen w-full bg-white flex items-center overflow-hidden">
             <div
               className="m2-step-glow top-[15%] left-[5%]"
               style={{ backgroundColor: feat.glowColor }}
@@ -906,7 +906,7 @@ export default function MainPage2() {
             SLICE 4 — ABOUT  (sticky, light)
             Slides up over the dark feature showcase.
             ═══════════════════════════════════════════════════════ */}
-        <section className="sticky top-0 z-[5] min-h-screen bg-white flex items-center m2-about-section">
+        <section className="m2-slice sticky top-0 z-[5] min-h-screen w-full bg-white flex items-center m2-about-section">
           <div
             ref={aboutR.ref}
             className={`mx-auto max-w-7xl px-6 py-16 lg:px-8 m2-reveal ${aboutR.visible ? "visible" : ""}`}
@@ -997,7 +997,7 @@ export default function MainPage2() {
             ═══════════════════════════════════════════════════════ */}
         <section
           ref={ctaR.ref}
-          className={`sticky top-0 z-[6] min-h-screen bg-gradient-to-br from-sky-500 to-emerald-500 flex items-center overflow-hidden ${ctaR.visible ? "m2-cta-visible" : ""}`}
+          className={`m2-slice sticky top-0 z-[6] min-h-screen w-full bg-gradient-to-br from-sky-500 to-emerald-500 flex items-center overflow-hidden ${ctaR.visible ? "m2-cta-visible" : ""}`}
         >
           {/* Grid pattern + subtle white overlay dots */}
           <div className="m2-grid-pattern pointer-events-none absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.25) 1px, transparent 1px)" }} />

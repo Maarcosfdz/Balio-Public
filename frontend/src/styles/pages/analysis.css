@@ -5,16 +5,49 @@
 /* ── Analysis hero (fade gris como Accounts) ───────────────────── */
 .analysis-hero-section {
   position: relative;
+  isolation: isolate;
   overflow: visible;
   margin: -1.5rem -1.5rem 0;
   padding: 0 1.5rem 1.5rem;
+}
+
+/* Full-bleed background behind the hero section to avoid visible white gutters */
+.analysis-hero-section::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 0;
+  bottom: 0;
+  width: 100vw;
+  pointer-events: none;
   background: linear-gradient(
     180deg,
     #f0f4f8 0%,
     #e8edf4 45%,
-    #f2f5f8 80%,
-    transparent 100%
+    #f2f5f8 82%,
+    rgba(242, 245, 248, 0) 100%
   );
+  z-index: 0;
+}
+
+.analysis-hero-section::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -3.3rem;
+  width: 100vw;
+  height: 7.2rem;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(232, 237, 244, 0.62) 0%,
+    rgba(242, 245, 248, 0.24) 56%,
+    rgba(242, 245, 248, 0) 100%
+  );
+  filter: blur(30px);
 }
 
 @media (min-width: 768px) {
@@ -53,9 +86,6 @@
 .analysis-edit-btn.is-active {
   background: linear-gradient(120deg, #059669 0%, #10b981 35%, #0ea5e9 80%, #0284c7 100%);
   background-size: 170% 100%;
-/*
- * pages/analysis.css — Styles specific to the Analysis page.
- */
   background-position: 10% center;
   box-shadow: 0 2px 8px -2px rgba(16, 185, 129, 0.4);
 }

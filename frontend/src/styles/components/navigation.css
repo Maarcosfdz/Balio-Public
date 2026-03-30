@@ -4,8 +4,14 @@
 
 .nav-sidebar {
   background: #ffffff;
-  position: relative;
   border-right: 1px solid #e2e8f0; /* slate-200 gray separator */
+}
+
+/* On desktop the sidebar is in normal flex flow (md:static) */
+@media (min-width: 768px) {
+  .nav-sidebar {
+    position: relative;
+  }
 }
 
 /* ── Sliding active pill ──────────────────────────────────────── */

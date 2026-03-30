@@ -23,6 +23,27 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ── Page shell: keep sticky slices flush and prevent horizontal drift ── */
+.m2-page {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+  background: #fff;
+}
+@supports not (overflow: clip) {
+  .m2-page {
+    overflow-x: hidden;
+  }
+}
+.m2-slices {
+  width: 100%;
+  isolation: isolate;
+}
+.m2-slice,
+.m2-sticky-frame {
+  width: 100%;
+}
+
 /* ══════════════════════════════════════════════════════════════
  * REVEAL + STAGGER SYSTEM
  * ══════════════════════════════════════════════════════════════ */

@@ -253,7 +253,7 @@ export default function AccountsPage() {
 
       {deleteState && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/35 backdrop-blur-sm" onClick={closeDeleteDialog} />
+          <div className="fixed inset-0 bg-black/35 backdrop-blur-sm" onClick={closeDeleteDialog} />
           <div className="relative z-10 w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
             <div className="flex items-start gap-3">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-500">

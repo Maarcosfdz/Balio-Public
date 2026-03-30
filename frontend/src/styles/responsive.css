@@ -1,0 +1,445 @@
+/*
+ * responsive.css — Mobile-first responsive system for Balio.
+ *
+ * IMPORTANT: This file only ADDS responsive behaviour.
+ * All desktop styles (≥ 1024 px) are intentionally untouched so the
+ * app looks exactly the same on PC as before.
+ *
+ * Breakpoints used here:
+ *   mobile  : < 640 px   (small phones 360–430 px)
+ *   mobile+ : 640–767 px  (large phones, landscape)
+ *   tablet  : 768–1023 px (iPad portrait / landscape)
+ *   desktop : ≥ 1024 px  (unchanged)
+ *   xl      : ≥ 1920 px  (ultra-wide — max-width caps)
+ *
+ * Sections:
+ *   0. Safe-area CSS variables
+ *   1. Global overflow / scroll prevention
+ *   2. Viewport height (dvh fix for mobile browsers)
+ *   3. TopBar — safe area + scrollable nav on tablet
+ *   4. Sidebar hamburger — safe area (Dynamic Island / notch)
+ *   5. Sidebar drawer — safe areas top + bottom
+ *   6. Main content — mobile top-padding (hamburger clearance)
+ *   7. Touch-targets — 44 × 44 px minimum
+ *   8. Inputs — font-size ≥ 16 px to prevent iOS auto-zoom
+ *   9. Tables — horizontal scroll on mobile
+ *  10. Transaction page — mobile stacking
+ *  11. Dashboard — mobile adjustments
+ *  12. Budget / Goal headers — mobile stacking
+ *  13. Large desktop — max-width content cap
+ */
+
+/* ═══════════════════════════════════════════════════════════════
+   0.  Safe-area CSS custom properties
+       (always 0 on desktop / non-iPhone devices)
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --safe-top:    env(safe-area-inset-top,    0px);
+  --safe-right:  env(safe-area-inset-right,  0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left:   env(safe-area-inset-left,   0px);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   1.  App layout only: prevent horizontal overflow at every breakpoint
+       (avoid affecting public pages like MainPage slices)
+   ═══════════════════════════════════════════════════════════════ */
+.app-layout-vertical,
+.app-layout-horizontal {
+  overflow-x: hidden;
+}
+
+/* Keep media constrained only inside authenticated app layouts */
+.app-layout-vertical img,
+.app-layout-vertical video,
+.app-layout-horizontal img,
+.app-layout-horizontal video {
+  max-width: 100%;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   2.  Viewport height — use dvh on mobile so the browser chrome
+       (address bar) doesn't clip the layout
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .app-layout-vertical,
+  .app-layout-horizontal {
+    height: 100dvh;          /* dynamic viewport height */
+    min-height: 100dvh;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   3.  TopBar — Dynamic Island / notch safe area
+       + scrollable nav on tablet / small laptop
+   ═══════════════════════════════════════════════════════════════ */
+
+/*
+ * Respect the Dynamic Island / notch at the very top of the screen.
+ * The topbar is the first element in horizontal layout.
+ * height adjusts so the rest of the layout still fills the viewport.
+ */
+.topbar-header {
+  padding-top: var(--safe-top);
+  height: calc(3.5rem + var(--safe-top));  /* h-14 + safe area */
+  box-sizing: border-box;
+}
+
+/*
+ * Tablet & small laptop (768 – 1023 px):
+ * Keep all nav items visible via horizontal scroll instead of wrapping.
+ */
+@media (max-width: 1023px) {
+  .topbar-nav {
+    overflow-x: auto;
+    scrollbar-width: none;       /* Firefox */
+    -ms-overflow-style: none;    /* IE/Edge */
+    min-width: 0;                /* allow flex shrink */
+  }
+
+  .topbar-nav::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/*
+ * Small mobile (< 640 px):
+ * Hide text labels in the topbar nav — keep only icons
+ * so the bar does not overflow on 360 px screens.
+ */
+@media (max-width: 639px) {
+  .topbar-item {
+    padding-left:  0.5rem;
+    padding-right: 0.5rem;
+    gap: 0;
+  }
+
+  /* Hide text but keep icon visible */
+  .topbar-item > span {
+    display: none;
+  }
+
+  /* Shrink user-info section to save space */
+  .topbar-header .topbar-user-section {
+    gap: 0.25rem;
+    padding-left: 0.5rem;
+  }
+
+  .topbar-header .topbar-user-name {
+    display: none;  /* hide nickname on very small screens */
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   4.  Sidebar hamburger — Dynamic Island / notch safe area
+       Overrides Tailwind's fixed top-4 / left-4 on mobile.
+   ═══════════════════════════════════════════════════════════════ */
+.nav-hamburger-btn {
+  /* Sit below Dynamic Island / notch and left of any landscape notch */
+  top:  max(1rem, calc(var(--safe-top)  + 0.5rem)) !important;
+  left: max(1rem, calc(var(--safe-left) + 0.75rem)) !important;
+  /* Comfortable touch target */
+  min-width:  44px;
+  min-height: 44px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   5.  Sidebar drawer — fixed positioning + safe areas on all edges
+       Force position:fixed so the sidebar is always out of the flex
+       layout on mobile, regardless of other CSS cascade order.
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .nav-sidebar {
+    position: fixed !important;  /* must not participate in flex layout */
+    /*
+     * Top: push logo + nav below Dynamic Island / notch.
+     * Bottom: lift logout button above home indicator.
+     * Left: respect landscape notch (e.g. iPhone landscape).
+     */
+    padding-top:    max(1rem, calc(var(--safe-top)    + 0.75rem)) !important;
+    padding-bottom: max(1rem, calc(var(--safe-bottom) + 0.75rem)) !important;
+    padding-left:   max(1rem, calc(var(--safe-left)   + 0.75rem)) !important;
+  }
+
+  /* Main content fills full viewport width — sidebar is out of flow */
+  .app-layout-vertical .app-main {
+    width: 100% !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   6.  Main content — mobile top padding + hero section fix
+       In the vertical (sidebar) layout the sidebar is a fixed
+       overlay on mobile. The main content needs top padding to clear
+       the hamburger button (itself pushed down by the safe area).
+       Hero sections use negative top margins to bleed to the edges;
+       those margins must match the new padding so there is no white
+       gap between the viewport top and the hero gradient.
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  /* Vertical layout: clear hamburger + Dynamic Island */
+  .app-layout-vertical .app-main {
+    /*
+     * Without Dynamic Island: max(4rem, 3.5rem)  = 4rem  (64 px)
+     * With    Dynamic Island: max(4rem, ~7.2rem)  ≈ 7.2rem (115 px)
+     */
+    padding-top: max(4rem, calc(var(--safe-top) + 3.5rem)) !important;
+    /* Home indicator clearance at the bottom */
+    padding-bottom: max(1.5rem, calc(var(--safe-bottom) + 1rem)) !important;
+  }
+
+  /*
+   * Hero sections: counteract the full padding-top so their gradient
+   * background bleeds all the way to the top of the viewport.
+   * (The left/right margins remain -1.5rem as set in each page's CSS.)
+   *
+   * min() gives the more-negative value:
+   *   No Dynamic Island → min(-4rem, -3.5rem) = -4rem  ✓
+   *   With Dynamic Island (59 px ≈ 3.7rem) → min(-4rem, -7.2rem) = -7.2rem ✓
+   */
+  .tx-hero-section,
+  .budgets-hero-section,
+  .goals-hero-section,
+  .analysis-hero-section,
+  .accounts-hero-section {
+    margin-top: min(-4rem, calc(-1 * var(--safe-top) - 3.5rem));
+  }
+
+  /*
+   * Hero inner content: push the actual text / buttons below the
+   * hamburger button (which sits at safe-top + ~0.5rem, height 40 px).
+   *   No Dynamic Island: max(4.5rem, 3.5rem) = 4.5rem (72 px) — clears 56 px hamburger ✓
+   *   With Dynamic Island: max(4.5rem, ~7.7rem) ≈ 7.7rem (123 px) — clears 107 px hamburger ✓
+   */
+  .tx-hero-inner,
+  .budgets-hero-inner,
+  .goals-hero-inner,
+  .analysis-hero-inner,
+  .accounts-hero-inner {
+    padding-top: max(4.5rem, calc(var(--safe-top) + 4rem));
+  }
+
+  /* Horizontal layout: just handle the home indicator at the bottom */
+  .app-layout-horizontal .app-main {
+    padding-bottom: max(1.5rem, calc(var(--safe-bottom) + 1rem)) !important;
+  }
+}
+
+/* Tablet: reduce padding slightly vs desktop's md:p-8 */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .app-main {
+    padding: 1.5rem !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   7.  Touch targets — 44 × 44 px minimum on mobile
+       (WCAG 2.5.5 / Apple HIG recommendation)
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  /* Sidebar nav links */
+  .nav-item {
+    min-height: 44px;
+  }
+
+  /* Topbar nav links */
+  .topbar-item {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Primary action buttons used across all pages */
+  .squishy-save-btn,
+  .squishy-save-simple,
+  .budget-new-btn,
+  .goal-new-btn,
+  .sched-new-btn,
+  .btn-primary-gradient,
+  .btn-ghost-draw,
+  .btn-cancel-draw,
+  .btn-register,
+  .btn-login-hover,
+  .btn-cancel-hover,
+  .app-gradient-btn,
+  .tx-action-pill {
+    min-height: 44px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   8.  Inputs — prevent iOS auto-zoom (requires font-size ≥ 16 px)
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="date"],
+  input[type="datetime-local"],
+  textarea,
+  select {
+    font-size: 1rem;    /* 16 px — prevents iOS from auto-zooming the page */
+    min-height: 44px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   9.  Tables — horizontal scroll on mobile
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  /*
+   * Wrap any table in .table-responsive to enable scroll.
+   * Individual pages can apply this wrapper as needed.
+   */
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /*
+   * Fallback: bare <table> elements not inside a wrapper will
+   * also scroll rather than causing page-level overflow.
+   */
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   10. Transaction page — mobile stacking
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 639px) {
+  /* Expense / income bento cards: stack vertically */
+  .tx-bento-grid {
+    flex-direction: column;
+  }
+
+  .tx-bento-card {
+    width: 100%;
+    min-height: 80px;
+  }
+
+  /* Filter tabs: scroll horizontally, no wrapping */
+  .tx-filter-tabs {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    flex-wrap: nowrap;
+    gap: 1rem;
+    padding-bottom: 2px;   /* avoid clipping the active underline */
+  }
+
+  .tx-filter-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Search bar: full width */
+  .tx-search-wrapper {
+    flex: 1;
+  }
+
+  .tx-search-input {
+    width: 100%;
+  }
+
+  /* Toolbar: two-row layout (tabs top, search+filter bottom) */
+  .tx-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .tx-toolbar-right {
+    width: 100%;
+  }
+}
+
+/* Tablet: hero bento cards: slightly narrower */
+@media (min-width: 640px) and (max-width: 767px) {
+  .tx-bento-card {
+    width: 240px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   11. Dashboard — mobile adjustments
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  /* Quick tools bar: allow horizontal scrolling */
+  .db-quick-tools {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    flex-wrap: nowrap;
+  }
+
+  .db-quick-tools::-webkit-scrollbar {
+    display: none;
+  }
+
+  .db-quick-tool-slot {
+    min-width: 110px;
+    flex: 1 0 110px;
+  }
+
+  /* Hero inner: reduce padding on small screens */
+  .db-hero-inner {
+    padding: 1.25rem;
+  }
+
+  /* Hero title text: slightly smaller on very small screens */
+  .db-hero-inner h2,
+  .db-hero-inner .text-xl,
+  .db-hero-inner .text-2xl {
+    font-size: 1.25rem;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   12. Budget / Goal hero headers — mobile stacking
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  /* Stack title + actions vertically */
+  .budgets-hero-header,
+  .goals-hero-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  /* Actions section: full width on mobile */
+  .budgets-hero-actions,
+  .goals-hero-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  /* Reduce oversized h1 on small screens */
+  .budgets-hero-title h1,
+  .goals-hero-title h1,
+  .tx-hero-title h1 {
+    font-size: 1.5rem;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   13. Large desktop (≥ 1920 px) — content max-width cap
+       Prevents lines of text and cards from stretching too wide
+       on ultra-wide monitors. Desktop (1280–1919 px) is untouched.
+   ═══════════════════════════════════════════════════════════════ */
+@media (min-width: 1920px) {
+  .app-main > * {
+    max-width: 1800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

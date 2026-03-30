@@ -35,7 +35,7 @@ export default function TopBar() {
   }, [activeIndex]);
 
   return (
-    <header className="relative flex h-14 shrink-0 items-center bg-card px-4 gap-4 shadow-sm">
+    <header className="relative flex h-14 shrink-0 items-center bg-card px-4 gap-4 shadow-sm topbar-header">
       {/* Full-width gradient bottom separator */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[1.5px] bg-gradient-to-r from-sky-400 to-emerald-400 opacity-55" />
 
@@ -87,8 +87,8 @@ export default function TopBar() {
       </nav>
 
       {/* User + logout */}
-      <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
-        <span className="text-sm text-slate-400 truncate max-w-[120px]">
+      <div className="flex items-center gap-3 pl-4 border-l border-slate-200 topbar-user-section">
+        <span className="text-sm text-slate-400 truncate max-w-[120px] topbar-user-name">
           {user?.nickname}
         </span>
         <button

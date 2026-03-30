@@ -63,9 +63,22 @@
 /* ── Hero header section ─────────────────────────────────────────── */
 .goals-hero-section {
   position: relative;
+  isolation: isolate;
   overflow: visible;
   margin: -1.5rem -1.5rem 0;
   padding: 0 1.5rem 3.25rem;
+}
+
+.goals-hero-section::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 0;
+  bottom: 0;
+  width: 100vw;
+  pointer-events: none;
+  z-index: 0;
   background: linear-gradient(
     160deg,
     #e8f5ef 0%,

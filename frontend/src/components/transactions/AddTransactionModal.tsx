@@ -486,7 +486,7 @@ export default function AddTransactionModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Overlay */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
+        className="fixed inset-0 bg-black/40 backdrop-blur-[2px]"
         onClick={onClose}
       />
 

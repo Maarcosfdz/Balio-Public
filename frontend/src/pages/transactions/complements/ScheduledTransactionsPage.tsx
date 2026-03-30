@@ -181,7 +181,7 @@ function ScheduledFormDialog({ open, editing, onClose, onSaved }: FormDialogProp
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
       <div className="relative z-10 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl sm:p-8">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
@@ -561,7 +561,7 @@ export default function ScheduledTransactionsPage() {
 
       {deleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setDeleteId(null)} />
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setDeleteId(null)} />
           <div className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
             <p className="text-sm text-slate-600">{t("scheduled.deleteConfirm")}</p>
             <div className="mt-4 flex items-center justify-end gap-3">

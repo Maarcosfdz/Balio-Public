@@ -6,6 +6,7 @@
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import {
   CheckCircle2,
@@ -292,86 +293,89 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
 
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-slate-800">
-            {isEdit ? t("goals.editGoal") : t("goals.create")}
-          </h2>
-          <button onClick={onClose} className="rounded-full p-1 text-slate-400 hover:bg-slate-100">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-500">{t("goals.name")}</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={80}
-              placeholder={t("goals.namePlaceholder")}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-              required
-            />
-            <FieldError message={nameError} />
+  return createPortal(
+    <div className="fixed inset-0 z-[90]">
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 flex items-center justify-center p-4">
+        <div className="relative z-10 w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+          <div className="mb-5 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-slate-800">
+              {isEdit ? t("goals.editGoal") : t("goals.create")}
+            </h2>
+            <button onClick={onClose} className="rounded-full p-1 text-slate-400 hover:bg-slate-100">
+              <X className="h-5 w-5" />
+            </button>
           </div>
 
-          <IconPicker
-            iconName={iconName}
-            iconBgColor={iconBgColor}
-            defaultIconName={defaultIconName}
-            defaultIconBgColor={DEFAULT_ICON_BG_COLOR}
-            onChange={(value) => {
-              setIconName(value.iconName);
-              setIconBgColor(value.iconBgColor);
-            }}
-          />
-
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-500">{t("goals.targetAmount")}</label>
-            <div className="relative">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-500">{t("goals.name")}</label>
               <input
-                type="number"
-                value={targetAmount}
-                onChange={(e) => setTargetAmount(e.target.value)}
-                min="0.01"
-                step="0.01"
-                placeholder="0.00"
-                className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 pr-10 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={80}
+                placeholder={t("goals.namePlaceholder")}
+                className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
                 required
               />
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">EUR</span>
+              <FieldError message={nameError} />
             </div>
-            <FieldError message={amountError} />
-          </div>
 
-          {formError && <FieldError message={formError} />}
+            <IconPicker
+              iconName={iconName}
+              iconBgColor={iconBgColor}
+              defaultIconName={defaultIconName}
+              defaultIconBgColor={DEFAULT_ICON_BG_COLOR}
+              onChange={(value) => {
+                setIconName(value.iconName);
+                setIconBgColor(value.iconBgColor);
+              }}
+            />
 
-          <div className="flex gap-2 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-cancel-draw flex-1 justify-center"
-            >
-              {t("common.cancel")}
-            </button>
-            <GradientButton
-              type="submit"
-              disabled={loading}
-              iconVariant={loading ? "none" : "other"}
-              icon={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              className="flex-1 justify-center"
-            >
-              {t("common.save")}
-            </GradientButton>
-          </div>
-        </form>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-500">{t("goals.targetAmount")}</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={targetAmount}
+                  onChange={(e) => setTargetAmount(e.target.value)}
+                  min="0.01"
+                  step="0.01"
+                  placeholder="0.00"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 pr-10 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                  required
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">EUR</span>
+              </div>
+              <FieldError message={amountError} />
+            </div>
+
+            {formError && <FieldError message={formError} />}
+
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn-cancel-draw flex-1 justify-center"
+              >
+                {t("common.cancel")}
+              </button>
+              <GradientButton
+                type="submit"
+                disabled={loading}
+                iconVariant={loading ? "none" : "other"}
+                icon={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                className="flex-1 justify-center"
+              >
+                {t("common.save")}
+              </GradientButton>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

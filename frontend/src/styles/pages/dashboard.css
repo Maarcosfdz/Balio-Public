@@ -3,11 +3,39 @@
    ══════════════════════════════════════════════════════ */
 
 /* ── Page background ────────────────────────────────── */
+.app-main.app-main--dashboard {
+  background: linear-gradient(180deg, #fcfcfd 0%, #f5f6f7 100%);
+}
+
 .db-page-bg {
   position: relative;
   min-height: 100%;
   background: linear-gradient(180deg, #fcfcfd 0%, #f5f6f7 100%);
   overflow: hidden;
+  width: 100vw;
+  margin-top: -1.5rem;
+  margin-bottom: -1.5rem;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+/* Ensure dashboard can bleed full-width even when global app-main caps children */
+.app-main > .db-page-bg {
+  width: 100vw;
+  max-width: none;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+@media (min-width: 768px) {
+  .db-page-bg {
+    margin-top: -2rem;
+    margin-bottom: -2rem;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
 }
 
 .db-page-bg::before {

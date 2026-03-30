@@ -534,29 +534,29 @@ export default function TransactionsPage() {
                 className="tx-action-pill"
                 onClick={() => navigate(ROUTES.CATEGORIES)}
               >
-                <Tag className="h-4 w-4" />
-                {t("nav.categories")}
+                <Tag className="h-4 w-4 shrink-0" />
+                <span className="tx-action-pill__label">{t("nav.categories")}</span>
               </button>
               <button
                 className="tx-action-pill"
                 onClick={() => navigate(ROUTES.SCHEDULED_TRANSACTIONS)}
               >
-                <CalendarClock className="h-4 w-4" />
-                {t("scheduled.title")}
+                <CalendarClock className="h-5 w-5 shrink-0" />
+                <span className="tx-action-pill__label">{t("scheduled.title")}</span>
               </button>
               <button
                 className="tx-action-pill"
                 onClick={() => setRulesOpen(true)}
               >
-                <ListChecks className="h-4 w-4" />
-                {t("rules.title")}
+                <ListChecks className="h-4 w-4 shrink-0" />
+                <span className="tx-action-pill__label">{t("rules.title")}</span>
               </button>
               <button
                 className="tx-action-pill"
                 onClick={() => navigate(ROUTES.FILTERS)}
               >
-                <ListChecks className="h-4 w-4" />
-                {t("txPage.savedFilters")}
+                <ListChecks className="h-4 w-4 shrink-0" />
+                <span className="tx-action-pill__label">{t("txPage.savedFilters")}</span>
               </button>
             </div>
           </div>

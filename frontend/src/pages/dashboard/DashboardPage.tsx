@@ -244,7 +244,7 @@ function QuickToolPicker({ slotIndex, goals, budgets, filters, onPick, onClose }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full max-w-xs rounded-2xl bg-white shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b">
           <p className="text-sm font-bold text-slate-800">{t("dashboard.page.quickTools.picker.title", "Configurar acceso rápido")}</p>
