@@ -31,6 +31,8 @@ public interface BudgetCategoryDao extends JpaRepository<BudgetCategory, UUID> {
     void deleteLinkedCategoryLinksByUserId(@Param("userId") UUID userId);
 
     @Modifying
-    @Query("DELETE FROM BudgetCategory bc WHERE bc.budget.user.id = :userId")
+    @Query(value = "DELETE FROM budget_categories WHERE budget_id IN " +
+                   "(SELECT b.id FROM budgets b WHERE b.user_id = :userId)",
+           nativeQuery = true)
     void deleteAllByBudgetUserId(@Param("userId") UUID userId);
 }

@@ -190,19 +190,23 @@
 }
 
 .budget-detail-hero-card {
-  box-shadow:
-    0 0 0 1px rgba(16, 185, 129, 0.14),
-    0 0 26px -10px rgba(16, 185, 129, 0.58),
-    0 0 34px -14px rgba(14, 165, 233, 0.48);
+  border-top: 1px solid #e2e8f0;
+  border-left: 1px solid #e2e8f0;
+  border-right: 2px solid #cbd5e1;
+  border-bottom: 2px solid #cbd5e1;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 10px 12px 26px -22px rgba(15, 23, 42, 0.45);
 }
 
 .budget-detail-summary-card {
-  border: 1px solid rgba(125, 211, 252, 0.35);
-  background:
-    linear-gradient(135deg, rgba(236, 253, 245, 0.72) 0%, rgba(224, 242, 254, 0.66) 46%, rgba(239, 246, 255, 0.72) 100%);
+  border-top: 0;
+  border-left: 0;
+  border-right: 1.5px solid #cbd5e1;
+  border-bottom: 1.5px solid #cbd5e1;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 16px 34px -26px rgba(16, 185, 129, 0.7);
+  box-shadow: 8px 10px 24px -22px rgba(15, 23, 42, 0.42);
 }
 
 .budget-detail-summary-eyebrow {
@@ -308,6 +312,73 @@
 .budget-card-tint-emerald { background-color: #f0fdf4 !important; }
 .budget-card-tint-amber   { background-color: #fffbeb !important; }
 .budget-card-tint-rose    { background-color: #fff1f2 !important; }
+
+.budget-card {
+  transition:
+    background-color 320ms ease,
+    box-shadow 220ms ease,
+    transform 180ms ease;
+}
+
+.budget-card-accent {
+  transition: background 320ms ease, opacity 320ms ease;
+}
+
+.budget-card-color-swap {
+  animation: budget-card-color-swap 480ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes budget-card-color-swap {
+  0% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 4px 14px -12px rgba(15, 23, 42, 0.28);
+  }
+  45% {
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 14px 28px -20px rgba(14, 165, 233, 0.5);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 4px 14px -12px rgba(15, 23, 42, 0.28);
+  }
+}
+
+.budget-detail-view-all-btn {
+  padding: 0.42rem 0.78rem;
+  border-radius: 0.65rem;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #64748b;
+  transition:
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    transform 180ms ease,
+    padding-right 450ms ease,
+    color 300ms ease;
+}
+
+.budget-detail-view-all-btn:hover {
+  border-color: #bae6fd;
+  box-shadow: 0 8px 20px -18px rgba(14, 165, 233, 0.6);
+  transform: translateY(-1px);
+}
+
+.budget-detail-view-all-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  -webkit-text-fill-color: unset;
+  animation: none;
+}
+
+.budget-detail-view-all-btn:disabled .db-view-all-arrow path {
+  opacity: 0.35 !important;
+  transform: none !important;
+  animation: none !important;
+}
 
 /* ── Usage color helpers (reusable) ────────────────────────────────── */
 

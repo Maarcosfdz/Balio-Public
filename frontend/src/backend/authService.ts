@@ -34,4 +34,8 @@ export const authService = {
   updatePreferredCurrency(userId: string, preferredCurrency: string): Promise<void> {
     return api.put(`/user/${userId}/preferredCurrency`, { preferredCurrency });
   },
+
+  deleteAccount(userId: string): Promise<void> {
+    return api.delete(`/user/${userId}`);
+  },
 };

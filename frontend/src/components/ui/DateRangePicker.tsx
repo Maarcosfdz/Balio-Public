@@ -27,6 +27,7 @@ interface Props {
   onChangeSpecificDates: (dates: string[]) => void;
   label?: string;
   allowLooseDates?: boolean;
+  singleOnly?: boolean;
 }
 
 export default function DateRangePicker({
@@ -34,14 +35,16 @@ export default function DateRangePicker({
   specificDates, onChangeSpecificDates,
   label,
   allowLooseDates = true,
+  singleOnly = false,
 }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<PickerMode>("range");
+  const [mode, setMode] = useState<PickerMode>(singleOnly ? "single" : "range");
   const [showMultiPanel, setShowMultiPanel] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [portalStyle, setPortalStyle] = useState<React.CSSProperties>({});
   const today = new Date();
+  const effectiveMode: PickerMode = singleOnly ? "single" : mode;
 
   const dayPickerClassNames = {
     selected: "!bg-sky-500 !text-white rounded-md",
@@ -149,7 +152,7 @@ export default function DateRangePicker({
     ? t("txPage.selectDates", "Select date(s)")
     : specificDates.length > 0 && !startDate
       ? `${specificDates.length} ${t("txPage.looseDates", "loose dates")}`
-      : mode === "single"
+      : effectiveMode === "single"
         ? formatDisplay(startDate)
         : endDate && endDate !== startDate
           ? `${formatDisplay(startDate)} → ${formatDisplay(endDate)}`
@@ -162,6 +165,7 @@ export default function DateRangePicker({
   };
 
   const handleModeChange = (next: PickerMode) => {
+    if (singleOnly) return;
     onChangeStart("");
     onChangeEnd("");
     setMode(next);
@@ -206,31 +210,32 @@ export default function DateRangePicker({
           style={portalStyle}
           className="rounded-xl border border-slate-200 bg-white p-3 shadow-xl ring-1 ring-black/5"
         >
-          {/* Mode toggle — 2 tabs */}
-          <div className="mb-2 flex gap-1 rounded-lg bg-slate-100 p-0.5">
-            <button
-              type="button"
-              onClick={() => handleModeChange("single")}
-              className={`flex-1 rounded-md py-1.5 text-xs font-semibold transition ${
-                mode === "single" ? "bg-white text-sky-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              {t("txPage.singleDate", "Day")}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleModeChange("range")}
-              className={`flex-1 rounded-md py-1.5 text-xs font-semibold transition ${
-                mode === "range" ? "bg-white text-sky-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              {t("txPage.dateRange", "Range")}
-            </button>
-          </div>
+          {!singleOnly && (
+            <div className="mb-2 flex gap-1 rounded-lg bg-slate-100 p-0.5">
+              <button
+                type="button"
+                onClick={() => handleModeChange("single")}
+                className={`flex-1 rounded-md py-1.5 text-xs font-semibold transition ${
+                  effectiveMode === "single" ? "bg-white text-sky-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                {t("txPage.singleDate", "Day")}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleModeChange("range")}
+                className={`flex-1 rounded-md py-1.5 text-xs font-semibold transition ${
+                  effectiveMode === "range" ? "bg-white text-sky-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                {t("txPage.dateRange", "Range")}
+              </button>
+            </div>
+          )}
 
           {/* Calendar */}
           <div style={dayPickerStyleVars}>
-            {mode === "single" ? (
+            {effectiveMode === "single" ? (
               <DayPicker
                 mode="single"
                 selected={parseIso(startDate)}
@@ -253,7 +258,7 @@ export default function DateRangePicker({
 
           {/* Action bar */}
           <div className="mt-1 flex items-center justify-between border-t border-slate-100 pt-2">
-            {mode === "single" ? (
+            {effectiveMode === "single" ? (
               <button
                 type="button"
                 onClick={() => { const iso = toInputDate(today); onChangeStart(iso); onChangeEnd(iso); }}

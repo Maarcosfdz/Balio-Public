@@ -15,7 +15,7 @@ import { bankService } from "@/backend/bankService";
 import { ROUTES } from "@/config/routes";
 import { ToastBanner } from "@/components/ui/toast-banner";
 import {
-  clearSessionData,
+  clearAllUserState,
   endSession,
   getAccessToken,
   getLastActivityAt,
@@ -222,6 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (params: LoginParamsDto) => {
     const data = await authService.login(params);
     persistSession(data);
+    touchSessionActivity(); // fresh login = genuine user activity, start inactivity timer now
     setSessionNoticeReason(null);
     setWarningDismissed(false);
     setWarningVisible(false);
@@ -232,6 +233,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = useCallback(async (params: UserDto) => {
     const data = await authService.signUp(params);
     persistSession(data);
+    touchSessionActivity(); // fresh sign-up = genuine user activity, start inactivity timer now
     setSessionNoticeReason(null);
     setWarningDismissed(false);
     setWarningVisible(false);
@@ -244,7 +246,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // Ignore logout errors (token expired, etc.)
     } finally {
-      clearSessionData();
+      clearAllUserState(); // wipes auth tokens + all user-specific UI state
       setSessionNoticeReason(null);
       setWarningDismissed(false);
       setWarningVisible(false);

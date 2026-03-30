@@ -31,6 +31,7 @@ import { transactionService } from "@/backend/transactionService";
 import type { TransactionSummaryDto } from "@/types";
 import { IconAvatar } from "@/components/icons/IconAvatar";
 import { IconPicker } from "@/components/icons/IconPicker";
+import MultiSelectDropdown from "@/components/ui/MultiSelectDropdown";
 import { GradientButton } from "@/components/ui/gradient-button";
 import Pagination from "@/components/ui/Pagination";
 import {
@@ -58,6 +59,21 @@ function formatDate(d: string) {
   return new Date(d + "T00:00:00").toLocaleDateString(undefined, {
     day: "numeric", month: "short", year: "numeric",
   });
+}
+
+function ViewAllArrowIcon() {
+  return (
+    <svg
+      className="db-view-all-arrow"
+      viewBox="0 0 24 12"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path className="one" d="M2 2 L7 6 L2 10" />
+      <path className="two" d="M9 2 L14 6 L9 10" />
+      <path className="three" d="M16 2 L21 6 L16 10" />
+    </svg>
+  );
 }
 
 // ── Usage color helper ──────────────────────────────────────────────
@@ -111,7 +127,6 @@ function CategoryFormDialog({
   const [iconName, setIconName] = useState("");
   const [iconBgColor, setIconBgColor] = useState(DEFAULT_ICON_BG_COLOR);
   const [selectedCatIds, setSelectedCatIds] = useState<Set<string>>(new Set());
-  const [catSearch, setCatSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [nameError, setNameError] = useState("");
   const [amountError, setAmountError] = useState("");
@@ -126,7 +141,6 @@ function CategoryFormDialog({
       setSelectedCatIds(
         new Set(initial?.linkedCategories?.map((c) => c.id) ?? [])
       );
-      setCatSearch("");
       setNameError("");
       setAmountError("");
       setFormError("");
@@ -139,24 +153,10 @@ function CategoryFormDialog({
     [allCategories],
   );
 
-  const filteredCategories = useMemo(() => {
-    const q = catSearch.toLowerCase().trim();
-    if (!q) return expenseCategories;
-    return expenseCategories.filter((c) => c.name.toLowerCase().includes(q));
-  }, [expenseCategories, catSearch]);
-
   const defaultIconName = useMemo(
     () => suggestIconFromText(name || initial?.name || "category"),
     [name, initial?.name],
   );
-
-  const toggleCategory = (id: string) => {
-    setSelectedCatIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -267,33 +267,15 @@ function CategoryFormDialog({
             <p className="text-[11px] text-slate-400">
               {t("budgets.detail.linkedCategoriesDesc")}
             </p>
-            <input
-              type="text"
-              value={catSearch}
-              onChange={(e) => setCatSearch(e.target.value)}
-              placeholder={t("budgets.detail.searchCategory")}
-              className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+            <MultiSelectDropdown
+              value={Array.from(selectedCatIds)}
+              onChange={(ids) => setSelectedCatIds(new Set(ids))}
+              options={expenseCategories.map((c) => ({ value: c.id, label: c.name }))}
+              placeholder={t("txPage.allCategories")}
+              searchPlaceholder={t("budgets.detail.searchCategory")}
+              emptyText={t("common.noResults")}
+              buttonClassName="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
             />
-            <div className="max-h-36 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-1.5">
-              {filteredCategories.length === 0 ? (
-                <p className="p-2 text-center text-xs text-slate-400">{t("common.noResults")}</p>
-              ) : (
-                filteredCategories.map((c) => (
-                  <label
-                    key={c.id}
-                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-white"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedCatIds.has(c.id)}
-                      onChange={() => toggleCategory(c.id)}
-                      className="h-3.5 w-3.5 rounded border-slate-300 text-sky-500 focus:ring-sky-200"
-                    />
-                    <span className="text-slate-700">{c.name}</span>
-                  </label>
-                ))
-              )}
-            </div>
           </div>
 
           {formError && <FieldError message={formError} />}
@@ -502,19 +484,12 @@ function CategoryRow({ cat, budgetId, onEdit, onDelete, onRefresh }: CategoryRow
   }, [cat.transactions, txSearchTerm]);
 
   const txTotalPages = Math.max(1, Math.ceil(filteredTransactions.length / CATEGORY_TX_PAGE_SIZE));
+  const safeTxPage = Math.min(txPage, txTotalPages);
 
   const visibleTransactions = useMemo(() => {
-    const start = (txPage - 1) * CATEGORY_TX_PAGE_SIZE;
+    const start = (safeTxPage - 1) * CATEGORY_TX_PAGE_SIZE;
     return filteredTransactions.slice(start, start + CATEGORY_TX_PAGE_SIZE);
-  }, [filteredTransactions, txPage]);
-
-  useEffect(() => {
-    setTxPage(1);
-  }, [txSearchTerm, expanded, cat.id]);
-
-  useEffect(() => {
-    if (txPage > txTotalPages) setTxPage(txTotalPages);
-  }, [txPage, txTotalPages]);
+  }, [filteredTransactions, safeTxPage]);
 
   const handleUnlink = async (txId: string) => {
     setUnlinking(txId);
@@ -563,7 +538,10 @@ function CategoryRow({ cat, budgetId, onEdit, onDelete, onRefresh }: CategoryRow
 
       <div className="mt-4 flex items-center justify-between gap-2">
         <button
-          onClick={() => setExpanded((v) => !v)}
+          onClick={() => {
+            setExpanded((v) => !v);
+            setTxPage(1);
+          }}
           className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100"
         >
           <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? "" : "-rotate-90"}`} />
@@ -639,7 +617,10 @@ function CategoryRow({ cat, budgetId, onEdit, onDelete, onRefresh }: CategoryRow
           <input
             type="text"
             value={txSearchTerm}
-            onChange={(e) => setTxSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setTxSearchTerm(e.target.value);
+              setTxPage(1);
+            }}
             placeholder={t("txPage.searchByNamePlaceholder")}
             className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
           />
@@ -694,7 +675,7 @@ function CategoryRow({ cat, budgetId, onEdit, onDelete, onRefresh }: CategoryRow
 
           {filteredTransactions.length > 0 && txTotalPages > 1 && (
             <Pagination
-              currentPage={txPage}
+              currentPage={safeTxPage}
               totalPages={txTotalPages}
               onPageChange={setTxPage}
             />
@@ -736,13 +717,13 @@ export default function BudgetDetailPage() {
     for (const cat of budget.categories) {
       for (const tx of cat.transactions) {
         if (!unique.has(tx.id)) {
-          unique.set(tx.id, {
+            unique.set(tx.id, {
             id: tx.id,
             name: tx.name,
             amount: tx.amount,
             date: tx.date,
             type: "EXPENSE",
-            categoryName: tx.categoryName,
+              categoryName: tx.categoryName ?? undefined,
             budgetCategoryName: cat.name,
           });
         }
@@ -896,16 +877,14 @@ export default function BudgetDetailPage() {
                   {t(`budgets.periodicities.${budget.periodicity}`)} · {formatDate(budget.periodStart)} — {formatDate(budget.periodEnd)}
                 </p>
               </div>
-              <GradientButton
+              <button
+                type="button"
                 onClick={() => { setEditCat(null); setCatFormOpen(true); }}
                 disabled={!canAddCat}
-                size="sm"
-                weight="normal"
-                iconVariant="plus"
-                icon={<Plus className="h-4 w-4" />}
+                className="db-view-all budget-detail-view-all-btn"
               >
-                {t("budgets.detail.addCategory")}
-              </GradientButton>
+                {t("budgets.detail.addCategory")} <ViewAllArrowIcon />
+              </button>
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

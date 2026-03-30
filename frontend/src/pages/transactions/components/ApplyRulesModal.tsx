@@ -239,17 +239,7 @@ export default function ApplyRulesModal({
       prev.map((r, i) => (i === idx ? { ...r, [field]: value } : r)),
     );
 
-  const toggleCategory = (idx: number, catId: string) => {
-    setRules((prev) =>
-      prev.map((r, i) => {
-        if (i !== idx) return r;
-        const ids = r.categoryIds.includes(catId)
-          ? r.categoryIds.filter((id) => id !== catId)
-          : [...r.categoryIds, catId];
-        return { ...r, categoryIds: ids };
-      }),
-    );
-  };
+  // toggleCategory removed — not used
 
   const rulesWithActions = useMemo(
     () => rules.filter((r) => r.newName.trim() || r.newCategoryId),

@@ -25,7 +25,9 @@ import type { BudgetSummaryDto, BudgetPeriodicity } from "@/types";
 import { budgetService } from "@/backend/budgetService";
 import { IconAvatar } from "@/components/icons/IconAvatar";
 import { IconPicker } from "@/components/icons/IconPicker";
+import DateRangePicker from "@/components/ui/DateRangePicker";
 import { GradientButton } from "@/components/ui/gradient-button";
+import SingleSelectDropdown from "@/components/ui/SelectDropdown";
 import {
   DEFAULT_ICON_BG_COLOR,
   normalizeIconBgColor,
@@ -131,6 +133,17 @@ function BudgetFormDialog({ open, initial, onClose, onSaved }: BudgetFormDialogP
     return suggestIconFromText(name || initial?.name || "budget");
   }, [name, initial?.name]);
 
+  const periodicityOptions = useMemo(
+    () => PERIODICITIES.map((p) => ({
+      value: p,
+      label: t(`budgets.periodicities.${p}`),
+    })),
+    [t],
+  );
+
+  const ignoreEndDate = useCallback(() => {}, []);
+  const ignoreSpecificDates = useCallback(() => {}, []);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setNameError("");
@@ -207,31 +220,25 @@ function BudgetFormDialog({ open, initial, onClose, onSaved }: BudgetFormDialogP
             }}
           />
 
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-500">{t("budgets.periodicity")}</label>
-            <select
-              value={periodicity}
-              onChange={(e) => setPeriodicity(e.target.value as BudgetPeriodicity)}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-            >
-              {PERIODICITIES.map((p) => (
-                <option key={p} value={p}>
-                  {t(`budgets.periodicities.${p}`)}
-                </option>
-              ))}
-            </select>
-          </div>
+          <SingleSelectDropdown
+            value={periodicity}
+            onChange={(v) => setPeriodicity(v as BudgetPeriodicity)}
+            options={periodicityOptions}
+            label={t("budgets.periodicity")}
+            buttonClassName="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+          />
 
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-500">{t("budgets.startDate")}</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-              required
-            />
-          </div>
+          <DateRangePicker
+            startDate={startDate}
+            endDate={startDate}
+            onChangeStart={setStartDate}
+            onChangeEnd={ignoreEndDate}
+            specificDates={[]}
+            onChangeSpecificDates={ignoreSpecificDates}
+            label={t("budgets.startDate")}
+            allowLooseDates={false}
+            singleOnly
+          />
 
           {formError && <FieldError message={formError} />}
 
@@ -337,6 +344,7 @@ function ColorPalettePicker({
 interface PrimaryCardProps {
   budget: BudgetSummaryDto;
   colorId: string;
+  isColorSwapping: boolean;
   onEdit: (b: BudgetSummaryDto) => void;
   onDelete: (b: BudgetSummaryDto) => void;
   onClick: (b: BudgetSummaryDto) => void;
@@ -347,7 +355,7 @@ interface PrimaryCardProps {
 }
 
 function PrimaryBudgetCard({
-  budget, colorId, onEdit, onDelete, onClick, onColorChange,
+  budget, colorId, isColorSwapping, onEdit, onDelete, onClick, onColorChange,
   showDeleteOverlay, onCancelDelete, onConfirmDelete,
 }: PrimaryCardProps) {
   const { t } = useTranslation();
@@ -360,13 +368,13 @@ function PrimaryBudgetCard({
 
   return (
     <div
-      className={`budget-card relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md cursor-pointer ${accent.tint}`}
+      className={`budget-card relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md cursor-pointer ${accent.tint} ${isColorSwapping ? "budget-card-color-swap" : ""}`}
       style={{ minHeight: "22rem" }}
       onClick={() => onClick(budget)}
     >
       {/* Top accent bar */}
-      <div className="absolute left-0 right-0 top-0 h-1.5 rounded-t-2xl" style={{ background: accent.id === "default" ? undefined : accent.bar }} />
-      {accent.id === "default" && <div className={`absolute left-0 right-0 top-0 h-1.5 rounded-t-2xl ${colors.bar}`} />}
+      <div className="budget-card-accent absolute left-0 right-0 top-0 h-1.5 rounded-t-2xl" style={{ background: accent.id === "default" ? undefined : accent.bar }} />
+      {accent.id === "default" && <div className={`budget-card-accent absolute left-0 right-0 top-0 h-1.5 rounded-t-2xl ${colors.bar}`} />}
 
       {showDeleteOverlay && (
         <DeleteBudgetOverlay
@@ -489,6 +497,7 @@ function PrimaryBudgetCard({
 interface SecondaryCardProps {
   budget: BudgetSummaryDto;
   colorId: string;
+  isColorSwapping: boolean;
   isPrimary: boolean;
   onEdit: (b: BudgetSummaryDto) => void;
   onDelete: (b: BudgetSummaryDto) => void;
@@ -501,7 +510,7 @@ interface SecondaryCardProps {
 }
 
 function SecondaryBudgetCard({
-  budget, colorId, onEdit, onDelete, onClick, onSetPrimary, onColorChange,
+  budget, colorId, isColorSwapping, onEdit, onDelete, onClick, onSetPrimary, onColorChange,
   showDeleteOverlay, onCancelDelete, onConfirmDelete,
 }: SecondaryCardProps) {
   const { t } = useTranslation();
@@ -514,14 +523,14 @@ function SecondaryBudgetCard({
 
   return (
     <div
-      className={`budget-card relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md cursor-pointer ${accent.tint}`}
+      className={`budget-card relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md cursor-pointer ${accent.tint} ${isColorSwapping ? "budget-card-color-swap" : ""}`}
       style={{ minHeight: "13rem" }}
       onClick={() => onClick(budget)}
     >
       {/* Top accent bar */}
       {accent.id === "default"
-        ? <div className={`absolute left-0 right-0 top-0 h-1 rounded-t-2xl ${colors.bar}`} />
-        : <div className="absolute left-0 right-0 top-0 h-1 rounded-t-2xl" style={{ background: accent.bar }} />
+        ? <div className={`budget-card-accent absolute left-0 right-0 top-0 h-1 rounded-t-2xl ${colors.bar}`} />
+        : <div className="budget-card-accent absolute left-0 right-0 top-0 h-1 rounded-t-2xl" style={{ background: accent.bar }} />
       }
 
       {showDeleteOverlay && (
@@ -657,6 +666,8 @@ export default function BudgetsPage() {
 
   // Card colors: budgetId -> colorId
   const [cardColors, setCardColors] = useState<Record<string, string>>({});
+  const [colorSwapBudgetId, setColorSwapBudgetId] = useState<string | null>(null);
+  const colorSwapTimerRef = useRef<number | null>(null);
 
   const fetchBudgets = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -709,6 +720,14 @@ export default function BudgetsPage() {
     try { window.localStorage.setItem(CARD_COLORS_STORAGE_KEY, JSON.stringify(cardColors)); } catch { /* ignore */ }
   }, [cardColors]);
 
+  useEffect(() => {
+    return () => {
+      if (colorSwapTimerRef.current !== null) {
+        window.clearTimeout(colorSwapTimerRef.current);
+      }
+    };
+  }, []);
+
   // Ensure primary id is valid
   const resolvedPrimaryId = useMemo(() => {
     if (budgets.length === 0) return null;
@@ -754,6 +773,15 @@ export default function BudgetsPage() {
 
   const handleColorChange = useCallback((budgetId: string, colorId: string) => {
     setCardColors((prev) => ({ ...prev, [budgetId]: colorId }));
+    setColorSwapBudgetId(budgetId);
+
+    if (colorSwapTimerRef.current !== null) {
+      window.clearTimeout(colorSwapTimerRef.current);
+    }
+    colorSwapTimerRef.current = window.setTimeout(() => {
+      setColorSwapBudgetId((current) => (current === budgetId ? null : current));
+      colorSwapTimerRef.current = null;
+    }, 520);
   }, []);
 
   const getCardColorId = useCallback((budgetId: string) => {
@@ -820,6 +848,7 @@ export default function BudgetsPage() {
                   <PrimaryBudgetCard
                     budget={primaryBudget}
                     colorId={getCardColorId(primaryBudget.id)}
+                    isColorSwapping={colorSwapBudgetId === primaryBudget.id}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onClick={handleClick}
@@ -837,6 +866,7 @@ export default function BudgetsPage() {
                   <SecondaryBudgetCard
                     budget={budget}
                     colorId={getCardColorId(budget.id)}
+                    isColorSwapping={colorSwapBudgetId === budget.id}
                     isPrimary={false}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
