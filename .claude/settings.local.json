@@ -66,7 +66,17 @@
       "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''c:/Users/mroma/Desktop/FIC/4.Cuarto/TFG/Balio/frontend/src/i18n/en.json''\\)\\); console.log\\(''en: OK''\\)\")",
       "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''c:/Users/mroma/Desktop/FIC/4.Cuarto/TFG/Balio/frontend/src/i18n/es.json''\\)\\); console.log\\(''es: OK''\\)\")",
       "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''c:/Users/mroma/Desktop/FIC/4.Cuarto/TFG/Balio/frontend/src/i18n/gal.json''\\)\\); console.log\\(''gal: OK''\\)\")",
-      "Bash(node -e \"const fs = require\\(''fs''\\); const src = fs.readFileSync\\(''c:/Users/mroma/Desktop/FIC/4.Cuarto/TFG/Balio/frontend/src/pages/mainPage/AboutPage.tsx'', ''utf8''\\); const missing = [''ab-reveal'',''ab-visible'',''ab-stagger'',''ab-gradient-text'',''ab-float-1'',''ab-orb'',''ab-grid-bg'',''ab-feature-card'',''ab-arch-card'',''ab-tech-badge'',''ab-avatar'',''ab-hero-title'',''ab-hero-badge'',''ab-stat-card'',''ab-link-arrow'',''ab-link-row''].filter\\(c => !src.includes\\(c\\)\\); console.log\\(missing.length ? ''MISSING: '' + missing.join\\('', ''\\) : ''All CSS classes present in TSX''\\);\")"
+      "Bash(node -e \"const fs = require\\(''fs''\\); const src = fs.readFileSync\\(''c:/Users/mroma/Desktop/FIC/4.Cuarto/TFG/Balio/frontend/src/pages/mainPage/AboutPage.tsx'', ''utf8''\\); const missing = [''ab-reveal'',''ab-visible'',''ab-stagger'',''ab-gradient-text'',''ab-float-1'',''ab-orb'',''ab-grid-bg'',''ab-feature-card'',''ab-arch-card'',''ab-tech-badge'',''ab-avatar'',''ab-hero-title'',''ab-hero-badge'',''ab-stat-card'',''ab-link-arrow'',''ab-link-row''].filter\\(c => !src.includes\\(c\\)\\); console.log\\(missing.length ? ''MISSING: '' + missing.join\\('', ''\\) : ''All CSS classes present in TSX''\\);\")",
+      "Bash(find /c/Users/mroma/Desktop/FIC/4.Cuarto/TFG/Balio/backend -type f \\\\\\(-name *.ts -o -name *.js \\\\\\))",
+      "Bash(grep -l \"user\\\\|User\" \"c:/Users/mroma/Desktop/FIC/4.Cuarto/TFG/Balio/backend/src/main/java/Balio/web/model/entities/\"*Dao.java)",
+      "Bash(do)",
+      "Bash(echo \"=== $f ===\")",
+      "Read(//c/Users/mroma/Desktop/FIC/4.Cuarto/TFG/Balio/backend/src/main/java/Balio/web/model/entities/**)",
+      "Bash(find /c/Users/mroma/Desktop/FIC/4.Cuarto/TFG/Balio/frontend/src -type f \\\\\\(-name *.tsx -o -name *.ts -o -name *.css \\\\\\))",
+      "Bash(ls -la /c/Users/mroma/Desktop/FIC/4.Cuarto/TFG/Balio/frontend/*.*)",
+      "Bash(find c:/Users/mroma/Desktop/FIC/4.Cuarto/TFG/Balio/frontend/src -name *.test.* -o -name *.spec.*)",
+      "Bash(npm test:*)",
+      "Bash(npx playwright:*)"
     ]
   }
 }

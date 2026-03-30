@@ -19,7 +19,6 @@ interface SignUpFormState {
   email: string;
   password: string;
   confirmPassword: string;
-  acceptedTerms: boolean;
 }
 
 interface SignUpFieldErrors {
@@ -27,7 +26,6 @@ interface SignUpFieldErrors {
   email?: string;
   password?: string;
   confirmPassword?: string;
-  acceptedTerms?: string;
   form?: string;
 }
 
@@ -41,7 +39,6 @@ export default function SignUpPage() {
     email: "",
     password: "",
     confirmPassword: "",
-    acceptedTerms: false,
   });
   const [errors, setErrors] = useState<SignUpFieldErrors>({});
   const [showPassword, setShowPassword] = useState(false);
@@ -91,9 +88,7 @@ export default function SignUpPage() {
       nextErrors.confirmPassword = t("auth.errors.passwordMismatch");
     }
 
-    if (!form.acceptedTerms) {
-      nextErrors.acceptedTerms = t("auth.errors.acceptTerms");
-    }
+    // Terms acceptance not required in this deployment.
 
     return nextErrors;
   };
@@ -233,22 +228,7 @@ export default function SignUpPage() {
           ) : null}
         </div>
 
-        <div className="space-y-1.5">
-          <label className="flex cursor-pointer items-start gap-2 text-sm text-slate-600">
-            <input
-              type="checkbox"
-              checked={form.acceptedTerms}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, acceptedTerms: event.target.checked }))
-              }
-              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span>{t("auth.acceptTerms")}</span>
-          </label>
-          {errors.acceptedTerms ? (
-            <p className="text-sm text-red-600">{errors.acceptedTerms}</p>
-          ) : null}
-        </div>
+        {/* Terms acceptance removed — not required in this deployment */}
 
         <GradientButton
           type="submit"
