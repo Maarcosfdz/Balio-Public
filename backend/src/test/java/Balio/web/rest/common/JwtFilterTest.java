@@ -1,5 +1,6 @@
 package Balio.web.rest.common;
 
+import Balio.web.model.entities.UserDao;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.when;
 class JwtFilterTest {
 
     @Mock private JwtGenerator jwtGenerator;
+    @Mock private UserDao userDao;
     @Mock private HttpServletRequest request;
     @Mock private HttpServletResponse response;
     @Mock private FilterChain filterChain;
@@ -36,7 +38,7 @@ class JwtFilterTest {
 
     @BeforeEach
     void setUp() {
-        jwtFilter = new JwtFilter(jwtGenerator);
+        jwtFilter = new JwtFilter(jwtGenerator, userDao);
         SecurityContextHolder.clearContext();
     }
 
@@ -71,6 +73,7 @@ class JwtFilterTest {
         when(request.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + token);
         when(jwtGenerator.extractTokenType(token)).thenReturn("access");
         when(jwtGenerator.extractUserId(token)).thenReturn(userId);
+        when(userDao.existsById(eq(userId))).thenReturn(true);
 
         jwtFilter.doFilterInternal(request, response, filterChain);
 
