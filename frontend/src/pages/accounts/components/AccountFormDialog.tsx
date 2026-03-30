@@ -78,7 +78,7 @@ export default function AccountFormDialog({ open, initial, onClose, onSaved }: A
         setInstitutions([]);
       })
       .finally(() => setLoadingInstitutions(false));
-  }, [isBankCreate, institutions.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isBankCreate, institutions.length]);
 
   const filteredInstitutions = institutions.filter((i) =>
     i.name.toLowerCase().includes(institutionSearch.toLowerCase()),

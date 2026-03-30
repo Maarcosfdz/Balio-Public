@@ -132,22 +132,6 @@
   font-weight: 600;
 }
 
-/* ══════════════════════════════════════════════════════════════
- * LEGACY — page header utility classes (kept intact)
- * ══════════════════════════════════════════════════════════════ */
-
-.page-header-actions > * {
-  /* Ensure no borders/shadows/rings on small action buttons */
-}
-
-/* Utility: hide any accidental border/ring/shadow inside header actions */
-.page-header-actions button {
-  box-shadow: none !important;
-  ring: 0 !important;
-  outline: none !important;
-  border: none !important;
-}
-
 /* ── Global squishy-save button (save preferences, etc.) ── */
 .squishy-save-btn {
   position: relative;
@@ -269,4 +253,3 @@
 }
 
 .squishy-save-simple:disabled { opacity: 0.45; transform: none; cursor: not-allowed; }
-

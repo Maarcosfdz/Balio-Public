@@ -209,7 +209,7 @@ class BankControllerTest {
         @Test
         @DisplayName("POST /bank/accounts/{accountId}/sync returns imported transactions")
         void shouldSyncSpecificAccount() throws Exception {
-            when(bankService.syncTransactions(USER_ID, ACCOUNT_ID)).thenReturn(7);
+            when(bankService.syncTransactions(USER_ID, ACCOUNT_ID, 90)).thenReturn(7);
 
             mockMvc.perform(post("/bank/accounts/{accountId}/sync", ACCOUNT_ID)
                             .requestAttr("userId", USER_ID))

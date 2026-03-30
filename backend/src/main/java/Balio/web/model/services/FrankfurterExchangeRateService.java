@@ -24,8 +24,12 @@ public class FrankfurterExchangeRateService implements ExchangeRateService {
 
     @Override
     public BigDecimal getRate(String from, String to) {
-        if (from == null || to == null) return null;
-        if (from.equalsIgnoreCase(to)) return BigDecimal.ONE;
+        if (from == null || to == null) {
+            return null;
+        }
+        if (from.equalsIgnoreCase(to)) {
+            return BigDecimal.ONE;
+        }
 
         String key = from.toUpperCase() + "->" + to.toUpperCase();
         CachedRate cached = cache.get(key);
@@ -58,7 +62,9 @@ public class FrankfurterExchangeRateService implements ExchangeRateService {
     @Override
     @SuppressWarnings("unchecked")
     public Map<String, BigDecimal> getLatestRates(String base) {
-        if (base == null) return Collections.emptyMap();
+        if (base == null) {
+            return Collections.emptyMap();
+        }
 
         try {
             Map<String, Object> response = restTemplate.getForObject(

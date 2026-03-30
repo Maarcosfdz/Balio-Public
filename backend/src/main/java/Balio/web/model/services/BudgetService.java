@@ -39,29 +39,29 @@ public interface BudgetService {
 
     // ── Budget categories ──
 
-        BudgetCategory createBudgetCategory(UUID userId, UUID budgetId, String name,
-                                                                                 BigDecimal maxAmount, List<UUID> linkedCategoryIds,
-                                                                                 String iconName, String iconBgColor)
+    BudgetCategory createBudgetCategory(UUID userId, UUID budgetId, String name,
+                                        BigDecimal maxAmount, List<UUID> linkedCategoryIds,
+                                        String iconName, String iconBgColor)
             throws InstanceNotFoundException;
 
-        default BudgetCategory createBudgetCategory(UUID userId, UUID budgetId, String name,
-                                                                                                BigDecimal maxAmount, List<UUID> linkedCategoryIds)
-                        throws InstanceNotFoundException {
-                return createBudgetCategory(userId, budgetId, name, maxAmount, linkedCategoryIds, null, null);
-        }
+    default BudgetCategory createBudgetCategory(UUID userId, UUID budgetId, String name,
+                                                BigDecimal maxAmount, List<UUID> linkedCategoryIds)
+            throws InstanceNotFoundException {
+        return createBudgetCategory(userId, budgetId, name, maxAmount, linkedCategoryIds, null, null);
+    }
 
     BudgetCategory modifyBudgetCategory(UUID userId, UUID budgetId, UUID categoryId,
-                                                                                 String name, BigDecimal maxAmount, List<UUID> linkedCategoryIds,
-                                                                                 String iconName, String iconBgColor)
+                                        String name, BigDecimal maxAmount, List<UUID> linkedCategoryIds,
+                                        String iconName, String iconBgColor)
             throws InstanceNotFoundException;
 
-        default BudgetCategory modifyBudgetCategory(UUID userId, UUID budgetId, UUID categoryId,
-                                                                                                String name, BigDecimal maxAmount,
-                                                                                                List<UUID> linkedCategoryIds)
-                        throws InstanceNotFoundException {
-                return modifyBudgetCategory(userId, budgetId, categoryId,
-                                name, maxAmount, linkedCategoryIds, null, null);
-        }
+    default BudgetCategory modifyBudgetCategory(UUID userId, UUID budgetId, UUID categoryId,
+                                                String name, BigDecimal maxAmount,
+                                                List<UUID> linkedCategoryIds)
+            throws InstanceNotFoundException {
+        return modifyBudgetCategory(
+                userId, budgetId, categoryId, name, maxAmount, linkedCategoryIds, null, null);
+    }
 
     void deleteBudgetCategory(UUID userId, UUID budgetId, UUID categoryId)
             throws InstanceNotFoundException;

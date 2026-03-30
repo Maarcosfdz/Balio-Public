@@ -12,7 +12,7 @@ target/
 .settings
 .springBeans
 .sts4-cache
-.claude
+
 
 ### IntelliJ IDEA ###
 .idea
@@ -32,6 +32,16 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Frontend Artifacts ###
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/playwright-report/
+frontend/test-results/
+
+### Local AI Tooling ###
+.claude/
 
 ### Environment / Secrets ###
 .env

@@ -2,14 +2,6 @@ import { test, expect } from "@playwright/test";
 
 // ── helpers ────────────────────────────────────────────────────────────────────
 
-/** Build a minimal JWT with exp = now + offsetSeconds. */
-function makeJwt(offsetSeconds: number): string {
-  const exp = Math.floor(Date.now() / 1000) + offsetSeconds;
-  const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" })).replace(/=/g, "");
-  const payload = btoa(JSON.stringify({ exp })).replace(/=/g, "");
-  return `${header}.${payload}.fakesig`;
-}
-
 /** Inject a fake authenticated session into localStorage. */
 async function injectAuthSession(page: import("@playwright/test").Page) {
   await page.addInitScript(() => {

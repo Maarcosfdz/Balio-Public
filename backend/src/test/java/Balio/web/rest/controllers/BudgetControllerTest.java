@@ -163,7 +163,8 @@ class BudgetControllerTest {
         @DisplayName("201 — valid creation returns Location header")
         void validCreation() throws Exception {
             when(budgetService.createBudget(eq(USER_ID), eq("My Budget"),
-                    eq(BudgetPeriodicity.MONTHLY), eq(LocalDate.of(2026, 1, 1))))
+                    eq(BudgetPeriodicity.MONTHLY), eq(LocalDate.of(2026, 1, 1)),
+                    isNull(), isNull()))
                     .thenReturn(budget);
             when(budgetConverter.toResponseDto(budget)).thenReturn(buildResponseDto());
 
@@ -230,7 +231,7 @@ class BudgetControllerTest {
                     LocalDate.of(2026, 1, 1), user);
             setId(b80, BUDGET_ID);
 
-            when(budgetService.createBudget(any(), eq(name80), any(), any())).thenReturn(b80);
+            when(budgetService.createBudget(any(), eq(name80), any(), any(), any(), any())).thenReturn(b80);
             when(budgetConverter.toResponseDto(b80)).thenReturn(buildResponseDto());
 
             String body = String.format(
@@ -274,7 +275,7 @@ class BudgetControllerTest {
         @Test
         @DisplayName("400 — service throws BudgetInvalidException (max limit reached)")
         void serviceThrowsBudgetInvalid() throws Exception {
-            when(budgetService.createBudget(any(), any(), any(), any()))
+            when(budgetService.createBudget(any(), any(), any(), any(), any(), any()))
                     .thenThrow(new BudgetInvalidException("Maximum number of budgets (10) reached"));
 
             String body = """
@@ -291,7 +292,7 @@ class BudgetControllerTest {
         @Test
         @DisplayName("201 — all periodicity values are accepted")
         void allPeriodicities() throws Exception {
-            when(budgetService.createBudget(any(), any(), any(), any())).thenReturn(budget);
+            when(budgetService.createBudget(any(), any(), any(), any(), any(), any())).thenReturn(budget);
             when(budgetConverter.toResponseDto(any())).thenReturn(buildResponseDto());
 
             for (BudgetPeriodicity p : BudgetPeriodicity.values()) {
@@ -317,7 +318,7 @@ class BudgetControllerTest {
         @DisplayName("200 — partial update (name only)")
         void partialUpdate() throws Exception {
             when(budgetService.modifyBudget(eq(USER_ID), eq(BUDGET_ID),
-                    eq("New Name"), isNull(), isNull()))
+                    eq("New Name"), isNull(), isNull(), isNull(), isNull()))
                     .thenReturn(budget);
             when(budgetConverter.toResponseDto(budget)).thenReturn(buildResponseDto());
 
@@ -347,7 +348,7 @@ class BudgetControllerTest {
         @Test
         @DisplayName("404 — budget not found")
         void notFound() throws Exception {
-            when(budgetService.modifyBudget(any(), eq(BUDGET_ID), any(), any(), any()))
+            when(budgetService.modifyBudget(any(), eq(BUDGET_ID), any(), any(), any(), any(), any()))
                     .thenThrow(new InstanceNotFoundException("Budget", BUDGET_ID));
 
             mockMvc.perform(put("/budget/{budgetId}", BUDGET_ID)
@@ -360,7 +361,7 @@ class BudgetControllerTest {
         @Test
         @DisplayName("400 — service throws BudgetInvalidException (blank name)")
         void serviceThrowsBudgetInvalid() throws Exception {
-            when(budgetService.modifyBudget(any(), any(), any(), any(), any()))
+            when(budgetService.modifyBudget(any(), any(), any(), any(), any(), any(), any()))
                     .thenThrow(new BudgetInvalidException("Budget name cannot be blank"));
 
             // BudgetUpdateDto has no @NotBlank so blank passes validation but fails service
@@ -417,7 +418,7 @@ class BudgetControllerTest {
             setId(bc, BC_ID);
 
             when(budgetService.createBudgetCategory(eq(USER_ID), eq(BUDGET_ID),
-                    eq("Food"), eq(new BigDecimal("300.00")), isNull()))
+                    eq("Food"), eq(new BigDecimal("300.00")), isNull(), isNull(), isNull()))
                     .thenReturn(bc);
             when(budgetService.findByIdAndUserId(BUDGET_ID, USER_ID)).thenReturn(budget);
             when(budgetConverter.toResponseDto(budget)).thenReturn(buildResponseDto());
@@ -504,7 +505,7 @@ class BudgetControllerTest {
         @Test
         @DisplayName("404 — budget not found")
         void budgetNotFound() throws Exception {
-            when(budgetService.createBudgetCategory(any(), eq(BUDGET_ID), any(), any(), any()))
+            when(budgetService.createBudgetCategory(any(), eq(BUDGET_ID), any(), any(), any(), any(), any()))
                     .thenThrow(new InstanceNotFoundException("Budget", BUDGET_ID));
 
             String body = """
@@ -521,7 +522,7 @@ class BudgetControllerTest {
         @Test
         @DisplayName("400 — max categories limit via BudgetInvalidException")
         void maxCategoriesLimit() throws Exception {
-            when(budgetService.createBudgetCategory(any(), any(), any(), any(), any()))
+            when(budgetService.createBudgetCategory(any(), any(), any(), any(), any(), any(), any()))
                     .thenThrow(new BudgetInvalidException("Maximum number of categories (40) reached"));
 
             String body = """
@@ -542,7 +543,7 @@ class BudgetControllerTest {
             BudgetCategory bc = new BudgetCategory("Food", new BigDecimal("200.00"), 0, budget);
             setId(bc, BC_ID);
 
-            when(budgetService.createBudgetCategory(any(), any(), any(), any(), any()))
+            when(budgetService.createBudgetCategory(any(), any(), any(), any(), any(), any(), any()))
                     .thenReturn(bc);
             when(budgetService.findByIdAndUserId(BUDGET_ID, USER_ID)).thenReturn(budget);
             when(budgetConverter.toResponseDto(budget)).thenReturn(buildResponseDto());
@@ -567,7 +568,7 @@ class BudgetControllerTest {
         @Test
         @DisplayName("200 — successful update")
         void successUpdate() throws Exception {
-            when(budgetService.modifyBudgetCategory(any(), any(), any(), any(), any(), any()))
+            when(budgetService.modifyBudgetCategory(any(), any(), any(), any(), any(), any(), any(), any()))
                     .thenReturn(new BudgetCategory("New Name", new BigDecimal("200.00"), 0, budget));
             when(budgetService.findByIdAndUserId(BUDGET_ID, USER_ID)).thenReturn(budget);
             when(budgetConverter.toResponseDto(budget)).thenReturn(buildResponseDto());
@@ -586,7 +587,7 @@ class BudgetControllerTest {
         @Test
         @DisplayName("404 — budget category not found")
         void notFound() throws Exception {
-            when(budgetService.modifyBudgetCategory(any(), any(), any(), any(), any(), any()))
+            when(budgetService.modifyBudgetCategory(any(), any(), any(), any(), any(), any(), any(), any()))
                     .thenThrow(new InstanceNotFoundException("BudgetCategory", BC_ID));
 
             mockMvc.perform(put("/budget/{budgetId}/category/{categoryId}", BUDGET_ID, BC_ID)

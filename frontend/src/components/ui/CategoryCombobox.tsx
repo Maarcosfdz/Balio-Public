@@ -79,8 +79,12 @@ export default function CategoryCombobox({
       });
       const summary: CategorySummaryDto = { id: created.id, name: created.name };
       onCategoryCreated(summary);
-        // Notify other pages that categories changed so they can refresh automatically
-        try { window.dispatchEvent(new CustomEvent("balio:categories-updated")); } catch {}
+      // Notify other pages that categories changed so they can refresh automatically
+      try {
+        window.dispatchEvent(new CustomEvent("balio:categories-updated"));
+      } catch {
+        // Ignore cross-context event dispatch issues.
+      }
       onChange(created.id);
       setQuery("");
       setOpen(false);

@@ -19,15 +19,19 @@ public interface BudgetCategoryDao extends JpaRepository<BudgetCategory, UUID> {
     // BudgetCategory rows, because JPQL bulk DELETE bypasses the JPA lifecycle.
 
     @Modifying
-    @Query(value = "DELETE FROM budget_category_transactions WHERE budget_category_id IN " +
-                   "(SELECT bc.id FROM budget_categories bc JOIN budgets b ON bc.budget_id = b.id WHERE b.user_id = :userId)",
-           nativeQuery = true)
+    @Query(
+            value = "DELETE FROM budget_category_transactions WHERE budget_category_id IN "
+                    + "(SELECT bc.id FROM budget_categories bc "
+                    + "JOIN budgets b ON bc.budget_id = b.id WHERE b.user_id = :userId)",
+            nativeQuery = true)
     void deleteTransactionLinksByUserId(@Param("userId") UUID userId);
 
     @Modifying
-    @Query(value = "DELETE FROM budget_category_linked_categories WHERE budget_category_id IN " +
-                   "(SELECT bc.id FROM budget_categories bc JOIN budgets b ON bc.budget_id = b.id WHERE b.user_id = :userId)",
-           nativeQuery = true)
+    @Query(
+            value = "DELETE FROM budget_category_linked_categories WHERE budget_category_id IN "
+                    + "(SELECT bc.id FROM budget_categories bc "
+                    + "JOIN budgets b ON bc.budget_id = b.id WHERE b.user_id = :userId)",
+            nativeQuery = true)
     void deleteLinkedCategoryLinksByUserId(@Param("userId") UUID userId);
 
     @Modifying

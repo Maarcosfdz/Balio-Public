@@ -154,9 +154,7 @@ export interface TransactionSummaryDto {
   originalAmount?: number;
 }
 
-export interface TransactionSummaryDtoWithCategoryIds extends TransactionSummaryDto {
-  // helper alias — same shape
-}
+export type TransactionSummaryDtoWithCategoryIds = TransactionSummaryDto;
 
 export interface TransactionResponseDto {
   id: string;

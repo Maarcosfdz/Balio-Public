@@ -149,7 +149,7 @@ class GoalControllerTest {
         @Test
         @DisplayName("201 – creates goal with valid data")
         void createsGoal() throws Exception {
-            when(goalService.createGoal(eq(USER_ID), eq(VALID_NAME), any(BigDecimal.class)))
+            when(goalService.createGoal(eq(USER_ID), eq(VALID_NAME), any(BigDecimal.class), any(), any()))
                     .thenReturn(testGoal);
 
             mockMvc.perform(post("/goal")
@@ -204,7 +204,7 @@ class GoalControllerTest {
         @Test
         @DisplayName("400 – service throws GoalInvalidException")
         void serviceThrowsInvalid() throws Exception {
-            when(goalService.createGoal(eq(USER_ID), any(), any()))
+            when(goalService.createGoal(eq(USER_ID), any(), any(), any(), any()))
                     .thenThrow(new GoalInvalidException("Name is required"));
 
             mockMvc.perform(post("/goal")
@@ -230,7 +230,7 @@ class GoalControllerTest {
             Goal updated = new Goal("Updated", TARGET, testUser);
             setFieldViaReflection(updated, "id", GOAL_ID);
 
-            when(goalService.modifyGoal(USER_ID, GOAL_ID, "Updated", null)).thenReturn(updated);
+            when(goalService.modifyGoal(USER_ID, GOAL_ID, "Updated", null, null, null)).thenReturn(updated);
 
             mockMvc.perform(put("/goal/{goalId}", GOAL_ID)
                             .requestAttr("userId", USER_ID)
@@ -246,7 +246,7 @@ class GoalControllerTest {
             Goal updated = new Goal(VALID_NAME, new BigDecimal("2000.00"), testUser);
             setFieldViaReflection(updated, "id", GOAL_ID);
 
-            when(goalService.modifyGoal(eq(USER_ID), eq(GOAL_ID), eq(null), any(BigDecimal.class)))
+            when(goalService.modifyGoal(eq(USER_ID), eq(GOAL_ID), eq(null), any(BigDecimal.class), any(), any()))
                     .thenReturn(updated);
 
             mockMvc.perform(put("/goal/{goalId}", GOAL_ID)
@@ -260,7 +260,7 @@ class GoalControllerTest {
         @Test
         @DisplayName("404 – goal not found")
         void notFound() throws Exception {
-            when(goalService.modifyGoal(eq(USER_ID), eq(GOAL_ID), any(), any()))
+            when(goalService.modifyGoal(eq(USER_ID), eq(GOAL_ID), any(), any(), any(), any()))
                     .thenThrow(new InstanceNotFoundException("Goal", GOAL_ID));
 
             mockMvc.perform(put("/goal/{goalId}", GOAL_ID)
