@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { gsap } from "gsap";
 import {
   ArrowRight,
   BarChart2,
@@ -15,6 +16,10 @@ import {
   GraduationCap,
   Linkedin,
   Lock,
+  Layers,
+  Server,
+  Database,
+  ChevronDown,
 } from "lucide-react";
 import { ROUTES } from "@/config/routes";
 import slice1Video from "@/assets/slice1.mp4";
@@ -441,6 +446,16 @@ export default function MainPage2() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const loopFadeActiveRef = useRef(false);
+  // GSAP refs
+  const floatCardTlRef = useRef<HTMLDivElement>(null);
+  const floatCardBrRef = useRef<HTMLDivElement>(null);
+  const savingsValueRef = useRef<HTMLParagraphElement>(null);
+  const goalValueRef = useRef<HTMLParagraphElement>(null);
+  const statCardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const ctaTickerRef = useRef<HTMLDivElement>(null);
+  const cursorGlowRef = useRef<HTMLDivElement>(null);
+  const xTo = useRef<((v: number) => void) | null>(null);
+  const yTo = useRef<((v: number) => void) | null>(null);
 
   // ── State ─────────────────────────────────────────────────
   const [activeIdx, setActiveIdx] = useState(0);
@@ -566,6 +581,105 @@ export default function MainPage2() {
     };
   }, []);
 
+  // ── Reveal hooks ──────────────────────────────────────────
+  const heroR = useReveal();
+  const aboutR = useReveal();
+  const ctaR = useReveal();
+
+  // ── GSAP: hero float cards bob + counter ─────────────────
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      // Infinite float for the two hero cards
+      gsap.to(floatCardTlRef.current, {
+        y: -10,
+        duration: 2.4,
+        ease: "sine.inOut",
+        repeat: -1,
+        yoyo: true,
+      });
+      gsap.to(floatCardBrRef.current, {
+        y: -10,
+        duration: 2.8,
+        ease: "sine.inOut",
+        repeat: -1,
+        yoyo: true,
+        delay: 0.9,
+      });
+
+      // Count-up: Savings +12.4%
+      const sObj = { v: 0 };
+      gsap.to(sObj, {
+        v: 12.4,
+        duration: 2,
+        ease: "power2.out",
+        delay: 0.5,
+        onUpdate() {
+          if (savingsValueRef.current)
+            savingsValueRef.current.textContent = `+${sObj.v.toFixed(1)}%`;
+        },
+      });
+
+      // Count-up: Goal 68%
+      const gObj = { v: 0 };
+      gsap.to(gObj, {
+        v: 68,
+        duration: 1.6,
+        ease: "power2.out",
+        delay: 0.7,
+        onUpdate() {
+          if (goalValueRef.current)
+            goalValueRef.current.textContent = `${Math.round(gObj.v)}%`;
+        },
+      });
+
+      // Horizontal ticker in CTA (infinite marquee)
+      const ticker = ctaTickerRef.current;
+      if (ticker) {
+        const totalW = ticker.scrollWidth / 2;
+        gsap.to(ticker, {
+          x: -totalW,
+          duration: 22,
+          ease: "none",
+          repeat: -1,
+        });
+      }
+    });
+    return () => ctx.revert();
+  }, []);
+
+  // ── GSAP: cursor glow follower ────────────────────────────
+  useEffect(() => {
+    const el = cursorGlowRef.current;
+    if (!el) return;
+    gsap.set(el, { xPercent: -50, yPercent: -50 });
+    xTo.current = gsap.quickTo(el, "x", { duration: 0.5, ease: "power3.out" });
+    yTo.current = gsap.quickTo(el, "y", { duration: 0.5, ease: "power3.out" });
+    const onMove = (e: MouseEvent) => {
+      xTo.current?.(e.clientX);
+      yTo.current?.(e.clientY);
+    };
+    window.addEventListener("mousemove", onMove, { passive: true });
+    return () => window.removeEventListener("mousemove", onMove);
+  }, []);
+
+  // ── GSAP: about stat cards stagger when visible ─────────────
+  useEffect(() => {
+    if (!aboutR.visible) return;
+    const cards = statCardRefs.current.filter(Boolean) as HTMLDivElement[];
+    if (!cards.length) return;
+    const ctx = gsap.context(() => {
+      gsap.from(cards, {
+        y: 28,
+        opacity: 0,
+        scale: 0.94,
+        duration: 0.5,
+        ease: "back.out(1.5)",
+        stagger: 0.11,
+      });
+    });
+    return () => ctx.revert();
+  }, [aboutR.visible]);
+
   const scrollToStep = useCallback((index: number) => {
     const el = scrollRef.current;
     if (!el) return;
@@ -577,13 +691,11 @@ export default function MainPage2() {
 
   const feat = FEATURES[activeIdx];
 
-  // ── Reveal hooks ──────────────────────────────────────────
-  const heroR = useReveal();
-  const aboutR = useReveal();
-  const ctaR = useReveal();
-
   return (
     <div className="m2-page flex min-h-screen flex-col">
+      {/* Cursor glow — desktop only, GSAP-tracked */}
+      <div ref={cursorGlowRef} className="m2-cursor-glow hidden lg:block" aria-hidden />
+
       <PublicHeader sticky={false} />
 
       {/* All slices in a single relative container —
@@ -675,25 +787,25 @@ export default function MainPage2() {
                 <BrowserFrame className="m2-hero-monitor m2-monitor--white">
                   <img src={dashboardImg} alt="Balio Dashboard" className="w-full block" />
                 </BrowserFrame>
-                <div className="m2-float-card m2-float-card--tl">
+                <div ref={floatCardTlRef} className="m2-float-card m2-float-card--tl">
                   <div className="flex items-center gap-1.5">
                     <div className="h-6 w-6 rounded-full bg-emerald-400/15 flex items-center justify-center shrink-0">
                       <TrendingUp className="h-3 w-3 text-emerald-500" />
                     </div>
                     <div>
                       <p className="text-[9px] text-slate-400 leading-none">Savings</p>
-                      <p className="text-xs font-black text-emerald-600">+12.4%</p>
+                      <p ref={savingsValueRef} className="text-xs font-black text-emerald-600">+0.0%</p>
                     </div>
                   </div>
                 </div>
-                <div className="m2-float-card m2-float-card--br">
+                <div ref={floatCardBrRef} className="m2-float-card m2-float-card--br">
                   <div className="flex items-center gap-1.5">
                     <div className="h-6 w-6 rounded-full bg-sky-400/15 flex items-center justify-center shrink-0">
                       <Target className="h-3 w-3 text-sky-500" />
                     </div>
                     <div>
                       <p className="text-[9px] text-slate-400 leading-none">Goal</p>
-                      <p className="text-xs font-black text-sky-600">68%</p>
+                      <p ref={goalValueRef} className="text-xs font-black text-sky-600">0%</p>
                     </div>
                   </div>
                 </div>
@@ -918,8 +1030,8 @@ export default function MainPage2() {
                 </span>
                 {/* Wave animation — always bouncing */}
                 <h2 className="mb-4 text-4xl font-black tracking-tight text-slate-900 lg:text-5xl">
-                  <WaveText text="Built with" className="text-slate-900" />{" "}
-                  <WaveText text="purpose." className="text-sky-500" />
+                  <WaveText text={t("landing.aboutTitle")} className="text-slate-900" />{" "}
+                  <WaveText text={t("landing.aboutHighlight")} className="text-sky-500" />
                 </h2>
                 <p className="m2-stagger m2-sd3 mb-6 max-w-lg text-base leading-relaxed text-slate-600">
                   {t("landing.aboutDesc")}
@@ -954,37 +1066,43 @@ export default function MainPage2() {
                 </div>
               </div>
 
-              {/* Stats grid — fan-out from cluster on scroll reveal */}
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { labelKey: "aboutModules", value: "5", subKey: "aboutModulesSub", from: "from-sky-50", to: "to-cyan-50", accent: "text-sky-600" },
-                  { labelKey: "aboutSecurity", value: "JWT", subKey: "aboutSecuritySub", from: "from-emerald-50", to: "to-green-50", accent: "text-emerald-600" },
-                  { labelKey: "aboutFrontend", value: "React", subKey: "aboutFrontendSub", from: "from-violet-50", to: "to-purple-50", accent: "text-violet-600" },
-                  { labelKey: "aboutBackend", value: "Spring", subKey: "aboutBackendSub", from: "from-amber-50", to: "to-orange-50", accent: "text-amber-600" },
-                ].map((s) => (
-                  <div
-                    key={s.labelKey}
-                    className={`m2-stat-card m2-fancy-card rounded-2xl bg-gradient-to-br ${s.from} ${s.to} border border-slate-100 p-5`}
-                  >
-                    {/* Hover shine */}
-                    <div className="m2-card-shine" />
-                    {/* Hover grid lines */}
-                    <div className="m2-card-lines">
-                      <div className="m2-card-line m2-card-line-1" />
-                      <div className="m2-card-line m2-card-line-2" />
+              {/* Architecture layers diagram — GSAP stagger on scroll reveal */}
+              <div>
+                <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-300">
+                  {t("landing.aboutArchTitle", "Architecture")}
+                </p>
+                <div className="m2-arch-stack">
+                  {([
+                    { icon: Layers,   label: "Frontend",       sub: "React 19 · TypeScript · Vite",   iconBg: "bg-sky-100",    iconColor: "text-sky-600",    bar: "#38bdf8" },
+                    { icon: Server,   label: "API REST",        sub: "Spring Boot · Controllers",       iconBg: "bg-violet-100", iconColor: "text-violet-600", bar: "#8b5cf6" },
+                    { icon: Lock,     label: t("landing.aboutSecurity", "Security"), sub: "JWT · Refresh Token",            iconBg: "bg-emerald-100",iconColor: "text-emerald-600",bar: "#10b981" },
+                    { icon: Database, label: t("landing.aboutBackend", "Database"), sub: "PostgreSQL · Flyway",             iconBg: "bg-amber-100",  iconColor: "text-amber-600",  bar: "#f59e0b" },
+                  ] as const).map((layer, li) => (
+                    <div
+                      key={layer.label}
+                      ref={(el) => { statCardRefs.current[li] = el; }}
+                    >
+                      <div className="m2-arch-layer">
+                        {/* Left accent bar */}
+                        <div className="m2-arch-bar" style={{ background: layer.bar }} />
+                        {/* Icon */}
+                        <div className={`m2-arch-icon-wrap ${layer.iconBg}`}>
+                          <layer.icon className={`h-4 w-4 ${layer.iconColor}`} />
+                        </div>
+                        {/* Text */}
+                        <div className="min-w-0">
+                          <p className="m2-arch-label">{layer.label}</p>
+                          <p className="m2-arch-sub">{layer.sub}</p>
+                        </div>
+                      </div>
+                      {li < 3 && (
+                        <div className="m2-arch-connector" aria-hidden>
+                          <ChevronDown className="h-3.5 w-3.5 text-slate-300" />
+                        </div>
+                      )}
                     </div>
-                    {/* Hover tiles */}
-                    <div className="m2-card-tiles">
-                      <div className="m2-tile m2-tile-1" />
-                      <div className="m2-tile m2-tile-2" />
-                      <div className="m2-tile m2-tile-3" />
-                      <div className="m2-tile m2-tile-4" />
-                    </div>
-                    <p className="relative z-10 mb-1 text-xs font-medium text-slate-400">{t(`landing.${s.labelKey}`)}</p>
-                    <p className={`relative z-10 text-2xl font-black ${s.accent}`}>{s.value}</p>
-                    <p className="relative z-10 mt-0.5 text-xs text-slate-500">{t(`landing.${s.subKey}`)}</p>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -1001,6 +1119,22 @@ export default function MainPage2() {
         >
           {/* Grid pattern + subtle white overlay dots */}
           <div className="m2-grid-pattern pointer-events-none absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.25) 1px, transparent 1px)" }} />
+
+          {/* Animated orbs */}
+          <div className="m2-cta-orb m2-cta-orb-1" aria-hidden />
+          <div className="m2-cta-orb m2-cta-orb-2" aria-hidden />
+          <div className="m2-cta-orb m2-cta-orb-3" aria-hidden />
+
+          {/* GSAP finance ticker tape */}
+          <div className="pointer-events-none absolute bottom-10 left-0 right-0 overflow-hidden opacity-20 select-none">
+            <div ref={ctaTickerRef} className="flex gap-10 whitespace-nowrap font-mono text-sm font-bold text-white">
+              {[...Array(2)].flatMap((_, rep) =>
+                ["EUR/USD 1.085 ▲", "BTC 42,300 ▼", "S&P 500 4,850 ▲", "GOLD 2,045 ▲", "SAVINGS +12.4%", "NET WORTH +8.2%", "BUDGET 94%", "GOALS 68%", "GBP/EUR 1.17 ▲", "ETH 2,240 ▼"].map((label) => (
+                  <span key={`${rep}-${label}`}>{label}</span>
+                ))
+              )}
+            </div>
+          </div>
 
           <div className={`relative mx-auto max-w-2xl px-6 text-center m2-reveal ${ctaR.visible ? "visible" : ""}`}>
             <h2 className="m2-stagger m2-sd1 mb-4 text-5xl font-black tracking-tight text-white lg:text-6xl">

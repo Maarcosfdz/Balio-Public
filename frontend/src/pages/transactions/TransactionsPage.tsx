@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -32,6 +33,7 @@ import { filterService } from "@/backend/filterService";
 import { categoryService } from "@/backend/categoryService";
 import "@/styles/pages/transactions.css";
 import { ToastBanner } from "@/components/ui/toast-banner";
+import InfoCard from "@/components/ui/InfoCard";
 import AddTransactionModal from "@/components/transactions/AddTransactionModal";
 import ApplyRulesModal from "./components/ApplyRulesModal";
 import Pagination from "@/components/ui/Pagination";
@@ -63,6 +65,7 @@ function currencyLabel(code?: string) {
 
 export default function TransactionsPage() {
   const { t } = useTranslation();
+  const infoCardItems = t("txPage.infoCardItems", { returnObjects: true }) as string[];
   const location = useLocation();
   const navigate = useNavigate();
   const stateAccountId   = (location.state as { accountId?: string; filterId?: string; editFilterId?: string; filterName?: string } | null)?.accountId;
@@ -110,6 +113,8 @@ export default function TransactionsPage() {
   const [allSavedFilters, setAllSavedFilters] = useState<FilterSummaryDto[]>([]);
   const [showAddPicker, setShowAddPicker] = useState(false);
   const addPickerRef = useRef<HTMLDivElement>(null);
+  const addPickerDropdownRef = useRef<HTMLDivElement>(null);
+  const [addPickerPos, setAddPickerPos] = useState<{ left: number; top: number } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch all saved filters for the add-to-tabs picker
@@ -123,13 +128,37 @@ export default function TransactionsPage() {
     if (!showAddPicker) return;
     // Refresh so newly-created filters appear without a page reload
     filterService.getAll().then(setAllSavedFilters).catch(() => {});
+
+    const updatePosition = () => {
+      if (!addPickerRef.current) return;
+      const rect = addPickerRef.current.getBoundingClientRect();
+      const menuWidth = 224; // 14rem
+      const viewportPadding = 8;
+      const left = Math.min(
+        Math.max(rect.left, viewportPadding),
+        window.innerWidth - menuWidth - viewportPadding,
+      );
+      const top = rect.bottom + 8;
+      setAddPickerPos({ left, top });
+    };
+    updatePosition();
+
     const handler = (e: MouseEvent) => {
-      if (addPickerRef.current && !addPickerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const clickedTrigger = !!addPickerRef.current?.contains(target);
+      const clickedMenu = !!addPickerDropdownRef.current?.contains(target);
+      if (!clickedTrigger && !clickedMenu) {
         setShowAddPicker(false);
       }
     };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
   }, [showAddPicker]);
 
 
@@ -468,6 +497,13 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-2">
+      <InfoCard
+        id="transactions"
+        accentColor="violet"
+        title={t("txPage.infoCardTitle", "Transactions")}
+        items={infoCardItems}
+        description={t("txPage.infoCardDescription", "You can also automate changes using rules.")}
+      />
       {syncSummary && (
         <ToastBanner
           tone="info"
@@ -599,8 +635,12 @@ export default function TransactionsPage() {
                 >
                   <Plus className="tx-add-filter-tab-btn__icon h-3.5 w-3.5" />
                 </button>
-                {showAddPicker && (
-                  <div className="tx-filter-dropdown" style={{ left: 0, right: "auto" }}>
+                {showAddPicker && addPickerPos && createPortal(
+                  <div
+                    ref={addPickerDropdownRef}
+                    className="tx-filter-dropdown tx-filter-dropdown--floating"
+                    style={{ left: `${addPickerPos.left}px`, top: `${addPickerPos.top}px` }}
+                  >
                     {allSavedFilters.filter((sf) => !pinnedFilters.some((pf) => pf.id === sf.id)).length === 0 ? (
                       <p className="tx-filter-dropdown-empty">{t("txPage.noMoreFilters", "No hay más filtros")}</p>
                     ) : (
@@ -619,7 +659,8 @@ export default function TransactionsPage() {
                           </button>
                         ))
                     )}
-                  </div>
+                  </div>,
+                  document.body,
                 )}
               </div>
             </div>
@@ -648,20 +689,22 @@ export default function TransactionsPage() {
           </div>
         </div>
 
-          {/* Filters — inside hero so gradient covers it */}
-          <FilterPanel
-            key={stateEditFilterId ?? "default"}
-            open={filtersOpen}
-            onToggle={() => setFiltersOpen((v) => !v)}
-            hideToggleButton
-            onApply={handleApplyFilters}
-            defaultAccountId={stateAccountId}
-            maxTransactionAmount={maxTxAmount || undefined}
-            initialFilters={editInitialFilters}
-            editFilterId={stateEditFilterId}
-            editFilterName={stateFilterName}
-            onUpdated={() => navigate(ROUTES.FILTERS)}
-          />
+          {/* Filters — dedicated layer above hero background */}
+          <div className="tx-filter-panel-layer">
+            <FilterPanel
+              key={stateEditFilterId ?? "default"}
+              open={filtersOpen}
+              onToggle={() => setFiltersOpen((v) => !v)}
+              hideToggleButton
+              onApply={handleApplyFilters}
+              defaultAccountId={stateAccountId}
+              maxTransactionAmount={maxTxAmount || undefined}
+              initialFilters={editInitialFilters}
+              editFilterId={stateEditFilterId}
+              editFilterName={stateFilterName}
+              onUpdated={() => navigate(ROUTES.FILTERS)}
+            />
+          </div>
       </div>
 
       {/* Transaction list — pulled up into background gradient */}

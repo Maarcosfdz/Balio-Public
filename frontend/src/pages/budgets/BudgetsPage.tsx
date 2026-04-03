@@ -8,6 +8,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import InfoCard from "@/components/ui/InfoCard";
 import {
   Loader2,
   Palette,
@@ -32,8 +33,8 @@ import {
   DEFAULT_ICON_BG_COLOR,
   normalizeIconBgColor,
   resolveEntityIconName,
-  suggestIconFromText,
 } from "@/components/icons/iconRegistry";
+import { suggestIconNameFromText } from "@/components/icons/iconSuggestions";
 
 const MAX_BUDGETS = 10;
 const PRIMARY_BUDGET_STORAGE_KEY = "budgets.primaryId.v1";
@@ -130,7 +131,7 @@ function BudgetFormDialog({ open, initial, onClose, onSaved }: BudgetFormDialogP
   }, [open, initial, defaultStartDate]);
 
   const defaultIconName = useMemo(() => {
-    return suggestIconFromText(name || initial?.name || "budget");
+    return suggestIconNameFromText(name || initial?.name || "budget");
   }, [name, initial?.name]);
 
   const periodicityOptions = useMemo(
@@ -653,6 +654,7 @@ function EmptyBudgetCard({ onAdd }: { onAdd: () => void }) {
 
 export default function BudgetsPage() {
   const { t } = useTranslation();
+  const infoCardItems = t("budgets.infoCardItems", { returnObjects: true }) as string[];
   const navigate = useNavigate();
 
   const [budgets, setBudgets] = useState<BudgetSummaryDto[]>([]);
@@ -799,6 +801,13 @@ export default function BudgetsPage() {
   return (
     <>
       <div className="budgets-page-shell space-y-5">
+        <InfoCard
+          id="budgets"
+          accentColor="amber"
+          title={t("budgets.infoCardTitle", "Budgets")}
+          items={infoCardItems}
+          description={t("budgets.infoCardDescription", "You will be notified if you exceed your budget.")}
+        />
         {/* ── Hero header ── */}
         <div className="budgets-hero-section">
           <div className="budgets-hero-inner">

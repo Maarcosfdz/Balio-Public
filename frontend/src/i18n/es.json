@@ -98,6 +98,9 @@
     "aboutFrontendSub": "TypeScript · Vite",
     "aboutBackend": "Backend",
     "aboutBackendSub": "Boot · PostgreSQL",
+    "aboutStat1Label": "Rastreado al mes",
+    "aboutStat2Label": "Precisión del presupuesto",
+    "aboutStat3Label": "Objetivos completados",
     "ctaLine1": "1 app.",
     "ctaHighlight": "5 herramientas.",
     "ctaLine2": "Todo lo que necesitas.",
@@ -120,6 +123,11 @@
     "error": "Ha ocurrido un error",
     "success": "Operación realizada correctamente",
     "currency": "€"
+  },
+  "infoCard": {
+    "badge": "Guía",
+    "dismiss": "Cerrar",
+    "gotIt": "Entendido"
   },
   "auth": {
     "login": "Iniciar sesión",
@@ -370,6 +378,40 @@
         "viewAll": "Ver todos",
         "createBudget": "Crear presupuesto"
       }
+      ,
+      "infoCard": {
+        "title": "Bienvenido a Balio 👋",
+        "description": "Balio es tu gestor de finanzas personales. Gestiona cuentas bancarias y manuales, registra ingresos/gastos y analiza tus finanzas de forma visual. Usa la navegación para explorar cada sección. Esta página muestra una vista general de tu situación financiera. 💡 Cambia el idioma y la divisa en Ajustes.",
+        "items": [
+          "Guía",
+          "Análisis",
+          "Visualiza ingresos y gastos",
+          "Ve la distribución por categorías",
+          "Analiza tendencias a lo largo del tiempo",
+          "Puedes personalizar tu panel con distintos gráficos.",
+          "Transacciones",
+          "Crear y editar ingresos y gastos",
+          "Organízalas con categorías (comida, alquiler, etc.)",
+          "Filtra y busca tus transacciones",
+          "Guarda filtros para acceso rápido",
+          "También puedes automatizar cambios usando reglas.",
+          "Cuentas",
+          "Añadir cuentas manualmente",
+          "Conectar tu cuenta bancaria",
+          "Importar y exportar transacciones",
+          "Las reglas se aplican automáticamente a las transacciones.",
+          "Presupuestos",
+          "Establecer límites de gasto",
+          "Vincular presupuestos a categorías",
+          "Elegir un período de tiempo",
+          "Serás notificado si superas tu presupuesto.",
+          "Metas",
+          "Define objetivos de ahorro",
+          "Añade dinero progresivamente",
+          "Sigue tu progreso",
+          "Esto no afecta a tu saldo real, es solo para seguimiento."
+        ]
+      }
     }
   },
   "accounts": {
@@ -398,6 +440,21 @@
     "ruleTransactionsUpdated_other": "{{count}} transacciones actualizadas."
   },
   "accountsPage": {
+    "infoCardTitle": "Cuentas",
+    "infoCardItems": [
+      "Añadir cuentas manualmente",
+      "Conectar tu cuenta bancaria",
+      "Importar y exportar transacciones"
+    ],
+    "infoCardDescription": "Las reglas se aplican automáticamente a las transacciones.",
+    "deleteDialog": {
+      "title": "Eliminar cuenta",
+      "description": "Vas a eliminar la cuenta {{accountName}}. Los enlaces bancarios y las reglas asociadas se borrarán automáticamente.",
+      "deleteTransactionsLabel": "Eliminar también las transacciones asociadas",
+      "deleteTransactionsHelp": "Si lo dejas desmarcado, las transacciones se conservarán pero quedarán sin cuenta asociada.",
+      "confirmLabel": "Escribe exactamente el nombre de la cuenta para confirmar",
+      "deleteError": "No se pudo eliminar la cuenta. Inténtalo de nuevo."
+    },
     "totalNetWorth": "Patrimonio neto total",
     "liquidAssets": "Activos líquidos",
     "totalLiabilities": "Pasivos totales",
@@ -453,6 +510,13 @@
   "goals": {
     "title": "Metas de ahorro",
     "subtitle": "Sigue tu progreso y alcanza tus objetivos antes de lo previsto.",
+    "infoCardTitle": "Metas",
+    "infoCardItems": [
+      "Define objetivos de ahorro",
+      "Añade dinero progresivamente",
+      "Sigue tu progreso"
+    ],
+    "infoCardDescription": "Esto no afecta a tu saldo real, es solo para seguimiento.",
     "create": "Nueva meta",
     "editGoal": "Editar meta",
     "createNew": "Crear nueva meta",
@@ -534,12 +598,23 @@
     "preferredCurrency": "Moneda preferida",
     "currencyDesc": "Elige la moneda predeterminada para el panel y las estadísticas.",
     "currencyUpdated": "Moneda preferida actualizada",
+    "onboardingTitle": "Guías de la página",
+    "onboardingDesc": "Mostrar las tarjetas de ayuda contextual de nuevo en cada página.",
+    "onboardingHint": "Cada página muestra una tarjeta de ayuda la primera vez que la visitas. Restablece para volver a verlas.",
+    "onboardingResetBtn": "Restablecer guías",
+    "onboardingReset": "Tarjetas de ayuda restablecidas — se mostrarán de nuevo en tu próxima visita.",
+    "infoCardTitle": "Ajustes",
+    "infoCardItem1": "Cambiar idioma y moneda",
+    "infoCardItem2": "Actualizar datos personales",
+    "infoCardItem3": "Personalizar las preferencias de la interfaz",
     "dangerZone": "Zona de peligro",
     "dangerDesc": "Una vez elimines tu cuenta, no hay vuelta atrás. Por favor, sé prudente.",
     "deleteAccount": "Eliminar cuenta",
     "deleteConfirmTitle": "¿Eliminar tu cuenta?",
     "deleteConfirmDesc": "Esta acción es irreversible. Escribe \"eliminar\" para confirmar.",
     "deleteTypePlaceholder": "Escribe \"eliminar\"",
+    "deleteConfirmWord": "eliminar",
+    "deleteError": "No se pudo eliminar tu cuenta. Inténtalo de nuevo.",
     "errors": {
       "emailInUse": "Este email ya está en uso",
       "wrongPassword": "La contraseña actual no es correcta",
@@ -552,6 +627,13 @@
   "budgets": {
     "title": "Presupuestos",
     "subtitle": "Planifica y controla tus gastos con presupuestos personalizados.",
+    "infoCardTitle": "Presupuestos",
+    "infoCardItems": [
+      "Establecer límites de gasto",
+      "Vincular presupuestos a categorías",
+      "Elegir un período de tiempo"
+    ],
+    "infoCardDescription": "Se te notificará si superas tu presupuesto.",
     "create": "Nuevo presupuesto",
     "editBudget": "Editar presupuesto",
     "createNew": "Crear presupuesto",
@@ -620,6 +702,14 @@
     }
   },
   "txPage": {
+    "infoCardTitle": "Transacciones",
+    "infoCardItems": [
+      "Crear y editar ingresos y gastos",
+      "Organízalas con categorías (comida, alquiler, etc.)",
+      "Filtra y busca tus transacciones",
+      "Guarda filtros para acceso rápido"
+    ],
+    "infoCardDescription": "También puedes automatizar cambios usando reglas.",
     "addExpense": "Nuevo gasto",
     "addIncome": "Nuevo ingreso",
     "addEntry": "Nuevo apunte",
@@ -794,6 +884,13 @@
   "analysis": {
     "title": "Análisis",
     "subtitle": "Crea, previsualiza y organiza tus widgets usando los mismos filtros que en transacciones.",
+    "infoCardTitle": "Análisis",
+    "infoCardItems": [
+      "Visualiza ingresos y gastos",
+      "Ve la distribución por categorías",
+      "Analiza tendencias a lo largo del tiempo"
+    ],
+    "infoCardDescription": "Puedes personalizar tu panel con distintos gráficos.",
     "loading": "Cargando análisis...",
     "actions": {
       "sync": "Sincronizar",

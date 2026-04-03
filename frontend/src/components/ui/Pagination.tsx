@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Fragment } from "react";
 
 interface PaginationProps {
   currentPage: number;
@@ -41,25 +42,28 @@ export default function Pagination({
         <ChevronLeft className="h-4 w-4" />
       </button>
 
-      {pages.map((p, i) =>
-        p === "..." ? (
-          <span key={`dots-${i}`} className="px-1 text-slate-400">
-            …
-          </span>
-        ) : (
-          <button
-            key={p}
-            onClick={() => onPageChange(p)}
-            className={`${base} ${
-              p === currentPage
-                ? "bg-gradient-to-r from-sky-500 to-emerald-500 text-white shadow-sm"
-                : "border border-slate-300 text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            {p}
-          </button>
-        )
-      )}
+      {pages.map((p, i) => {
+        const itemKey = p === "..." ? `dots-${i}` : `page-${p}-${i}`;
+
+        return (
+          <Fragment key={itemKey}>
+            {p === "..." ? (
+              <span className="px-1 text-slate-400">…</span>
+            ) : (
+              <button
+                onClick={() => onPageChange(p)}
+                className={`${base} ${
+                  p === currentPage
+                    ? "bg-gradient-to-r from-sky-500 to-emerald-500 text-white shadow-sm"
+                    : "border border-slate-300 text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                {p}
+              </button>
+            )}
+          </Fragment>
+        );
+      })}
 
       {/* Next */}
       <button

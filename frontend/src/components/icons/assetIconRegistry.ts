@@ -28,7 +28,8 @@ const rawAssetOptions = Object.entries(assetModules)
     usedKeys.add(key);
     return {
       name: key,
-      label: `Asset ${index + 1}`,
+      // Display the file name without extension (e.g., "my_icon" instead of "Asset 1")
+      label: stem.charAt(0).toUpperCase() + stem.slice(1).replace(/[-_]/g, " "),
       url,
     };
   });

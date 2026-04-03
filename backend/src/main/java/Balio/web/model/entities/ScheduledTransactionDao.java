@@ -19,6 +19,8 @@ public interface ScheduledTransactionDao extends JpaRepository<ScheduledTransact
 
     List<ScheduledTransaction> findAllByUserIdAndActiveTrue(UUID userId);
 
+    List<ScheduledTransaction> findAllByUserIdAndAccountIdOrderByStartDateAsc(UUID userId, UUID accountId);
+
     long countByUserId(UUID userId);
 
     @Modifying

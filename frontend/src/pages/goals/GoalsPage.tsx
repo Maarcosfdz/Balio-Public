@@ -8,6 +8,7 @@
 } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
+import InfoCard from "@/components/ui/InfoCard";
 import {
   CheckCircle2,
   Loader2,
@@ -29,8 +30,8 @@ import {
   DEFAULT_ICON_BG_COLOR,
   normalizeIconBgColor,
   resolveEntityIconName,
-  suggestIconFromText,
 } from "@/components/icons/iconRegistry";
+import { suggestIconNameFromText } from "@/components/icons/iconSuggestions";
 
 const MAX_GOALS = 40;
 
@@ -256,7 +257,10 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
     }
   }, [open, initial]);
 
-  const defaultIconName = useMemo(() => suggestIconFromText(name || initial?.name || "goal"), [name, initial?.name]);
+  const defaultIconName = useMemo(
+    () => suggestIconNameFromText(name || initial?.name || "goal"),
+    [name, initial?.name],
+  );
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -518,6 +522,7 @@ function EmptyGoalCard({ onAdd }: { onAdd: () => void }) {
 
 export default function GoalsPage() {
   const { t } = useTranslation();
+  const infoCardItems = t("goals.infoCardItems", { returnObjects: true }) as string[];
 
   const [goals, setGoals] = useState<GoalSummaryDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -607,6 +612,13 @@ export default function GoalsPage() {
       </svg>
 
       <div className="space-y-6">
+        <InfoCard
+          id="goals"
+          accentColor="rose"
+          title={t("goals.infoCardTitle", "Goals")}
+          items={infoCardItems}
+          description={t("goals.infoCardDescription", "This does not affect your real balance, it is only for tracking purposes.")}
+        />
         {/* ── Cabecera hero ── */}
         <div className="goals-hero-section">
           <div className="goals-hero-inner">

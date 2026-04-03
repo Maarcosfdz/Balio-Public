@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChartNoAxesCombined, LayoutDashboard, RefreshCw } from "lucide-react";
+import { gsap } from "gsap";
 import PageHeader from "@/components/layout/PageHeader";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { ToastBanner, type ToastBannerTone } from "@/components/ui/toast-banner";
+import InfoCard from "@/components/ui/InfoCard";
 import {
   accountService,
   categoryService,
@@ -450,10 +452,30 @@ function isLocalWidgetId(widgetId: string): boolean {
 export default function AnalysisPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const infoCardItems = t("analysis.infoCardItems", { returnObjects: true }) as string[];
+  const pageRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setChartCurrency(user?.preferredCurrency ?? "EUR");
   }, [user?.preferredCurrency]);
+
+  // GSAP stagger entrance for page sections
+  useEffect(() => {
+    const el = pageRef.current;
+    if (!el) return;
+    const sections = el.querySelectorAll<HTMLElement>(":scope > *");
+    const ctx = gsap.context(() => {
+      gsap.from(sections, {
+        y: 20,
+        opacity: 0,
+        duration: 0.45,
+        ease: "power2.out",
+        stagger: 0.1,
+        clearProps: "all",
+      });
+    }, el);
+    return () => ctx.revert();
+  }, []);
   const [toast, setToast] = useState<{ message: string; tone: ToastBannerTone } | null>(null);
   const [widgets, setWidgets] = useState<AnalysisWidget[]>([]);
   const [transactions, setTransactions] = useState<AnalysisTransaction[]>([]);
@@ -847,7 +869,14 @@ export default function AnalysisPage() {
 
   return (
     <>
-      <div className="space-y-5">
+      <div ref={pageRef} className="space-y-5">
+        <InfoCard
+          id="analysis"
+          accentColor="sky"
+          title={t("analysis.infoCardTitle", "Analytics")}
+          items={infoCardItems}
+          description={t("analysis.infoCardDescription", "You can customize your dashboard with different charts.")}
+        />
         <div className="analysis-hero-section">
           <div className="analysis-hero-inner">
             <PageHeader

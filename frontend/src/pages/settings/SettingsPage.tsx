@@ -1,9 +1,11 @@
 import React, {
   type FormEvent,
+  useCallback,
   useEffect,
   useRef,
   useState,
 } from "react";
+import { gsap } from "gsap";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -11,10 +13,12 @@ import {
   CircleDollarSign,
   Eye,
   EyeOff,
+  HelpCircle,
   KeyRound,
   LayoutTemplate,
   Loader2,
   Pencil,
+  RotateCcw,
   Save,
   ShieldAlert,
   User,
@@ -22,11 +26,10 @@ import {
 } from "lucide-react";
 import { authService } from "@/backend/authService";
 import { useAuth } from "@/contexts/AuthContext";
-import { clearAllUserState } from "@/lib/session";
-import { ROUTES } from "@/config/routes";
 import { ToastBanner, type ToastBannerTone } from "@/components/ui/toast-banner";
 import { FieldError } from "@/components/ui/field-error";
 import { GradientButton } from "@/components/ui/gradient-button";
+import InfoCard, { resetAllInfoCards } from "@/components/ui/InfoCard";
 
 // ── Small reusable components ────────────────────────────────────────────
 
@@ -545,16 +548,16 @@ function CurrencySection({ onToast }: { onToast: (t: Toast) => void }) {
 // ── Danger Zone ──────────────────────────────────────────────────────────
 
 function DangerSection() {
-  const { t, i18n } = useTranslation();
-  const { user } = useAuth();
+  const { t } = useTranslation();
+  const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const CONFIRM_WORD = i18n.language?.startsWith("en") ? "delete" : "eliminar";
-  const canDelete = typed.toLowerCase() === CONFIRM_WORD;
+  const confirmWord = t("settings.deleteConfirmWord", "delete").toLowerCase();
+  const canDelete = typed.trim().toLowerCase() === confirmWord;
 
   const openDialog = () => {
     setTyped("");
@@ -584,10 +587,9 @@ function DangerSection() {
     setError("");
     try {
       await authService.deleteAccount(user.id);
-      clearAllUserState();
-      window.location.assign(ROUTES.HOME);
+      await logout();
     } catch {
-      setError(t("common.error"));
+      setError(t("settings.deleteError", "Could not delete your account. Please try again."));
       setLoading(false);
     }
   };
@@ -685,20 +687,85 @@ function DangerSection() {
   );
 }
 
+// ── Onboarding / Help Reset section ─────────────────────────────────────────
+
+function OnboardingSection({ onToast }: { onToast: (t: Toast) => void }) {
+  const { t } = useTranslation();
+  const [resetDone, setResetDone] = useState(false);
+
+  const handleReset = () => {
+    resetAllInfoCards();
+    setResetDone(true);
+    onToast({ type: "success", message: t("settings.onboardingReset", "Guide cards reset — they will show again on your next visit.") });
+    setTimeout(() => setResetDone(false), 3000);
+  };
+
+  return (
+    <SectionCard
+      icon={<HelpCircle className="h-5 w-5" />}
+      title={t("settings.onboardingTitle", "Page Guides")}
+      desc={t("settings.onboardingDesc", "Show the contextual help cards again on each page.")}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-slate-500">
+          {t("settings.onboardingHint", "Each page shows a guide card the first time you visit it. Reset to see them again.")}
+        </p>
+        <button
+          type="button"
+          onClick={handleReset}
+          disabled={resetDone}
+          className="flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-sky-400 hover:bg-sky-50 hover:text-sky-700 disabled:opacity-50"
+        >
+          <RotateCcw className={`h-4 w-4 ${resetDone ? "animate-spin" : ""}`} />
+          {t("settings.onboardingResetBtn", "Reset guides")}
+        </button>
+      </div>
+    </SectionCard>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
   const { t } = useTranslation();
   const [toast, setToast] = useState<Toast | null>(null);
+  const pageRef = useRef<HTMLDivElement>(null);
 
-  const showToast = (newToast: Toast) => {
+  const showToast = useCallback((newToast: Toast) => {
     setToast(newToast);
     setTimeout(() => setToast(null), 4000);
-  };
+  }, []);
+
+  useEffect(() => {
+    const el = pageRef.current;
+    if (!el) return;
+    const cards = el.querySelectorAll<HTMLElement>(":scope > div");
+    const ctx = gsap.context(() => {
+      gsap.from(cards, {
+        y: 18,
+        opacity: 0,
+        duration: 0.4,
+        ease: "power2.out",
+        stagger: 0.07,
+        clearProps: "all",
+      });
+    }, el);
+    return () => ctx.revert();
+  }, []);
 
   return (
     <>
-      <div className="mx-auto w-full space-y-4" style={{ maxWidth: "680px" }}>
+      <div ref={pageRef} className="mx-auto w-full space-y-4" style={{ maxWidth: "680px" }}>
+        <InfoCard
+          id="settings"
+          accentColor="violet"
+          title={t("settings.infoCardTitle", "Settings")}
+          items={[
+            t("settings.infoCardItem1", "Change language and currency"),
+            t("settings.infoCardItem2", "Update personal data"),
+            t("settings.infoCardItem3", "Customize interface preferences"),
+          ]}
+        />
         <div>
           <h1 className="text-xl font-bold text-slate-800">{t("settings.title")}</h1>
           <p className="mt-0.5 text-xs text-slate-400">{t("settings.subtitle")}</p>
@@ -708,6 +775,7 @@ export default function SettingsPage() {
         <PasswordSection onToast={showToast} />
         <PreferencesSection onToast={showToast} />
         <CurrencySection onToast={showToast} />
+        <OnboardingSection onToast={showToast} />
         <DangerSection />
 
         <p className="pb-4 text-center text-xs text-slate-300">

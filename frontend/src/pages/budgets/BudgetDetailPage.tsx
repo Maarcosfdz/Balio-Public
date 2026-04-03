@@ -38,8 +38,8 @@ import {
   DEFAULT_ICON_BG_COLOR,
   normalizeIconBgColor,
   resolveEntityIconName,
-  suggestIconFromText,
 } from "@/components/icons/iconRegistry";
+import { suggestIconNameFromText } from "@/components/icons/iconSuggestions";
 
 const MAX_CATEGORIES = 40;
 const TX_FETCH_PAGE_SIZE = 200;
@@ -154,7 +154,7 @@ function CategoryFormDialog({
   );
 
   const defaultIconName = useMemo(
-    () => suggestIconFromText(name || initial?.name || "category"),
+    () => suggestIconNameFromText(name || initial?.name || "category"),
     [name, initial?.name],
   );
 

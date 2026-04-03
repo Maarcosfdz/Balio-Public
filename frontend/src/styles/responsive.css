@@ -49,6 +49,11 @@
   overflow-x: hidden;
 }
 
+/* Ensure the main content inside vertical layout never scrolls horizontally */
+.app-layout-vertical .app-main {
+  overflow-x: hidden;
+}
+
 /* Keep media constrained only inside authenticated app layouts */
 .app-layout-vertical img,
 .app-layout-vertical video,

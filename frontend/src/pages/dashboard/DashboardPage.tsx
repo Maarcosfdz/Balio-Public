@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { gsap } from "gsap";
+import InfoCard from "@/components/ui/InfoCard";
 import {
   ChevronRight,
   Minus,
@@ -476,6 +478,28 @@ export default function DashboardPage() {
     [accounts],
   );
 
+  // ── GSAP: balance count-up whenever totalBalance changes ─────────────
+  const balanceRef = useRef<HTMLParagraphElement>(null);
+  const prevBalanceRef = useRef(0);
+  useEffect(() => {
+    const el = balanceRef.current;
+    if (!el) return;
+    const from = prevBalanceRef.current;
+    const obj = { v: from };
+    const ctx = gsap.context(() => {
+      gsap.to(obj, {
+        v: totalBalance,
+        duration: 1.1,
+        ease: "power2.out",
+        onUpdate() {
+          el.textContent = formatCurrency(obj.v, user?.preferredCurrency ?? "EUR", locale);
+        },
+        onComplete() { prevBalanceRef.current = totalBalance; },
+      });
+    });
+    return () => ctx.revert();
+  }, [totalBalance, user?.preferredCurrency, locale]);
+
   // ── Quick tools helpers ──────────────────────────────────────────────
   const handlePickTool = useCallback((idx: number, config: QuickToolConfig) => {
     setQuickTools((prev) => {
@@ -537,8 +561,21 @@ export default function DashboardPage() {
 
   // ── Render ───────────────────────────────────────────────────────────
 
+  // Preparedo: obtener items traducidos para la InfoCard
+  const infoItems = t("dashboard.page.infoCard.items", { returnObjects: true }) as string[];
+
   return (
     <div className="db-page-bg">
+      <InfoCard
+        id="dashboard"
+        accentColor="sky"
+        title={t("dashboard.page.infoCard.title", "Welcome to Balio 👋")}
+        description={t(
+          "dashboard.page.infoCard.description",
+          "Balio is your personal finance manager. Manage bank and manual accounts, track income/expenses, and analyze your finances visually. Use the navigation to explore each section. This page shows a general overview of your financial situation. 💡 Change language and currency in Settings."
+        )}
+        items={infoItems}
+      />
       <div className="db-grid">
 
       {/* ── Hero card (gradient border wrapper) ─────────────────────── */}
@@ -555,7 +592,7 @@ export default function DashboardPage() {
               </h1>
               <div className="mt-4">
                 <p className="text-xs text-slate-400 mb-0.5">{t("dashboard.page.hero.totalBalance", "Balance total")}</p>
-                <p className="text-3xl font-extrabold text-slate-800 tracking-tight">
+                <p ref={balanceRef} className="text-3xl font-extrabold text-slate-800 tracking-tight">
                   {formatCurrency(totalBalance, user?.preferredCurrency ?? "EUR", locale)}
                 </p>
               </div>

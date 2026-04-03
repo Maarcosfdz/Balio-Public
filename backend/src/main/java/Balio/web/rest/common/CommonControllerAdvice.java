@@ -17,7 +17,10 @@ import Balio.web.enablebanking.EnableBankingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -37,6 +40,7 @@ public class CommonControllerAdvice {
     private static final String INCORRECT_LOGIN_EXCEPTION_CODE = "project.exceptions.IncorrectLoginException";
     private static final String INCORRECT_PASSWORD_EXCEPTION_CODE = "project.exceptions.IncorrectPasswordException";
     private static final String PERMISSION_EXCEPTION_CODE = "project.exceptions.PermissionException";
+    private static final String UNAUTHORIZED_EXCEPTION_CODE = "project.exceptions.UnauthorizedException";
 
     // --- Balio InstanceNotFoundException (AccountService, CategoryService) ---
 
@@ -102,6 +106,20 @@ public class CommonControllerAdvice {
     @ResponseBody
     public Map<String, String> handlePermissionException(PermissionException exception) {
         return Map.of("code", PERMISSION_EXCEPTION_CODE, "message", "Permission denied");
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ResponseBody
+    public Map<String, String> handleAccessDeniedException(AccessDeniedException exception) {
+        return Map.of("code", PERMISSION_EXCEPTION_CODE, "message", "Permission denied");
+    }
+
+    @ExceptionHandler({AuthenticationCredentialsNotFoundException.class, ServletRequestBindingException.class})
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ResponseBody
+    public Map<String, String> handleUnauthorizedException(Exception exception) {
+        return Map.of("code", UNAUTHORIZED_EXCEPTION_CODE, "message", "Authentication required");
     }
 
     // --- UserNotFoundException (runtime) ---

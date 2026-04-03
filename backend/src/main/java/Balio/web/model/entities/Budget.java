@@ -38,7 +38,7 @@ public class Budget {
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 
-    @Column(name = "icon_name", length = 60)
+    @Column(name = "icon_name", length = 120)
     private String iconName;
 
     @Column(name = "icon_bg_color", length = 20)
