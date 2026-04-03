@@ -9,6 +9,8 @@ import Balio.web.model.entities.AccountDao;
 import Balio.web.model.entities.BankConnectionDao;
 import Balio.web.model.entities.BankTransactionRule;
 import Balio.web.model.entities.BankTransactionRuleDao;
+import Balio.web.model.entities.ScheduledTransaction;
+import Balio.web.model.entities.ScheduledTransactionDao;
 import Balio.web.model.entities.Transaction;
 import Balio.web.model.entities.TransactionDao;
 import Balio.web.model.entities.User;
@@ -31,14 +33,17 @@ public class AccountServiceImpl implements AccountService {
     private final TransactionDao transactionDao;
     private final BankConnectionDao bankConnectionDao;
     private final BankTransactionRuleDao bankTransactionRuleDao;
+    private final ScheduledTransactionDao scheduledTransactionDao;
 
     public AccountServiceImpl(UserDao userDao, AccountDao accountDao, TransactionDao transactionDao,
-                              BankConnectionDao bankConnectionDao, BankTransactionRuleDao bankTransactionRuleDao) {
+                              BankConnectionDao bankConnectionDao, BankTransactionRuleDao bankTransactionRuleDao,
+                              ScheduledTransactionDao scheduledTransactionDao) {
         this.userDao = userDao;
         this.accountDao = accountDao;
         this.transactionDao = transactionDao;
         this.bankConnectionDao = bankConnectionDao;
         this.bankTransactionRuleDao = bankTransactionRuleDao;
+        this.scheduledTransactionDao = scheduledTransactionDao;
     }
 
     @Override
@@ -113,6 +118,16 @@ public class AccountServiceImpl implements AccountService {
                 transactions.forEach(transaction -> transaction.setAccount(null));
                 transactionDao.saveAll(transactions);
             }
+        }
+
+        // Keep scheduled rules even if the account is removed.
+        // This avoids FK issues in environments where ON DELETE SET NULL
+        // is missing or inconsistent.
+        List<ScheduledTransaction> scheduledTransactions = scheduledTransactionDao
+                .findAllByUserIdAndAccountIdOrderByStartDateAsc(userId, accountId);
+        if (!scheduledTransactions.isEmpty()) {
+            scheduledTransactions.forEach(st -> st.setAccount(null));
+            scheduledTransactionDao.saveAll(scheduledTransactions);
         }
 
         accountDao.delete(account);

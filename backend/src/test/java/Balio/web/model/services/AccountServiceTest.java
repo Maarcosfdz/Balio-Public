@@ -1,6 +1,7 @@
 package Balio.web.model.services;
 
 import Balio.web.enums.AccountType;
+import Balio.web.enums.TransactionType;
 import Balio.web.model.Exceptions.AccountInvalidException;
 import Balio.web.model.Exceptions.InstanceNotFoundException;
 import Balio.web.model.Exceptions.UserNotFoundException;
@@ -8,6 +9,8 @@ import Balio.web.model.entities.Account;
 import Balio.web.model.entities.AccountDao;
 import Balio.web.model.entities.BankConnectionDao;
 import Balio.web.model.entities.BankTransactionRuleDao;
+import Balio.web.model.entities.ScheduledTransaction;
+import Balio.web.model.entities.ScheduledTransactionDao;
 import Balio.web.model.entities.TransactionDao;
 import Balio.web.model.entities.User;
 import Balio.web.model.entities.UserDao;
@@ -25,6 +28,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -69,6 +73,9 @@ class AccountServiceTest {
     @Mock
     private BankTransactionRuleDao bankTransactionRuleDao;
 
+    @Mock
+    private ScheduledTransactionDao scheduledTransactionDao;
+
     @InjectMocks
     private AccountServiceImpl accountService;
 
@@ -88,6 +95,8 @@ class AccountServiceTest {
         lenient().when(bankConnectionDao.findByAccountIdAndUserId(ACCOUNT_ID, USER_ID))
             .thenReturn(Optional.empty());
         lenient().when(transactionDao.findAllByUserIdAndAccountIdOrderByDateDesc(USER_ID, ACCOUNT_ID))
+            .thenReturn(List.of());
+        lenient().when(scheduledTransactionDao.findAllByUserIdAndAccountIdOrderByStartDateAsc(USER_ID, ACCOUNT_ID))
             .thenReturn(List.of());
     }
 
@@ -336,6 +345,27 @@ class AccountServiceTest {
             accountService.deleteAccount(USER_ID, ACCOUNT_ID);
 
             verify(userDao, never()).save(any());
+            verify(accountDao).delete(existingAccount);
+        }
+
+        @Test
+        @DisplayName("should clear account reference in scheduled transactions before deleting account")
+        void shouldClearScheduledTransactionAccountReferences() throws InstanceNotFoundException {
+            when(accountDao.findByIdAndUserId(ACCOUNT_ID, USER_ID))
+                    .thenReturn(Optional.of(existingAccount));
+
+            ScheduledTransaction scheduled = new ScheduledTransaction(
+                    "Rent", new BigDecimal("900.00"), TransactionType.EXPENSE,
+                    0, 1, 0, 0, LocalDate.now(), user);
+            scheduled.setAccount(existingAccount);
+
+            when(scheduledTransactionDao.findAllByUserIdAndAccountIdOrderByStartDateAsc(USER_ID, ACCOUNT_ID))
+                    .thenReturn(List.of(scheduled));
+
+            accountService.deleteAccount(USER_ID, ACCOUNT_ID);
+
+            assertNull(scheduled.getAccount());
+            verify(scheduledTransactionDao).saveAll(any());
             verify(accountDao).delete(existingAccount);
         }
 
