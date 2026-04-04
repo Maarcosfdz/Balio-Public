@@ -178,7 +178,7 @@ export default function InfoCard({
   const bulletRefs = useRef<HTMLDivElement[]>([]);
   const [particles] = useState(() => generateParticles(8));
   const palette = ACCENT[accentColor];
-  const isDashboardCard = id === "dashboard";
+  const isDashboardCard = id.startsWith("dashboard");
 
   // ── Entrance animation ───────────────────────────────────────────────────
   useEffect(() => {
@@ -244,7 +244,7 @@ export default function InfoCard({
   };
 
   const rootClasses = isDashboardCard
-    ? `info-card-root fixed left-1/2 top-1/2 z-50 w-[min(92vw,760px)] max-h-[calc(100vh-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border bg-white/95 backdrop-blur-md ${palette.border}`
+    ? `info-card-root fixed left-1/2 top-1/2 z-50 w-[min(96vw,980px)] max-h-[calc(100vh-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border bg-white/95 backdrop-blur-md ${palette.border}`
     : `info-card-root fixed bottom-5 right-5 z-50 w-[340px] max-w-[calc(100vw-2.5rem)] overflow-hidden rounded-2xl border bg-white/95 backdrop-blur-md ${palette.border}`;
 
   const bodyClasses = isDashboardCard

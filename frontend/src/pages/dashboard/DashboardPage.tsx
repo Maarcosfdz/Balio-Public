@@ -75,6 +75,7 @@ interface CategorySlice {
 // ── Constants ────────────────────────────────────────────────────────
 
 const STORAGE_KEY = "dashboard_quick_tools_v2";
+const DASHBOARD_INFOCARD_VERSION = "v2";
 
 // Blue/green/teal palette (screen18 style)
 const DONUT_COLORS = [
@@ -343,20 +344,24 @@ function BarTooltip({
 function DonutTooltip({
   active,
   payload,
+  total = 0,
   currency = "EUR",
 }: {
   active?: boolean;
   payload?: { name: string; value: number }[];
+  total?: number;
   currency?: string;
 }) {
   const { i18n } = useTranslation();
   const locale = resolveLocale(i18n.resolvedLanguage);
 
   if (!active || !payload?.length) return null;
+  const value = payload[0].value;
+  const pct = total > 0 ? (value / total) * 100 : 0;
   return (
     <div className="db-tooltip">
       <p className="font-semibold text-white/90">{payload[0].name}</p>
-      <p className="text-white/70">{formatCurrency(payload[0].value, currency, locale)}</p>
+      <p className="text-white/70">{formatCurrency(value, currency, locale)} · {pct.toFixed(1)}%</p>
     </div>
   );
 }
@@ -370,6 +375,10 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const chartCurrency = user?.preferredCurrency ?? "EUR";
+  const dashboardInfoCardId = useMemo(
+    () => `dashboard-${DASHBOARD_INFOCARD_VERSION}-${user?.id ?? "guest"}`,
+    [user?.id],
+  );
   const locale = useMemo(() => resolveLocale(i18n.resolvedLanguage), [i18n.resolvedLanguage]);
 
   // ── Data state ──────────────────────────────────────────────────────
@@ -472,6 +481,11 @@ export default function DashboardPage() {
       }));
   }, [chartTx, categoryMap, t]);
 
+  const categoryDonutTotal = useMemo(
+    () => categoryDonutData.reduce((sum, item) => sum + item.value, 0),
+    [categoryDonutData],
+  );
+
   // ── Total balance ────────────────────────────────────────────────────
   const totalBalance = useMemo(
     () => accounts.reduce((sum, a) => sum + a.balance, 0),
@@ -567,7 +581,7 @@ export default function DashboardPage() {
   return (
     <div className="db-page-bg">
       <InfoCard
-        id="dashboard"
+        id={dashboardInfoCardId}
         accentColor="sky"
         title={t("dashboard.page.infoCard.title", "Welcome to Balio 👋")}
         description={t(
@@ -757,27 +771,30 @@ export default function DashboardPage() {
                       />
                     ))}
                   </Pie>
-                  <Tooltip content={<DonutTooltip currency={chartCurrency} />} />
+                  <Tooltip content={<DonutTooltip currency={chartCurrency} total={categoryDonutTotal} />} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="style-1 max-h-[152px] flex-1 min-w-0 space-y-1 overflow-y-auto pr-1">
-                {categoryDonutData.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className={`flex items-center gap-1.5 min-w-0 rounded px-1 py-0.5 transition ${activeDonutIndex == null || activeDonutIndex === idx ? "opacity-100" : "opacity-35"}`}
-                    onMouseEnter={() => setActiveDonutIndex(idx)}
-                    onMouseLeave={() => setActiveDonutIndex(null)}
-                  >
-                    <span
-                      className="inline-block w-2 h-2 rounded-full shrink-0"
-                      style={{ background: item.color }}
-                    />
-                    <span className="text-[11px] text-slate-500 truncate min-w-0">{item.name}</span>
-                    <span className="text-[11px] font-semibold text-slate-700 shrink-0 ml-auto pl-1">
-                      {formatCurrency(item.value, chartCurrency, locale)}
-                    </span>
-                  </div>
-                ))}
+                {categoryDonutData.map((item, idx) => {
+                  const pct = categoryDonutTotal > 0 ? (item.value / categoryDonutTotal) * 100 : 0;
+                  return (
+                    <div
+                      key={idx}
+                      className={`flex items-center gap-1.5 min-w-0 rounded px-1 py-0.5 transition ${activeDonutIndex == null || activeDonutIndex === idx ? "opacity-100" : "opacity-35"}`}
+                      onMouseEnter={() => setActiveDonutIndex(idx)}
+                      onMouseLeave={() => setActiveDonutIndex(null)}
+                    >
+                      <span
+                        className="inline-block w-2 h-2 rounded-full shrink-0"
+                        style={{ background: item.color }}
+                      />
+                      <span className="text-[11px] text-slate-500 truncate min-w-0">{item.name}</span>
+                      <span className="text-[11px] font-semibold text-slate-700 shrink-0 ml-auto pl-1 tabular-nums">
+                        {formatCurrency(item.value, chartCurrency, locale)} · {pct.toFixed(1)}%
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
