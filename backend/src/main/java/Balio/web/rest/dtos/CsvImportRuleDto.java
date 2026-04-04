@@ -6,6 +6,8 @@ public class CsvImportRuleDto {
     private String categoryId;
     private String transactionType; // EXPENSE, INCOME, or null (both)
     private String mappedName;
+    private Boolean excludeMatch;
+    private java.math.BigDecimal amountMultiplier;
 
     public CsvImportRuleDto() {}
 
@@ -20,4 +22,12 @@ public class CsvImportRuleDto {
 
     public String getMappedName() { return mappedName; }
     public void setMappedName(String mappedName) { this.mappedName = mappedName; }
+
+    public Boolean getExcludeMatch() { return excludeMatch; }
+    public void setExcludeMatch(Boolean excludeMatch) { this.excludeMatch = excludeMatch; }
+
+    public java.math.BigDecimal getAmountMultiplier() { return amountMultiplier; }
+    public void setAmountMultiplier(java.math.BigDecimal amountMultiplier) {
+        this.amountMultiplier = amountMultiplier;
+    }
 }

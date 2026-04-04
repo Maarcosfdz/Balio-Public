@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -170,8 +171,12 @@ public class EnableBankingSyncService {
         Category resolvedCategory = null;
         boolean nameResolved = false;
         boolean categoryResolved = false;
+        BigDecimal resolvedAmount = amount;
         for (BankTransactionRule rule : rules) {
             if (matches(rule, name, bankCategory, type)) {
+                if (rule.isExcludeMatch()) {
+                    return 0;
+                }
                 if (!nameResolved && rule.getMappedName() != null && !rule.getMappedName().isBlank()) {
                     resolvedName = rule.getMappedName();
                     nameResolved = true;
@@ -182,13 +187,25 @@ public class EnableBankingSyncService {
                     resolvedCategory = rule.getMappedCategory();
                     categoryResolved = true;
                 }
+                if (rule.getAmountMultiplier() != null
+                        && rule.getAmountMultiplier().compareTo(BigDecimal.ZERO) > 0
+                        && rule.getAmountMultiplier().compareTo(BigDecimal.ONE) != 0) {
+                    resolvedAmount = resolvedAmount
+                            .multiply(rule.getAmountMultiplier())
+                            .setScale(2, RoundingMode.HALF_UP)
+                            .abs();
+                }
                 if (nameResolved && categoryResolved) {
                     break;
                 }
             }
         }
 
-        Transaction transaction = new Transaction(resolvedName, amount, date, type, user);
+        if (resolvedAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            return 0;
+        }
+
+        Transaction transaction = new Transaction(resolvedName, resolvedAmount, date, type, user);
         transaction.setAccount(account);
         transaction.setCategory(resolvedCategory);
         transaction.setAffectsBalance(false);

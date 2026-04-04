@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
@@ -49,12 +50,19 @@ public class BankTransactionRule {
     @Column(nullable = false)
     private int priority;
 
+    @Column(name = "exclude_match", nullable = false)
+    private boolean excludeMatch;
+
+    @Column(name = "amount_multiplier", precision = 12, scale = 4)
+    private BigDecimal amountMultiplier;
+
     protected BankTransactionRule() {
     }
 
     public BankTransactionRule(User user, Account account, String namePattern, String bankCategory,
                                TransactionType transactionType, String mappedName,
-                               Category mappedCategory, int priority) {
+                               Category mappedCategory, int priority,
+                               boolean excludeMatch, BigDecimal amountMultiplier) {
         this.user = user;
         this.account = account;
         this.namePattern = namePattern;
@@ -63,6 +71,15 @@ public class BankTransactionRule {
         this.mappedName = mappedName;
         this.mappedCategory = mappedCategory;
         this.priority = priority;
+        this.excludeMatch = excludeMatch;
+        this.amountMultiplier = amountMultiplier;
+    }
+
+    public BankTransactionRule(User user, Account account, String namePattern, String bankCategory,
+                               TransactionType transactionType, String mappedName,
+                               Category mappedCategory, int priority) {
+        this(user, account, namePattern, bankCategory, transactionType, mappedName,
+                mappedCategory, priority, false, BigDecimal.ONE);
     }
 
     // -------- GETTERS / SETTERS --------
@@ -90,4 +107,10 @@ public class BankTransactionRule {
 
     public int getPriority() { return priority; }
     public void setPriority(int priority) { this.priority = priority; }
+
+    public boolean isExcludeMatch() { return excludeMatch; }
+    public void setExcludeMatch(boolean excludeMatch) { this.excludeMatch = excludeMatch; }
+
+    public BigDecimal getAmountMultiplier() { return amountMultiplier; }
+    public void setAmountMultiplier(BigDecimal amountMultiplier) { this.amountMultiplier = amountMultiplier; }
 }

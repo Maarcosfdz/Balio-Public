@@ -31,7 +31,15 @@ import {
 } from "./mocks";
 import { setChartCurrency } from "./registry";
 import { useAuth } from "@/contexts/AuthContext";
-import type { AnalysisTransaction, AnalysisWidget, LineWidgetConfig, WidgetDraft, WidgetSize, WidgetType } from "./types";
+import type {
+  AnalysisTransaction,
+  AnalysisWidget,
+  LineWidgetConfig,
+  WidgetDraft,
+  WidgetLayout,
+  WidgetSize,
+  WidgetType,
+} from "./types";
 import type {
   BackendChartType,
   BackendWidgetType,
@@ -52,6 +60,37 @@ interface FilterDefinitionLike {
   nameQuery?: string;
   amountMin?: number;
   amountMax?: number;
+}
+
+const ANALYSIS_COLS = 4;
+const ANALYSIS_MAX_ROWS = 3;
+const SIZE_DIMENSIONS: Record<WidgetSize, { w: number; h: number }> = {
+  sm: { w: 1, h: 1 },
+  md: { w: 2, h: 1 },
+  lg: { w: 2, h: 2 },
+};
+
+function inferSizeFromDimensions(w: number, h: number): WidgetSize {
+  if (h >= 2) return "lg";
+  if (w >= 2) return "md";
+  return "sm";
+}
+
+function normalizeWidgetLayout(raw: unknown): WidgetLayout | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const candidate = raw as Partial<WidgetLayout>;
+  const x = Number(candidate.x);
+  const y = Number(candidate.y);
+  const w = Number(candidate.w);
+  const h = Number(candidate.h);
+  if (![x, y, w, h].every((value) => Number.isFinite(value))) return undefined;
+
+  const safeW = Math.min(ANALYSIS_COLS, Math.max(1, Math.round(w)));
+  const safeH = Math.min(ANALYSIS_MAX_ROWS, Math.max(1, Math.round(h)));
+  const safeX = Math.min(ANALYSIS_COLS - safeW, Math.max(0, Math.round(x)));
+  const safeY = Math.max(0, Math.round(y));
+
+  return { x: safeX, y: safeY, w: safeW, h: safeH };
 }
 
 function normalizeOrder(widgets: AnalysisWidget[]): AnalysisWidget[] {
@@ -312,11 +351,14 @@ function buildConfiguration(
     backendSpecific.metric = "NET";
   }
 
+  const widgetLayout = ("layout" in widget ? widget.layout : undefined) as WidgetLayout | undefined;
+
   return JSON.stringify({
     ...backendSpecific,
     frontendType: widget.type,
     description: widget.description,
     widgetConfig: widget.config,
+    widgetLayout,
     importedFilterId: "importedFilterId" in widget ? widget.importedFilterId : undefined,
   });
 }
@@ -431,7 +473,14 @@ function mapBackendToFrontend(
   };
 
   const size = dto.layoutSize?.toLowerCase();
-  const mappedSize = size === "lg" || size === "md" || size === "sm" ? size : fallback.size;
+  const persistedLayout = normalizeWidgetLayout(parsedConfig.widgetLayout);
+  const mappedSizeFromLayout = persistedLayout
+    ? inferSizeFromDimensions(persistedLayout.w, persistedLayout.h)
+    : undefined;
+  const mappedSize =
+    size === "lg" || size === "md" || size === "sm"
+      ? size
+      : mappedSizeFromLayout ?? fallback.size;
 
   return {
     id: dto.id,
@@ -439,6 +488,7 @@ function mapBackendToFrontend(
     description: (parsedConfig.description as string | undefined) ?? fallback.description,
     type: frontendType,
     size: mappedSize,
+    layout: persistedLayout,
     visible: dto.visible ?? true,
     order: dto.displayOrder ?? 0,
     config: config as AnalysisWidget["config"],
@@ -497,22 +547,43 @@ export default function AnalysisPage() {
   );
 
   const [editMode, setEditMode] = useState(false);
+  const [hasUnsavedDashboardChanges, setHasUnsavedDashboardChanges] = useState(false);
 
   const resizeWidget = (widgetId: string, size: WidgetSize) => {
     setWidgets((prev) =>
-      normalizeOrder(prev.map((w) => (w.id === widgetId ? { ...w, size } : w))),
+      normalizeOrder(
+        prev.map((widget) => {
+          if (widget.id !== widgetId) return widget;
+          const targetDim = SIZE_DIMENSIONS[size];
+          return {
+            ...widget,
+            size,
+            layout: widget.layout
+              ? { ...widget.layout, w: targetDim.w, h: targetDim.h }
+              : widget.layout,
+          };
+        }),
+      ),
     );
+    setHasUnsavedDashboardChanges(true);
   };
 
-  const handleLayoutChange = (updates: { id: string; order: number; size: WidgetSize }[]) => {
+  const handleLayoutChange = (updates: { id: string; order: number; size: WidgetSize; layout: WidgetLayout }[]) => {
     setWidgets((prev) => {
-      const next = prev.map((w) => {
-        const update = updates.find((u) => u.id === w.id);
-        if (!update) return w;
-        return { ...w, order: update.order, size: update.size };
+      const updatesById = new Map(updates.map((item) => [item.id, item]));
+      const next = prev.map((widget) => {
+        const update = updatesById.get(widget.id);
+        if (!update) return widget;
+        return {
+          ...widget,
+          order: update.order,
+          size: update.size,
+          layout: normalizeWidgetLayout(update.layout),
+        };
       });
       return normalizeOrder(next);
     });
+    setHasUnsavedDashboardChanges(true);
   };
 
   const toggleWidgetVisibility = (widgetId: string) => {
@@ -522,6 +593,7 @@ export default function AnalysisPage() {
       );
       return normalizeOrder(next);
     });
+    setHasUnsavedDashboardChanges(true);
 
     if (activeWidgetId === widgetId) {
       const target = widgets.find((widget) => widget.id === widgetId);
@@ -548,6 +620,7 @@ export default function AnalysisPage() {
           });
         }),
     );
+    setHasUnsavedDashboardChanges(false);
   }, [sortedWidgets, categoryIdsByName]);
 
   const toggleEditMode = () => {
@@ -560,6 +633,30 @@ export default function AnalysisPage() {
       setEditMode(true);
     }
   };
+
+  useEffect(() => {
+    if (!editMode || !hasUnsavedDashboardChanges) return;
+    const timer = setTimeout(() => {
+      void saveEditChanges().catch(() => {
+        setToast({ message: t("analysis.toasts.widgetUpdateError"), tone: "error" });
+      });
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [editMode, hasUnsavedDashboardChanges, saveEditChanges, t]);
+
+  useEffect(() => {
+    const shouldWarn = editMode && (hasUnsavedDashboardChanges || Boolean(draft));
+    if (!shouldWarn) return;
+
+    const handler = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [editMode, hasUnsavedDashboardChanges, draft]);
 
   const loadAnalysisData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);

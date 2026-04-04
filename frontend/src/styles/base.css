@@ -57,14 +57,14 @@
 
   /* ── Dashboard InfoCard scrollbar: minimal light gray line, no arrows ── */
   .style-dashboard-scroll {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(203, 213, 225, 0.95) transparent;
-    -ms-overflow-style: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
   .style-dashboard-scroll::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 0;
+    height: 0;
+    display: none;
   }
 
   .style-dashboard-scroll::-webkit-scrollbar-track {
@@ -72,12 +72,11 @@
   }
 
   .style-dashboard-scroll::-webkit-scrollbar-thumb {
-    background: rgba(203, 213, 225, 0.95);
-    border-radius: 999px;
+    background: transparent;
   }
 
   .style-dashboard-scroll::-webkit-scrollbar-thumb:hover {
-    background: rgba(203, 213, 225, 0.95);
+    background: transparent;
   }
 
   .style-dashboard-scroll::-webkit-scrollbar-button {
