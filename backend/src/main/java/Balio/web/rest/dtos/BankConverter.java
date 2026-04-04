@@ -28,6 +28,8 @@ public class BankConverter {
         dto.setBankCategory(rule.getBankCategory());
         dto.setTransactionType(rule.getTransactionType());
         dto.setMappedName(rule.getMappedName());
+        dto.setExcludeMatch(rule.isExcludeMatch());
+        dto.setAmountMultiplier(rule.getAmountMultiplier());
         dto.setPriority(rule.getPriority());
 
         if (rule.getMappedCategory() != null) {

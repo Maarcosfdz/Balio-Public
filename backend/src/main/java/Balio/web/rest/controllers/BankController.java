@@ -191,6 +191,8 @@ public class BankController {
                 dto.getTransactionType(),
                 dto.getMappedName(),
                 categoryId,
+                Boolean.TRUE.equals(dto.getExcludeMatch()),
+                dto.getAmountMultiplier(),
                 Boolean.TRUE.equals(dto.getApplyToExisting()),
                 dto.getApplyWindowDays());
 
@@ -215,9 +217,11 @@ public class BankController {
                 dto.getBankCategory(),
                 dto.getTransactionType(),
                 dto.getMappedName(),
-            categoryId,
-            Boolean.TRUE.equals(dto.getApplyToExisting()),
-            dto.getApplyWindowDays());
+                categoryId,
+                dto.getExcludeMatch(),
+                dto.getAmountMultiplier(),
+                Boolean.TRUE.equals(dto.getApplyToExisting()),
+                dto.getApplyWindowDays());
 
         BankRuleResponseDto response = bankConverter.toRuleResponseDto(result.rule());
         response.setAppliedTransactions(result.appliedTransactions());

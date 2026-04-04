@@ -39,6 +39,28 @@ function _parseISO(s: string): Date | undefined {
   return new Date(y, m - 1, d);
 }
 
+function _addIntervalISO(
+  startDate: string,
+  years: number,
+  months: number,
+  weeks: number,
+  days: number,
+): string {
+  const base = _parseISO(startDate);
+  if (!base) return startDate;
+
+  const next = new Date(base);
+  next.setFullYear(next.getFullYear() + years);
+  next.setMonth(next.getMonth() + months);
+  next.setDate(next.getDate() + (weeks * 7) + days);
+
+  // If the source transaction is historical, avoid generating a large backfill
+  // by starting the schedule from today.
+  const candidate = _toISO(next);
+  const today = todayISO();
+  return candidate < today ? today : candidate;
+}
+
 // ── Date selector with portal ─────────────────────────────────────────
 function ModalDatePicker({ date, onChange }: { date: string; onChange: (v: string) => void }) {
   const { t } = useTranslation();
@@ -115,6 +137,7 @@ function ModalDatePicker({ date, onChange }: { date: string; onChange: (v: strin
             <DayPicker
               mode="single"
               selected={parsed}
+              weekStartsOn={1}
               onSelect={(d) => { if (d) { onChange(_toISO(d)); setOpen(false); } }}
             />
           </div>
@@ -414,14 +437,6 @@ export default function AddTransactionModal({
         : {}),
     };
 
-    // Log request for debugging (mask sensitive data)
-    if (import.meta.env.DEV) {
-      console.log(
-        `[AddTransaction] ${isExpense ? "EXPENSE" : "INCOME"} →`,
-        { ...dto, _endpoint: isExpense ? "/transaction/expense" : "/transaction/income" }
-      );
-    }
-
     try {
       let result: TransactionResponseDto;
 
@@ -445,32 +460,20 @@ export default function AddTransactionModal({
               categoryId: categoryId ?? undefined,
               affectsBalance,
               freqYears, freqMonths, freqWeeks, freqDays,
-              startDate: date,
+              // The current manual transaction is already the first occurrence.
+              // Schedule from the next execution date to avoid immediate duplicates.
+              startDate: _addIntervalISO(date, freqYears, freqMonths, freqWeeks, freqDays),
             });
           } catch {
             // Don't block transaction creation if schedule fails
-            if (import.meta.env.DEV) {
-              console.warn("[AddTransaction] Schedule creation failed");
-            }
           }
         }
       }
 
-      if (import.meta.env.DEV) {
-        console.log(`[AddTransaction] ✓ ${editTransaction ? "Updated" : "Created"}:`, result.id);
-      }
       onCreated(result);
       onClose();
     } catch (err: unknown) {
-      // Enhanced error logging for debugging 403/network issues
-      if (import.meta.env.DEV) {
-        const axiosErr = err as { response?: { status: number; data: unknown }; message?: string };
-        console.error("[AddTransaction] ✗ Error:", {
-          status: axiosErr.response?.status,
-          data: axiosErr.response?.data,
-          message: axiosErr.message,
-        });
-      }
+      void err;
       setError(t("common.error"));
     } finally {
       setSubmitting(false);

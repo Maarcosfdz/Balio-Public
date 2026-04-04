@@ -23,6 +23,8 @@ interface RuleRow {
   endDate: string;
   newName: string;
   newCategoryId: string;
+  excludeMatch: boolean;
+  amountMultiplier: string;
 }
 
 const EMPTY_RULE: RuleRow = {
@@ -33,6 +35,8 @@ const EMPTY_RULE: RuleRow = {
   endDate: "",
   newName: "",
   newCategoryId: "",
+  excludeMatch: false,
+  amountMultiplier: "",
 };
 
 const EMPTY_DATES: string[] = [];
@@ -234,7 +238,7 @@ export default function ApplyRulesModal({
   const removeRule = (idx: number) =>
     setRules((prev) => prev.filter((_, i) => i !== idx));
 
-  const updateRule = (idx: number, field: keyof RuleRow, value: string | string[]) =>
+  const updateRule = (idx: number, field: keyof RuleRow, value: string | string[] | boolean) =>
     setRules((prev) =>
       prev.map((r, i) => (i === idx ? { ...r, [field]: value } : r)),
     );
@@ -242,7 +246,12 @@ export default function ApplyRulesModal({
   // toggleCategory removed — not used
 
   const rulesWithActions = useMemo(
-    () => rules.filter((r) => r.newName.trim() || r.newCategoryId),
+    () =>
+      rules.filter((r) => {
+        const parsed = Number.parseFloat(r.amountMultiplier);
+        const hasMultiplierAction = Number.isFinite(parsed) && parsed > 0 && parsed !== 1;
+        return r.newName.trim() || r.newCategoryId || r.excludeMatch || hasMultiplierAction;
+      }),
     [rules],
   );
 
@@ -263,6 +272,13 @@ export default function ApplyRulesModal({
         if (rule.endDate) dto.endDate = rule.endDate;
         if (rule.newName.trim()) dto.newName = rule.newName.trim();
         if (rule.newCategoryId) dto.newCategoryId = rule.newCategoryId;
+        if (rule.excludeMatch) dto.excludeMatch = true;
+        if (rule.amountMultiplier.trim()) {
+          const parsed = Number.parseFloat(rule.amountMultiplier);
+          if (Number.isFinite(parsed) && parsed > 0 && parsed !== 1) {
+            dto.amountMultiplier = parsed;
+          }
+        }
 
         const res = await transactionService.applyBatchRules(dto);
         totalUpdated += res.updated;
@@ -403,6 +419,31 @@ export default function ApplyRulesModal({
                       ...incomeCats.map((c) => ({ value: c.id, label: c.name })),
                     ]}
                   />
+
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-slate-500">
+                      {t("rules.amountMultiplier", "Multiplicador de importe")}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={rule.amountMultiplier}
+                      onChange={(e) => updateRule(idx, "amountMultiplier", e.target.value)}
+                      placeholder={t("rules.amountMultiplierPlaceholder", "1.00 = sin cambios, 0.90 = -10%")}
+                      className={controlClassName}
+                    />
+                  </div>
+
+                  <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
+                    <input
+                      type="checkbox"
+                      checked={rule.excludeMatch}
+                      onChange={(e) => updateRule(idx, "excludeMatch", e.target.checked)}
+                      className="h-4 w-4 rounded accent-sky-500"
+                    />
+                    <span>{t("rules.excludeMatch", "Excluir transacciones que cumplan esta regla")}</span>
+                  </label>
                 </div>
               </div>
             </div>

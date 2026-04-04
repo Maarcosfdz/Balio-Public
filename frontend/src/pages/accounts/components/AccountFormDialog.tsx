@@ -8,6 +8,12 @@ import { typeIcon } from "../utils";
 import { FieldError } from "@/components/ui/field-error";
 import { GradientButton } from "@/components/ui/gradient-button";
 
+const BALANCE_EPSILON = 0.00001;
+
+function roundToCents(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
 interface AccountFormDialogProps {
   open: boolean;
   initial?: AccountSummaryDto | null;
@@ -99,21 +105,45 @@ export default function AccountFormDialog({ open, initial, onClose, onSaved }: A
     }
     setLoading(true);
     setError("");
+    const normalizedCurrency = type === "BANK" ? "EUR" : currency.toUpperCase();
     const dto: AccountDto = {
       name: name.trim(),
       type,
-      currency: type === "BANK" ? "EUR" : currency.toUpperCase(),
+      currency: normalizedCurrency,
       setDefault: setDefault || undefined,
     };
-    const parsedBalance = parseFloat(balance.replace(",", "."));
+    const parsedBalance = Number.parseFloat(balance.replace(",", "."));
+    const hasValidBalance = Number.isFinite(parsedBalance);
+
+    if (type !== "BANK" && !hasValidBalance) {
+      setError(t("accountsPage.balanceError", "Introduce un saldo valido"));
+      setLoading(false);
+      return;
+    }
 
     try {
       if (isEdit && initial) {
-        await accountService.update(initial.id, dto);
-        // Adjust balance if changed and account is not BANK
-        if (type !== "BANK" && !isNaN(parsedBalance) && parsedBalance !== initial.balance) {
-          await accountService.adjustBalance(initial.id, parsedBalance);
+        const roundedCurrentBalance = roundToCents(initial.balance);
+        const roundedTargetBalance = hasValidBalance ? roundToCents(parsedBalance) : roundedCurrentBalance;
+
+        const hasMetaChanges =
+          name.trim() !== initial.name ||
+          type !== initial.type ||
+          normalizedCurrency !== initial.currency;
+
+        const shouldAdjustBalance =
+          initial.type !== "BANK" &&
+          hasValidBalance &&
+          Math.abs(roundedTargetBalance - roundedCurrentBalance) > BALANCE_EPSILON;
+
+        if (hasMetaChanges) {
+          await accountService.update(initial.id, dto);
         }
+
+        if (shouldAdjustBalance) {
+          await accountService.adjustBalance(initial.id, roundedTargetBalance);
+        }
+
         onSaved();
       } else if (type === "BANK") {
         const created = await accountService.create(dto);
@@ -132,13 +162,13 @@ export default function AccountFormDialog({ open, initial, onClose, onSaved }: A
       } else {
         const created = await accountService.create(dto);
         // Set initial balance if different from 0
-        if (!isNaN(parsedBalance) && parsedBalance !== 0) {
-          await accountService.adjustBalance(created.id, parsedBalance);
+        if (hasValidBalance && Math.abs(roundToCents(parsedBalance)) > BALANCE_EPSILON) {
+          await accountService.adjustBalance(created.id, roundToCents(parsedBalance));
         }
         onSaved();
       }
-    } catch {
-      setError(t("common.error"));
+    } catch (err: any) {
+      setError(err?.response?.data?.message ?? t("common.error"));
       setLoading(false);
     }
   };
