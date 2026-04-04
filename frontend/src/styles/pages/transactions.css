@@ -1065,6 +1065,31 @@
   box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
 }
 
+/* Sort option row inside the dropdown */
+.tx-sort-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.tx-sort-option--active {
+  background: #f0f9ff;
+  color: #0284c7;
+  font-weight: 600;
+}
+
+.tx-sort-option--active:hover {
+  background: #e0f2fe;
+}
+
+.tx-sort-arrow {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+  transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* responsive: stack on small screens */
 @media (max-width: 768px) {
   .tx-hero-row {

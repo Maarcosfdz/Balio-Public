@@ -1,4 +1,5 @@
 import api from "./api";
+import { normalizePageResponse } from "./pageUtils";
 import type {
   ScheduledTransactionDto,
   ScheduledTransactionUpdateDto,
@@ -8,7 +9,9 @@ import type {
 
 export const scheduledTransactionService = {
   getAll(page = 0, size = 20): Promise<ScheduledTransactionPage> {
-    return api.get("/scheduled-transaction", { params: { page, size } }).then((r) => r.data);
+    return api
+      .get("/scheduled-transaction", { params: { page, size } })
+      .then((r) => normalizePageResponse(r.data, page, size));
   },
 
   getById(id: string): Promise<ScheduledTransactionResponseDto> {

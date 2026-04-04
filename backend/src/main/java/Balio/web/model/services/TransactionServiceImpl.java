@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -289,7 +290,8 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public int applyBatchRule(UUID userId, TransactionType type, List<UUID> categoryIds,
                               String nameContains, LocalDate startDate, LocalDate endDate,
-                              String newName, UUID newCategoryId) {
+                              String newName, UUID newCategoryId,
+                              Boolean excludeMatch, BigDecimal amountMultiplier) {
 
         // Resolve target category once
         Category targetCategory = null;
@@ -319,6 +321,15 @@ public class TransactionServiceImpl implements TransactionService {
 
         int updated = 0;
         for (Transaction tx : matches) {
+            if (Boolean.TRUE.equals(excludeMatch)) {
+                if (tx.isAffectsBalance() && tx.getAccount() != null) {
+                    applyBalance(tx.getAccount(), tx.getAmount(), tx.getType(), true);
+                }
+                transactionDao.delete(tx);
+                updated++;
+                continue;
+            }
+
             boolean changed = false;
             if (newName != null && !newName.isBlank() && !newName.equals(tx.getName())) {
                 tx.setName(newName.trim());
@@ -331,20 +342,81 @@ public class TransactionServiceImpl implements TransactionService {
                 tx.setCategory(targetCategory);
                 changed = true;
             }
+
+            if (amountMultiplier != null && amountMultiplier.compareTo(BigDecimal.ZERO) > 0
+                    && amountMultiplier.compareTo(BigDecimal.ONE) != 0) {
+                BigDecimal adjusted = tx.getAmount()
+                        .multiply(amountMultiplier)
+                        .setScale(2, RoundingMode.HALF_UP)
+                        .abs();
+                if (adjusted.compareTo(BigDecimal.ZERO) > 0
+                        && adjusted.compareTo(tx.getAmount()) != 0) {
+                    if (tx.isAffectsBalance() && tx.getAccount() != null) {
+                        applyBalance(tx.getAccount(), tx.getAmount(), tx.getType(), true);
+                        tx.setAmount(adjusted);
+                        applyBalance(tx.getAccount(), tx.getAmount(), tx.getType(), false);
+                    } else {
+                        tx.setAmount(adjusted);
+                    }
+                    changed = true;
+                }
+            }
+
             if (changed) { updated++; }
         }
 
         return updated;
     }
 
+    public int applyBatchRule(UUID userId, TransactionType type, List<UUID> categoryIds,
+                              String nameContains, LocalDate startDate, LocalDate endDate,
+                              String newName, UUID newCategoryId) {
+        return applyBatchRule(userId, type, categoryIds, nameContains, startDate, endDate,
+                newName, newCategoryId, null, null);
+    }
+
     @Override
     @Transactional(readOnly = true)
     public org.springframework.data.domain.Page<Transaction> findPaged(
             UUID userId, TransactionType type, UUID accountId, UUID categoryId,
-            LocalDate startDate, LocalDate endDate, int page, int size) {
+            LocalDate startDate, LocalDate endDate, String sortBy, String sortDir, int page, int size) {
+        org.springframework.data.domain.Sort.Direction direction = resolveSortDirection(sortDir);
+        String sortProperty = resolveSortProperty(sortBy);
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
                 page, size,
-                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "date"));
+                org.springframework.data.domain.Sort.by(direction, sortProperty)
+                        .and(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
+                                "date"))
+                        .and(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
+                                "id")));
         return transactionDao.findFilteredPaged(userId, type, accountId, categoryId, startDate, endDate, pageable);
+    }
+
+    public org.springframework.data.domain.Page<Transaction> findPaged(
+            UUID userId, TransactionType type, UUID accountId, UUID categoryId,
+            LocalDate startDate, LocalDate endDate, int page, int size) {
+        return findPaged(userId, type, accountId, categoryId, startDate, endDate,
+                "date", "desc", page, size);
+    }
+
+    private org.springframework.data.domain.Sort.Direction resolveSortDirection(String sortDir) {
+        if (sortDir == null) {
+            return org.springframework.data.domain.Sort.Direction.DESC;
+        }
+        return "asc".equalsIgnoreCase(sortDir)
+                ? org.springframework.data.domain.Sort.Direction.ASC
+                : org.springframework.data.domain.Sort.Direction.DESC;
+    }
+
+    private String resolveSortProperty(String sortBy) {
+        if (sortBy == null || sortBy.isBlank()) {
+            return "date";
+        }
+
+        return switch (sortBy.toLowerCase(Locale.ROOT)) {
+            case "amount", "price" -> "amount";
+            case "name" -> "name";
+            default -> "date";
+        };
     }
 }

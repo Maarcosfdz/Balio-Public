@@ -3,6 +3,7 @@ package Balio.web.rest.controllers;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -88,11 +89,13 @@ public class TransactionController {
             @RequestParam(required = false) UUID categoryId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(defaultValue = "date") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
         return transactionService
-                .findPaged(userId, type, accountId, categoryId, startDate, endDate, page, size)
+                .findPaged(userId, type, accountId, categoryId, startDate, endDate, sortBy, sortDir, page, size)
                 .map(transactionConverter::toSummaryDto);
     }
 
@@ -192,7 +195,7 @@ public class TransactionController {
         int updated = transactionService.applyBatchRule(
                 userId, dto.getType(), dto.getCategoryIds(),
                 dto.getNameContains(), dto.getStartDate(), dto.getEndDate(),
-                dto.getNewName(), dto.getNewCategoryId());
+            dto.getNewName(), dto.getNewCategoryId(), dto.getExcludeMatch(), dto.getAmountMultiplier());
 
         log.info("Batch rules applied: userId={}, updated={}", userId, updated);
         return ResponseEntity.ok(java.util.Map.of("updated", updated));
@@ -301,6 +304,7 @@ public class TransactionController {
 
                     // Apply rules (rules override category and name from CSV)
                     String finalName = row.name.trim();
+                        boolean excluded = false;
                     for (CsvImportRuleDto rule : importRules) {
                         if (rule.getPattern() != null && !rule.getPattern().isBlank()
                                 && row.name.toLowerCase().contains(rule.getPattern().toLowerCase())) {
@@ -310,6 +314,17 @@ public class TransactionController {
                                     TransactionType ruleType = TransactionType.valueOf(rule.getTransactionType());
                                     if (ruleType != type) { continue; }
                                 } catch (IllegalArgumentException ignored) {}
+                            }
+                            if (Boolean.TRUE.equals(rule.getExcludeMatch())) {
+                                excluded = true;
+                                break;
+                            }
+                            if (rule.getAmountMultiplier() != null
+                                    && rule.getAmountMultiplier().compareTo(BigDecimal.ZERO) > 0
+                                    && rule.getAmountMultiplier().compareTo(BigDecimal.ONE) != 0) {
+                                absAmount = absAmount.multiply(rule.getAmountMultiplier())
+                                        .setScale(2, RoundingMode.HALF_UP)
+                                        .abs();
                             }
                             if (rule.getCategoryId() != null && !rule.getCategoryId().isBlank()) {
                                 try {
@@ -327,6 +342,11 @@ public class TransactionController {
                             }
                             break;
                         }
+                    }
+
+                    if (excluded || absAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                        skipped++;
+                        continue;
                     }
 
                     if (type == TransactionType.EXPENSE) {

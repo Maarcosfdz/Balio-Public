@@ -1,4 +1,5 @@
 import api from "./api";
+import { normalizePageResponse } from "./pageUtils";
 import type {
   CsvImportResultDto,
   CsvImportRuleDto,
@@ -11,7 +12,9 @@ import type {
 
 export const transactionService = {
   getAll(filters?: TransactionFilters, page = 0, size = 20): Promise<TransactionPage> {
-    return api.get("/transaction", { params: { ...filters, page, size } }).then((r) => r.data);
+    return api
+      .get("/transaction", { params: { ...filters, page, size } })
+      .then((r) => normalizePageResponse(r.data, page, size));
   },
 
   getById(transactionId: string): Promise<TransactionResponseDto> {

@@ -58,13 +58,20 @@ public interface TransactionService {
                                    UUID categoryId, LocalDate startDate, LocalDate endDate);
 
     /**
-     * Returns a paginated page of transactions matching optional filters. Ordered by date desc.
+        * Returns a paginated page of transactions matching optional filters and sort options.
      * @param page  zero-based page index
      * @param size  page size
      */
     Page<Transaction> findPaged(UUID userId, TransactionType type, UUID accountId,
                                 UUID categoryId, LocalDate startDate, LocalDate endDate,
-                                int page, int size);
+                                String sortBy, String sortDir, int page, int size);
+
+        default Page<Transaction> findPaged(UUID userId, TransactionType type, UUID accountId,
+                                                                                UUID categoryId, LocalDate startDate, LocalDate endDate,
+                                                                                int page, int size) {
+                return findPaged(userId, type, accountId, categoryId, startDate, endDate,
+                                "date", "desc", page, size);
+        }
 
     /**
      * Applies a batch rule: finds transactions matching the filters and updates name/category.
@@ -73,6 +80,14 @@ public interface TransactionService {
      */
     int applyBatchRule(UUID userId, TransactionType type, List<UUID> categoryIds,
                        String nameContains, LocalDate startDate, LocalDate endDate,
-                       String newName, UUID newCategoryId);
+                       String newName, UUID newCategoryId,
+                       Boolean excludeMatch, BigDecimal amountMultiplier);
+
+        default int applyBatchRule(UUID userId, TransactionType type, List<UUID> categoryIds,
+                                                           String nameContains, LocalDate startDate, LocalDate endDate,
+                                                           String newName, UUID newCategoryId) {
+                return applyBatchRule(userId, type, categoryIds, nameContains, startDate, endDate,
+                                newName, newCategoryId, null, null);
+        }
 }
 
