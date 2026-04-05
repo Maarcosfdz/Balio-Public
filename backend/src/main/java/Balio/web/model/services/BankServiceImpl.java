@@ -456,9 +456,17 @@ public class BankServiceImpl implements BankService {
                     if (newAmount.compareTo(BigDecimal.ZERO) > 0
                             && transaction.getAmount().compareTo(newAmount) != 0) {
                         if (transaction.isAffectsBalance() && transaction.getAccount() != null) {
-                            applyBalance(transaction.getAccount(), transaction.getAmount(), transaction.getType(), true);
+                            applyBalance(
+                                    transaction.getAccount(),
+                                    transaction.getAmount(),
+                                    transaction.getType(),
+                                    true);
                             transaction.setAmount(newAmount);
-                            applyBalance(transaction.getAccount(), transaction.getAmount(), transaction.getType(), false);
+                            applyBalance(
+                                    transaction.getAccount(),
+                                    transaction.getAmount(),
+                                    transaction.getType(),
+                                    false);
                         } else {
                             transaction.setAmount(newAmount);
                         }

@@ -74,7 +74,12 @@ public class AccountController {
                                                             @Validated @RequestBody AccountDto dto) {
 
         Account account = accountService.createAccount(
-                userId, dto.getName(), dto.getType(), dto.getCurrency(), dto.getSetDefault(), dto.getSyncDeletedTransactions());
+            userId,
+            dto.getName(),
+            dto.getType(),
+            dto.getCurrency(),
+            dto.getSetDefault(),
+            dto.getSyncDeletedTransactions());
 
         log.info("Account created: accountId={}, userId={}, type={}", account.getId(), userId, dto.getType());
 

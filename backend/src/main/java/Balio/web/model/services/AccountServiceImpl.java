@@ -47,7 +47,9 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public Account createAccount(UUID userId, String name, AccountType type, String currency, Boolean setDefault, Boolean syncDeletedTransactions) {
+    public Account createAccount(UUID userId, String name, AccountType type,
+                                 String currency, Boolean setDefault,
+                                 Boolean syncDeletedTransactions) {
 
         User user = userDao.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
@@ -89,7 +91,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-        public void deleteAccount(UUID userId, UUID accountId, boolean deleteTransactions)
+    public void deleteAccount(UUID userId, UUID accountId, boolean deleteTransactions)
             throws InstanceNotFoundException {
 
         Account account = accountDao.findByIdAndUserId(accountId, userId)
@@ -137,7 +139,9 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public Account modifyAccount(UUID userId, UUID accountId, String name, AccountType type, String currency, Boolean syncDeletedTransactions)
+    public Account modifyAccount(UUID userId, UUID accountId, String name,
+                                 AccountType type, String currency,
+                                 Boolean syncDeletedTransactions)
             throws InstanceNotFoundException {
 
         Account account = accountDao.findByIdAndUserId(accountId, userId)

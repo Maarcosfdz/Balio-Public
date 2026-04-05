@@ -31,5 +31,7 @@ public class AccountDto {
     public void setSetDefault(Boolean setDefault) { this.setDefault = setDefault; }
 
     public Boolean getSyncDeletedTransactions() { return syncDeletedTransactions; }
-    public void setSyncDeletedTransactions(Boolean syncDeletedTransactions) { this.syncDeletedTransactions = syncDeletedTransactions; }
+    public void setSyncDeletedTransactions(Boolean syncDeletedTransactions) {
+        this.syncDeletedTransactions = syncDeletedTransactions;
+    }
 }

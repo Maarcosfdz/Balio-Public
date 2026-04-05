@@ -22,7 +22,9 @@ public interface AccountService {
      * @throws Balio.web.model.Exceptions.UserNotFoundException if the user does not exist (unchecked)
      * @throws Balio.web.model.Exceptions.AccountInvalidException if the account limit is reached (unchecked)
      */
-    Account createAccount(UUID userId, String name, AccountType type, String currency, Boolean setDefault, Boolean syncDeletedTransactions);
+        Account createAccount(UUID userId, String name, AccountType type,
+                                                  String currency, Boolean setDefault,
+                                                  Boolean syncDeletedTransactions);
 
     /**
      * Deletes an account owned by the user.
@@ -40,14 +42,16 @@ public interface AccountService {
          * @throws InstanceNotFoundException if the account does not exist or does not belong to the user
          */
         void deleteAccount(UUID userId, UUID accountId, boolean deleteTransactions)
-            throws InstanceNotFoundException;
+                        throws InstanceNotFoundException;
 
     /**
      * Modifies the fields of an existing account. Only non-null parameters are applied.
      *
      * @throws InstanceNotFoundException if the account does not exist or does not belong to the user
      */
-    Account modifyAccount(UUID userId, UUID accountId, String name, AccountType type, String currency, Boolean syncDeletedTransactions)
+        Account modifyAccount(UUID userId, UUID accountId, String name,
+                                                  AccountType type, String currency,
+                                                  Boolean syncDeletedTransactions)
             throws InstanceNotFoundException;
 
     /**

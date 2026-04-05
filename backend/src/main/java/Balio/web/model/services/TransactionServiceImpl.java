@@ -382,13 +382,14 @@ public class TransactionServiceImpl implements TransactionService {
             LocalDate startDate, LocalDate endDate, String sortBy, String sortDir, int page, int size) {
         org.springframework.data.domain.Sort.Direction direction = resolveSortDirection(sortDir);
         String sortProperty = resolveSortProperty(sortBy);
+        org.springframework.data.domain.Sort sort =
+            org.springframework.data.domain.Sort.by(direction, sortProperty)
+                .and(org.springframework.data.domain.Sort.by(
+                    org.springframework.data.domain.Sort.Direction.DESC, "date"))
+                .and(org.springframework.data.domain.Sort.by(
+                    org.springframework.data.domain.Sort.Direction.DESC, "id"));
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
-                page, size,
-                org.springframework.data.domain.Sort.by(direction, sortProperty)
-                        .and(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
-                                "date"))
-                        .and(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
-                                "id")));
+            page, size, sort);
         return transactionDao.findFilteredPaged(userId, type, accountId, categoryId, startDate, endDate, pageable);
     }
 
