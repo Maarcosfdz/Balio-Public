@@ -40,6 +40,7 @@ import { ToastBanner } from "@/components/ui/toast-banner";
 import InfoCard from "@/components/ui/InfoCard";
 import AddTransactionModal from "@/components/transactions/AddTransactionModal";
 import ApplyRulesModal from "./components/ApplyRulesModal";
+import SyncModal from "./components/SyncModal";
 import Pagination from "@/components/ui/Pagination";
 import FilterPanel, {
   type ActiveFilters,
@@ -99,6 +100,7 @@ export default function TransactionsPage() {
   const [expenseOpen, setExpenseOpen] = useState(false);
   const [incomeOpen, setIncomeOpen] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [syncModalOpen, setSyncModalOpen] = useState(false);
   const [editingTx, setEditingTx] = useState<TransactionResponseDto | null>(null);
   const [deleteTx, setDeleteTx] = useState<TransactionSummaryDto | null>(null);
   const [deletingTx, setDeletingTx] = useState(false);
@@ -475,14 +477,19 @@ export default function TransactionsPage() {
     }
   };
 
-  const handleSyncAll = async () => {
+  const handleSyncAll = () => {
     if (syncingAll) return;
+    setSyncModalOpen(true);
+  };
+
+  const handleSyncConfirm = async (ignoreSyncLimit: boolean) => {
+    setSyncModalOpen(false);
     setSyncingAll(true);
     setSyncSummary(null);
     try {
-      const result = await bankService.syncAll();
+      const result = await bankService.syncAll({ ignoreSyncLimit, lookBackDays: 365 });
       localStorage.setItem(LAST_AUTO_SYNC_KEY, String(Date.now()));
-      setSyncSummary(
+      const summary =
         result.syncedAccounts === 0
           ? t("txPage.syncNoLinkedAccounts")
           : result.imported === 0
@@ -490,7 +497,12 @@ export default function TransactionsPage() {
             : t("txPage.syncDoneWithImported", {
               accounts: result.syncedAccounts,
               imported: result.imported,
-            }),
+            });
+
+      setSyncSummary(
+        ignoreSyncLimit
+          ? `${summary} ${t("txPage.syncIgnoreLimitTag", "(sin limite por fecha)")}`
+          : summary,
       );
       const cp = isServerPagedRef.current ? pageRef.current - 1 : 0;
       await fetchTransactions(filtersRef.current, false, cp);
@@ -1000,6 +1012,13 @@ export default function TransactionsPage() {
           const cp = isServerPagedRef.current ? pageRef.current - 1 : 0;
           fetchTransactions(filtersRef.current, false, cp);
         }}
+      />
+
+      <SyncModal
+        open={syncModalOpen}
+        onConfirm={handleSyncConfirm}
+        onCancel={() => setSyncModalOpen(false)}
+        loading={syncingAll}
       />
 
       {deleteTx && (

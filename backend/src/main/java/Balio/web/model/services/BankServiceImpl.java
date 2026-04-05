@@ -38,6 +38,7 @@ import java.util.UUID;
 public class BankServiceImpl implements BankService {
 
     private static final Logger log = LoggerFactory.getLogger(BankServiceImpl.class);
+    private static final int DEFAULT_LOOKBACK_DAYS = 365;
 
     private final AccountDao accountDao;
     private final BankConnectionDao bankConnectionDao;
@@ -70,15 +71,26 @@ public class BankServiceImpl implements BankService {
 
     @Override
     public int syncTransactions(UUID userId, UUID accountId) throws InstanceNotFoundException {
-        return syncTransactions(userId, accountId, 90);
+        return syncTransactions(userId, accountId, DEFAULT_LOOKBACK_DAYS);
     }
 
     @Override
     public int syncTransactions(UUID userId, UUID accountId, int lookBackDays) throws InstanceNotFoundException {
+        return syncTransactions(userId, accountId, lookBackDays, false);
+    }
+
+    @Override
+    public int syncTransactions(UUID userId, UUID accountId, int lookBackDays, boolean ignoreSyncLimit)
+            throws InstanceNotFoundException {
         BankConnection connection = bankConnectionDao.findByAccountIdAndUserId(accountId, userId)
                 .orElseThrow(() -> new InstanceNotFoundException("BankConnection", accountId));
 
-        return enableBankingSyncService.sync(connection, lookBackDays);
+        int safeLookBackDays = normalizeLookBackDays(lookBackDays);
+        if (ignoreSyncLimit) {
+            return enableBankingSyncService.sync(connection, safeLookBackDays);
+        }
+
+        return syncIncremental(connection, safeLookBackDays);
     }
 
     @Override
@@ -95,9 +107,19 @@ public class BankServiceImpl implements BankService {
 
     @Override
     public int syncAllConnections(UUID userId) {
+        return syncAllConnections(userId, false, DEFAULT_LOOKBACK_DAYS);
+    }
+
+    @Override
+    public int syncAllConnections(UUID userId, boolean ignoreSyncLimit, int lookBackDays) {
         int imported = 0;
+        int safeLookBackDays = normalizeLookBackDays(lookBackDays);
         for (BankConnection connection : bankConnectionDao.findAllByUserId(userId)) {
-            imported += syncWithProvider(connection);
+            if (ignoreSyncLimit) {
+                imported += enableBankingSyncService.sync(connection, safeLookBackDays);
+            } else {
+                imported += syncIncremental(connection, safeLookBackDays);
+            }
         }
         return imported;
     }
@@ -109,7 +131,27 @@ public class BankServiceImpl implements BankService {
     }
 
     private int syncWithProvider(BankConnection connection) {
-        return enableBankingSyncService.sync(connection);
+        return syncIncremental(connection, DEFAULT_LOOKBACK_DAYS);
+    }
+
+    private int syncIncremental(BankConnection connection, int fallbackLookBackDays) {
+        Instant lastSync = connection.getLastSync();
+        if (lastSync == null) {
+            return enableBankingSyncService.sync(connection, fallbackLookBackDays);
+        }
+
+        if (lastSync.isAfter(Instant.now())) {
+            return enableBankingSyncService.sync(connection, fallbackLookBackDays);
+        }
+
+        return enableBankingSyncService.sync(connection, lastSync);
+    }
+
+    private int normalizeLookBackDays(int lookBackDays) {
+        if (lookBackDays <= 0) {
+            return DEFAULT_LOOKBACK_DAYS;
+        }
+        return Math.min(lookBackDays, 3650);
     }
 
     // ── ENABLE BANKING: INIT ─────────────────────────────────────────────

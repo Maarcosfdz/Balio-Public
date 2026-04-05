@@ -26,6 +26,7 @@ public class AccountConverter {
         dto.setCurrency(account.getCurrency());
         dto.setBalance(account.getBalance());
         dto.setDefault(defaultAccountId != null && defaultAccountId.equals(account.getId()));
+        dto.setSyncDeletedTransactions(account.isSyncDeletedTransactions());
         return dto;
     }
 }

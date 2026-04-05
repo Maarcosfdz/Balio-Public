@@ -31,6 +31,7 @@ export default function AccountFormDialog({ open, initial, onClose, onSaved }: A
   const [currency, setCurrency] = useState(initial?.currency ?? "EUR");
   const [balance, setBalance] = useState<string>(initial ? initial.balance.toFixed(2) : "0.00");
   const [setDefault, setSetDefault] = useState(false);
+  const [syncDeletedTransactions, setSyncDeletedTransactions] = useState(initial?.syncDeletedTransactions ?? false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -49,6 +50,7 @@ export default function AccountFormDialog({ open, initial, onClose, onSaved }: A
       setCurrency(initial?.currency ?? "EUR");
       setBalance(initial ? initial.balance.toFixed(2) : "0.00");
       setSetDefault(false);
+      setSyncDeletedTransactions(initial?.syncDeletedTransactions ?? false);
       setLoading(false);
       setError("");
       setSelectedBank(null);
@@ -111,6 +113,7 @@ export default function AccountFormDialog({ open, initial, onClose, onSaved }: A
       type,
       currency: normalizedCurrency,
       setDefault: setDefault || undefined,
+      syncDeletedTransactions: type === "BANK" ? syncDeletedTransactions : undefined,
     };
     const parsedBalance = Number.parseFloat(balance.replace(",", "."));
     const hasValidBalance = Number.isFinite(parsedBalance);
@@ -330,6 +333,26 @@ export default function AccountFormDialog({ open, initial, onClose, onSaved }: A
                 </span>
               </div>
             </div>
+          )}
+
+          {/* Sync preference (only for BANK accounts) */}
+          {type === "BANK" && (
+            <label className="flex cursor-pointer items-center gap-3">
+              <div
+                onClick={() => setSyncDeletedTransactions((v) => !v)}
+                className={`flex h-5 w-5 items-center justify-center rounded border-2 transition ${
+                  syncDeletedTransactions ? "border-sky-500 bg-sky-500" : "border-slate-300"
+                }`}
+              >
+                {syncDeletedTransactions && <Check className="h-3 w-3 text-white" />}
+              </div>
+              <div>
+                <span className="text-sm text-slate-600">{t("accounts.syncDeleted", "Sincronizar también transacciones eliminadas")}</span>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {t("accounts.syncDeletedDesc", "Si está desactivado, solo se sincronizan las nuevas transacciones")}
+                </p>
+              </div>
+            </label>
           )}
 
           {/* Set default (only on create) */}

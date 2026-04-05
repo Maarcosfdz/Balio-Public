@@ -62,9 +62,19 @@ public interface BankService {
      */
     int syncTransactions(UUID userId, UUID accountId, int lookBackDays) throws InstanceNotFoundException;
 
+    /**
+     * Manual synchronization with mode selection.
+     *
+         * @param ignoreSyncLimit true = ignores last synchronization limit and fetches full history window
+     */
+        int syncTransactions(UUID userId, UUID accountId, int lookBackDays, boolean ignoreSyncLimit)
+            throws InstanceNotFoundException;
+
         int syncStaleConnections(UUID userId, int staleMinutes);
 
         int syncAllConnections(UUID userId);
+
+        int syncAllConnections(UUID userId, boolean ignoreSyncLimit, int lookBackDays);
 
         List<BankConnection> findLinkedConnections(UUID userId);
 

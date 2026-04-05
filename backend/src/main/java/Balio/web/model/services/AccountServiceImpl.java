@@ -47,7 +47,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public Account createAccount(UUID userId, String name, AccountType type, String currency, Boolean setDefault) {
+    public Account createAccount(UUID userId, String name, AccountType type, String currency, Boolean setDefault, Boolean syncDeletedTransactions) {
 
         User user = userDao.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
@@ -70,6 +70,9 @@ public class AccountServiceImpl implements AccountService {
         }
 
         Account account = new Account(name, type, currency, BigDecimal.ZERO, user);
+        if (type == AccountType.BANK && Boolean.TRUE.equals(syncDeletedTransactions)) {
+            account.setSyncDeletedTransactions(true);
+        }
         accountDao.save(account);
 
         if (Boolean.TRUE.equals(setDefault)) {
@@ -134,7 +137,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public Account modifyAccount(UUID userId, UUID accountId, String name, AccountType type, String currency)
+    public Account modifyAccount(UUID userId, UUID accountId, String name, AccountType type, String currency, Boolean syncDeletedTransactions)
             throws InstanceNotFoundException {
 
         Account account = accountDao.findByIdAndUserId(accountId, userId)
@@ -154,6 +157,9 @@ public class AccountServiceImpl implements AccountService {
                 throw new AccountInvalidException("Currency cannot be blank");
             }
             account.setCurrency(currency);
+        }
+        if (syncDeletedTransactions != null && account.getType() == AccountType.BANK) {
+            account.setSyncDeletedTransactions(syncDeletedTransactions);
         }
 
         accountDao.save(account);

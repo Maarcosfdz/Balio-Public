@@ -14,6 +14,7 @@ public class AccountSummaryDto {
     private BigDecimal balance;
     @JsonProperty("isDefault")
     private boolean isDefault;
+    private boolean syncDeletedTransactions;
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -32,4 +33,7 @@ public class AccountSummaryDto {
 
     public boolean isDefault() { return isDefault; }
     public void setDefault(boolean isDefault) { this.isDefault = isDefault; }
+
+    public boolean isSyncDeletedTransactions() { return syncDeletedTransactions; }
+    public void setSyncDeletedTransactions(boolean syncDeletedTransactions) { this.syncDeletedTransactions = syncDeletedTransactions; }
 }

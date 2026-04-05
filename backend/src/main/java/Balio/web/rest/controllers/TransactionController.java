@@ -182,7 +182,8 @@ public class TransactionController {
             throws InstanceNotFoundException {
 
         transactionService.deleteTransaction(userId, transactionId, revertBalance);
-        log.info("Transaction deleted: txId={}, userId={}, revertBalance={}", transactionId, userId, revertBalance);
+        log.info("Transaction deleted: txId={}, userId={}, revertBalance={}",
+                transactionId, userId, revertBalance);
     }
 
     // ── APPLY BATCH RULES ──────────────────────────────────────────────

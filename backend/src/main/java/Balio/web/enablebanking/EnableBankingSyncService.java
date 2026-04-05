@@ -17,13 +17,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -42,6 +48,7 @@ import java.util.UUID;
 public class EnableBankingSyncService {
 
     private static final Logger log = LoggerFactory.getLogger(EnableBankingSyncService.class);
+    private static final int DEFAULT_LOOKBACK_DAYS = 365;
 
     private final EnableBankingClient enableBankingClient;
     private final TransactionDao transactionDao;
@@ -59,13 +66,13 @@ public class EnableBankingSyncService {
     }
 
     /**
-     * Synchronizes transactions and balance for an Enable Banking connection (last 90 days).
+    * Synchronizes transactions and balance for an Enable Banking connection (last 365 days).
      *
      * @return number of new transactions imported
      */
     @Transactional
     public int sync(BankConnection connection) {
-        return sync(connection, 90);
+        return sync(connection, DEFAULT_LOOKBACK_DAYS, null);
     }
 
     /**
@@ -76,6 +83,18 @@ public class EnableBankingSyncService {
      */
     @Transactional
     public int sync(BankConnection connection, int lookBackDays) {
+        return sync(connection, lookBackDays, null);
+    }
+
+    @Transactional
+    public int sync(BankConnection connection, Instant dateFrom) {
+        return sync(connection, DEFAULT_LOOKBACK_DAYS, dateFrom);
+    }
+
+    @Transactional
+    private int sync(BankConnection connection,
+                     int lookBackDays,
+                     Instant dateFrom) {
         String ebAccountId = connection.getExternalAccountId();
         Account account = connection.getAccount();
         User user = connection.getUser();
@@ -94,15 +113,18 @@ public class EnableBankingSyncService {
             userId, account.getId());
 
         // ── Fetch and import transactions ────────────────────────────────
-        JsonNode txRoot = enableBankingClient.fetchTransactions(ebAccountId, lookBackDays);
+        JsonNode txRoot = dateFrom != null
+            ? enableBankingClient.fetchTransactionsSince(ebAccountId, dateFrom)
+            : enableBankingClient.fetchTransactions(ebAccountId, lookBackDays);
         log.info("Enable Banking transactions raw response: {}", txRoot);
         // Enable Banking returns: { transactions: [ ... ] }
         JsonNode transactions = txRoot.path("transactions");
+        Set<String> seenExternalIds = new HashSet<>();
 
         int imported = 0;
         if (transactions.isArray()) {
             for (JsonNode txNode : transactions) {
-                imported += importTransaction(txNode, account, user, rules);
+                imported += importTransaction(txNode, account, user, rules, seenExternalIds);
             }
         }
 
@@ -121,15 +143,13 @@ public class EnableBankingSyncService {
     // ── INTERNALS ────────────────────────────────────────────────────────
 
     private int importTransaction(JsonNode txNode, Account account, User user,
-                                  List<BankTransactionRule> rules) {
+                                  List<BankTransactionRule> rules,
+                                  Set<String> seenExternalIds) {
 
-        // Enable Banking uses "transaction_id" or "entry_reference" as unique ID.
-        // Use hasNonNull to skip the field when it is explicitly null in the JSON.
-        String externalId = txNode.hasNonNull("transaction_id")
-                ? txNode.path("transaction_id").asText(null)
-                : txNode.path("entry_reference").asText(null);
+        String externalId = resolveExternalId(txNode);
 
-        if (externalId == null || externalId.isBlank()) {
+        // Avoid duplicate inserts when provider returns repeated rows in one payload.
+        if (!seenExternalIds.add(externalId)) {
             return 0;
         }
 
@@ -214,6 +234,56 @@ public class EnableBankingSyncService {
 
         transactionDao.save(transaction);
         return 1;
+    }
+
+    private String resolveExternalId(JsonNode txNode) {
+        String entryReference = txNode.path("entry_reference").asText(null);
+        if (entryReference != null && !entryReference.isBlank()) {
+            return "entry:" + entryReference;
+        }
+
+        String fingerprint = buildFallbackFingerprint(txNode);
+        if (!fingerprint.isBlank()) {
+            return "fp:" + fingerprint;
+        }
+
+        String transactionId = txNode.path("transaction_id").asText(null);
+        if (transactionId != null && !transactionId.isBlank()) {
+            return "txid:" + transactionId;
+        }
+
+        // Last-resort deterministic value to avoid null external ids.
+        return "raw:" + Integer.toHexString(txNode.toString().hashCode());
+    }
+
+    private String buildFallbackFingerprint(JsonNode txNode) {
+        JsonNode amountNode = txNode.path("transaction_amount");
+        JsonNode remittance = txNode.path("remittance_information");
+        String remittanceFirst = (remittance.isArray() && !remittance.isEmpty())
+                ? remittance.get(0).asText("")
+                : "";
+
+        String raw = String.join("|",
+                txNode.path("booking_date").asText(""),
+                txNode.path("value_date").asText(""),
+                txNode.path("transaction_date").asText(""),
+                amountNode.path("amount").asText(""),
+                amountNode.path("currency").asText(""),
+                txNode.path("credit_debit_indicator").asText(""),
+                txNode.path("creditor").path("name").asText(""),
+                txNode.path("debtor").path("name").asText(""),
+                txNode.path("reference_number").asText(""),
+                txNode.path("proprietary_bank_transaction_code").asText(""),
+                remittanceFirst
+        );
+
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256")
+                    .digest(raw.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is not available", e);
+        }
     }
 
     private boolean matches(BankTransactionRule rule, String name, String bankCategory,

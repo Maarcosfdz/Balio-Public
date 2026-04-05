@@ -733,6 +733,8 @@
     "clearFilters": "Clear",
     "syncBanks": "Sync banks",
     "syncingBanks": "Syncing banks...",
+    "syncLimitPrompt": "Ignore last sync limit?\nAccept = fetch full history\nCancel = fetch only since last sync",
+    "syncIgnoreLimitTag": "(no date limit)",
     "filterTransactions": "Filter transactions",
     "addFilterTab": "Add filter to tabs",
     "removeFilterTabAria": "Remove {{name}}",

@@ -247,7 +247,7 @@ export default function AccountCard({
         <>
           <div className="mx-5 border-t border-slate-100" />
           <BankConnectionPanel
-            accountId={account.id}
+            account={account}
             onSynced={() => {
               setTxLoading(true);
               setTxRefresh((v) => v + 1);

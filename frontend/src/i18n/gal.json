@@ -727,6 +727,8 @@
     "clearFilters": "Limpar",
     "syncBanks": "Sincronizar bancos",
     "syncingBanks": "Sincronizando bancos...",
+    "syncLimitPrompt": "Ignorar o limite da ultima sincronizacion?\nAceptar = traer historico completo\nCancelar = traer so desde a ultima sincronizacion",
+    "syncIgnoreLimitTag": "(sen limite por data)",
     "filterTransactions": "Filtrar transaccións",
     "addFilterTab": "Engadir filtro a lapelas",
     "removeFilterTabAria": "Quitar {{name}}",

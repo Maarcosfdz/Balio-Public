@@ -74,7 +74,7 @@ public class AccountController {
                                                             @Validated @RequestBody AccountDto dto) {
 
         Account account = accountService.createAccount(
-                userId, dto.getName(), dto.getType(), dto.getCurrency(), dto.getSetDefault());
+                userId, dto.getName(), dto.getType(), dto.getCurrency(), dto.getSetDefault(), dto.getSyncDeletedTransactions());
 
         log.info("Account created: accountId={}, userId={}, type={}", account.getId(), userId, dto.getType());
 
@@ -93,7 +93,7 @@ public class AccountController {
                                             @Validated @RequestBody AccountDto dto) throws InstanceNotFoundException {
 
         Account account = accountService.modifyAccount(
-                userId, accountId, dto.getName(), dto.getType(), dto.getCurrency());
+                userId, accountId, dto.getName(), dto.getType(), dto.getCurrency(), dto.getSyncDeletedTransactions());
 
         return accountConverter.toResponseDto(account);
     }

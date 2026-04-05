@@ -39,12 +39,16 @@ public class Account {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @Column(nullable = false)
+    private boolean syncDeletedTransactions = false;
+
     public Account(String name, AccountType type, String currency, BigDecimal balance, User user) {
         this.name = name;
         this.type = type;
         this.currency = currency;
         this.balance = balance;
         this.user = user;
+        this.syncDeletedTransactions = false;
     }
 
     protected Account() {
@@ -77,4 +81,12 @@ public class Account {
     }
 
     public User getUser() {return user;}
+
+    public boolean isSyncDeletedTransactions() {
+        return syncDeletedTransactions;
+    }
+
+    public void setSyncDeletedTransactions(boolean syncDeletedTransactions) {
+        this.syncDeletedTransactions = syncDeletedTransactions;
+    }
 }

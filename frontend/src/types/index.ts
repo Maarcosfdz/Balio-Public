@@ -57,6 +57,7 @@ export interface AccountDto {
   type?: AccountType;
   currency?: string;
   setDefault?: boolean;
+  syncDeletedTransactions?: boolean;
 }
 
 export interface AccountSummaryDto {
@@ -66,6 +67,7 @@ export interface AccountSummaryDto {
   currency: string;
   balance: number;
   isDefault: boolean;
+  syncDeletedTransactions?: boolean;
 }
 
 export interface AccountResponseDto {

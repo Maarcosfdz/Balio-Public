@@ -387,12 +387,25 @@ export default function AddTransactionModal({
   const handleAccountChange = (v: string) => {
     setAccountId(v);
     const next = accounts.find((acc) => acc.id === v);
-    if (!v || next?.type === "BANK") setAffectsBalance(false);
+    // For BANK accounts: always false
+    // For CASH/OTHER accounts: always true
+    if (!v) {
+      setAffectsBalance(true);
+    } else if (next?.type === "BANK") {
+      setAffectsBalance(false);
+    } else {
+      setAffectsBalance(true);
+    }
   };
 
   useEffect(() => {
-    if (!accountId || isBankAccount) {
+    if (!accountId) {
+      setAffectsBalance(true);
+    } else if (isBankAccount) {
       setAffectsBalance(false);
+    } else {
+      // For CASH/OTHER, ensure it's always true
+      setAffectsBalance(true);
     }
   }, [accountId, isBankAccount]);
 

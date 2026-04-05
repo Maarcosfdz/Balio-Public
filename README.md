@@ -162,7 +162,7 @@ Run backend with H2:
 Run frontend (folder frontend):
 
 ```bash
-npm start
+npm run dev
 ```
 
 ## 📚 API Documentation
