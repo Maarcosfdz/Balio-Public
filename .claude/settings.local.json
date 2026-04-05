@@ -23,7 +23,8 @@
       "Bash(timeout 45 mvn spring-boot:run -DskipTests)",
       "Bash(tee /tmp/boot.log)",
       "Read(//tmp/**)",
-      "Bash(mvn spring-boot:run -DskipTests)"
+      "Bash(mvn spring-boot:run -DskipTests)",
+      "Bash(curl -s -X POST http://localhost:8080/api/login -H 'Content-Type: application/json' -d '{\"email\":\"marcos@romay.es\",\"password\":\"Marcos*337\"}')"
     ]
   }
 }
