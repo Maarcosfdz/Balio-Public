@@ -9,6 +9,7 @@ import {
   ArrowUp,
   ArrowUpCircle,
   CalendarClock,
+  ChevronDown,
   ListChecks,
   Loader2,
   ArrowUpDown,
@@ -572,7 +573,7 @@ export default function TransactionsPage() {
       setPage(1);
       void fetchTransactions(filtersRef.current, true, 0, { sortBy: field, sortDir: nextDir });
     }
-    setSortDropdownOpen(false);
+    // Dropdown stays open after selection - don't close it
   };
 
   const formatDate = (iso: string) => {
@@ -823,11 +824,17 @@ export default function TransactionsPage() {
 
               {/* Filter toggle button — opens/closes the filter panel */}
               <button
-                className={`tx-filter-dropdown-btn ${filtersOpen ? "tx-filter-dropdown-btn--active" : ""}`}
-                onClick={() => setFiltersOpen((v) => !v)}
+                className={`tx-filter-dropdown-btn tx-filter-toggle-btn ${filtersOpen ? "tx-filter-dropdown-btn--active tx-filter-toggle-btn--open" : ""}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setFiltersOpen(true);
+                }}
                 title={t("txPage.filterTransactions")}
+                aria-expanded={filtersOpen}
               >
-                <SlidersHorizontal className="h-4 w-4" />
+                <SlidersHorizontal className="tx-filter-btn-icon h-4 w-4" />
+                <ChevronDown className="tx-filter-btn-arrow h-3.5 w-3.5" />
               </button>
             </div>
           </div>
@@ -838,7 +845,7 @@ export default function TransactionsPage() {
             <FilterPanel
               key={stateEditFilterId ?? "default"}
               open={filtersOpen}
-              onToggle={() => setFiltersOpen((v) => !v)}
+              onToggle={() => setFiltersOpen(true)}
               hideToggleButton
               onApply={handleApplyFilters}
               defaultAccountId={stateAccountId}

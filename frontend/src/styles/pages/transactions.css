@@ -980,6 +980,49 @@
   border-color: #0284c7;
 }
 
+.tx-filter-dropdown-btn:hover svg {
+  animation: emoji-bounce 600ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.tx-filter-toggle-btn {
+  width: auto;
+  gap: 0.35rem;
+  padding: 0 0.65rem;
+  border-radius: 9999px;
+  transition: background 200ms, color 200ms, border-color 200ms, box-shadow 220ms, transform 220ms;
+}
+
+.tx-filter-toggle-btn:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 10px 20px -14px rgba(2, 132, 199, 0.65);
+}
+
+.tx-filter-btn-icon {
+  transition: transform 280ms cubic-bezier(0.22, 0.8, 0.3, 1), color 220ms ease;
+}
+
+.tx-filter-toggle-btn:hover .tx-filter-btn-icon {
+  transform: rotate(-12deg) scale(1.08);
+}
+
+.tx-filter-toggle-btn:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.tx-filter-btn-arrow {
+  transition: transform 260ms cubic-bezier(0.2, 0.7, 0.2, 1), opacity 200ms;
+  opacity: 0.8;
+}
+
+.tx-filter-toggle-btn--open .tx-filter-btn-arrow {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+.tx-filter-toggle-btn--open .tx-filter-btn-icon {
+  transform: rotate(16deg) scale(1.08);
+}
+
 /* Filter dropdown menu */
 .tx-filter-dropdown {
   position: absolute;
@@ -1087,7 +1130,26 @@
   width: 0.875rem;
   height: 0.875rem;
   flex-shrink: 0;
-  transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Animations */
+@keyframes emoji-bounce {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.15) rotate(-8deg);
+  }
+  50% {
+    transform: scale(1.1) rotate(8deg);
+  }
+  75% {
+    transform: scale(1.05) rotate(-4deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
 }
 
 /* responsive: stack on small screens */
