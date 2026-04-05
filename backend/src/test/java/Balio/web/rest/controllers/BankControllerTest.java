@@ -209,7 +209,7 @@ class BankControllerTest {
         @Test
         @DisplayName("POST /bank/accounts/{accountId}/sync returns imported transactions")
         void shouldSyncSpecificAccount() throws Exception {
-            when(bankService.syncTransactions(USER_ID, ACCOUNT_ID, 90)).thenReturn(7);
+                        when(bankService.syncTransactions(USER_ID, ACCOUNT_ID, 365, false)).thenReturn(7);
 
             mockMvc.perform(post("/bank/accounts/{accountId}/sync", ACCOUNT_ID)
                             .requestAttr("userId", USER_ID))
@@ -234,7 +234,7 @@ class BankControllerTest {
         @Test
         @DisplayName("POST /bank/sync-all returns imported and linked account count")
         void shouldSyncAll() throws Exception {
-            when(bankService.syncAllConnections(USER_ID)).thenReturn(9);
+                        when(bankService.syncAllConnections(USER_ID, false, 365)).thenReturn(9);
             when(bankService.findLinkedConnections(USER_ID))
                                         .thenReturn(List.of(sampleConnection(), sampleConnection(), sampleConnection()));
 
@@ -303,7 +303,7 @@ class BankControllerTest {
 
             when(bankService.createRule(
                     eq(USER_ID), eq(ACCOUNT_ID), eq("netflix"), eq("streaming"), eq(TransactionType.EXPENSE),
-                    eq("Netflix"), isNull(), eq(true), eq(30)))
+                    eq("Netflix"), isNull(), eq(false), isNull(), eq(true), eq(30)))
                     .thenReturn(new BankService.RuleCreationResult(rule, 4));
             when(bankConverter.toRuleResponseDto(rule)).thenReturn(converted);
 
@@ -359,7 +359,7 @@ class BankControllerTest {
 
             when(bankService.updateRule(
                     eq(USER_ID), eq(ACCOUNT_ID), eq(RULE_ID), eq("uber"), isNull(), eq(TransactionType.EXPENSE),
-                    eq("Uber"), isNull(), eq(false), isNull()))
+                    eq("Uber"), isNull(), isNull(), isNull(), eq(false), isNull()))
                     .thenReturn(new BankService.RuleUpdateResult(updatedRule, 1));
             when(bankConverter.toRuleResponseDto(updatedRule)).thenReturn(converted);
 

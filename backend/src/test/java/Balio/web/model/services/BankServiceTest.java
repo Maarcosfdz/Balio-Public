@@ -41,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -162,13 +163,13 @@ class BankServiceTest {
             when(bankConnectionDao.existsByAccountId(ACCOUNT_ID)).thenReturn(false);
             when(enableBankingClient.createSession("eb-code")).thenReturn(session);
             when(bankConnectionDao.save(any())).thenAnswer(inv -> inv.getArgument(0));
-            when(enableBankingSyncService.sync(any())).thenReturn(3);
+            when(enableBankingSyncService.sync(any(BankConnection.class), anyInt())).thenReturn(3);
 
             BankConnection result = service.completeEnableBankingConnection(ACCOUNT_ID.toString(), "eb-code");
 
             assertEquals("ENABLE_BANKING", result.getProvider());
             assertEquals("sess-abc", result.getSessionId());
-            verify(enableBankingSyncService).sync(any());
+            verify(enableBankingSyncService).sync(any(BankConnection.class), anyInt());
         }
 
         @Test
@@ -203,7 +204,7 @@ class BankServiceTest {
             BankConnection conn = new BankConnection(bankAccount, user, null, null, null);
             conn.setProvider("ENABLE_BANKING");
             when(bankConnectionDao.findByAccountIdAndUserId(ACCOUNT_ID, USER_ID)).thenReturn(Optional.of(conn));
-            when(enableBankingSyncService.sync(conn, 90)).thenReturn(4);
+            when(enableBankingSyncService.sync(eq(conn), anyInt())).thenReturn(4);
 
             int result = service.syncTransactions(USER_ID, ACCOUNT_ID);
 
@@ -247,7 +248,7 @@ class BankServiceTest {
             BankConnection stale = new BankConnection(bankAccount, user, null, null, null);
             // lastSync is null by default
             when(bankConnectionDao.findAllByUserId(USER_ID)).thenReturn(List.of(stale));
-            when(enableBankingSyncService.sync(stale)).thenReturn(2);
+            when(enableBankingSyncService.sync(eq(stale), anyInt())).thenReturn(2);
 
             int result = service.syncStaleConnections(USER_ID, 60);
 
@@ -258,9 +259,10 @@ class BankServiceTest {
         @DisplayName("syncs connections whose lastSync is older than the threshold")
         void shouldSync_staleConnections() {
             BankConnection stale = new BankConnection(bankAccount, user, null, null, null);
-            stale.setLastSync(Instant.now().minusSeconds(7200)); // 2 hours ago
+            Instant lastSync = Instant.now().minusSeconds(7200); // 2 hours ago
+            stale.setLastSync(lastSync);
             when(bankConnectionDao.findAllByUserId(USER_ID)).thenReturn(List.of(stale));
-            when(enableBankingSyncService.sync(stale)).thenReturn(3);
+            when(enableBankingSyncService.sync(stale, lastSync)).thenReturn(3);
 
             int result = service.syncStaleConnections(USER_ID, 60); // stale after 60 min
 

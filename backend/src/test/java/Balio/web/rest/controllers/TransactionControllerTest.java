@@ -51,6 +51,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -599,7 +600,8 @@ class TransactionControllerTest {
             Transaction tx2 = new Transaction("B", VALID_AMOUNT, VALID_DATE, TransactionType.INCOME, testUser);
             setFieldViaReflection(tx2, "id", UUID.randomUUID());
 
-            when(transactionService.findPaged(eq(USER_ID), isNull(), isNull(), isNull(), isNull(), isNull(), eq(0), eq(20)))
+            when(transactionService.findPaged(eq(USER_ID), isNull(), isNull(), isNull(), isNull(), isNull(),
+                    eq("date"), eq("desc"), eq(0), eq(20)))
                     .thenReturn(new PageImpl<>(new ArrayList<>(List.of(tx1, tx2)), PageRequest.of(0, 20), 2));
 
             mockMvc.perform(get("/transaction")
@@ -613,7 +615,8 @@ class TransactionControllerTest {
         @Test
         @DisplayName("200 – returns empty list when no transactions")
         void shouldReturn200_whenNoTransactions() throws Exception {
-            when(transactionService.findPaged(eq(USER_ID), isNull(), isNull(), isNull(), isNull(), isNull(), eq(0), eq(20)))
+            when(transactionService.findPaged(eq(USER_ID), isNull(), isNull(), isNull(), isNull(), isNull(),
+                    eq("date"), eq("desc"), eq(0), eq(20)))
                     .thenReturn(new PageImpl<>(new ArrayList<>(), PageRequest.of(0, 20), 0));
 
             mockMvc.perform(get("/transaction")
@@ -628,7 +631,8 @@ class TransactionControllerTest {
             Transaction tx = new Transaction("Filtered", VALID_AMOUNT, VALID_DATE, TransactionType.EXPENSE, testUser);
             setFieldViaReflection(tx, "id", UUID.randomUUID());
 
-            when(transactionService.findPaged(eq(USER_ID), eq(TransactionType.EXPENSE), isNull(), isNull(), isNull(), isNull(), eq(0), eq(20)))
+            when(transactionService.findPaged(eq(USER_ID), eq(TransactionType.EXPENSE), isNull(), isNull(), isNull(), isNull(),
+                    eq("date"), eq("desc"), eq(0), eq(20)))
                     .thenReturn(new PageImpl<>(new ArrayList<>(List.of(tx)), PageRequest.of(0, 20), 1));
 
             mockMvc.perform(get("/transaction")
@@ -642,7 +646,8 @@ class TransactionControllerTest {
         @Test
         @DisplayName("200 – returns filtered results when accountId filter provided")
         void shouldReturn200_whenAccountIdFilterProvided() throws Exception {
-            when(transactionService.findPaged(eq(USER_ID), isNull(), eq(ACCOUNT_ID), isNull(), isNull(), isNull(), eq(0), eq(20)))
+            when(transactionService.findPaged(eq(USER_ID), isNull(), eq(ACCOUNT_ID), isNull(), isNull(), isNull(),
+                    eq("date"), eq("desc"), eq(0), eq(20)))
                     .thenReturn(new PageImpl<>(new ArrayList<>(), PageRequest.of(0, 20), 0));
 
             mockMvc.perform(get("/transaction")
@@ -658,7 +663,8 @@ class TransactionControllerTest {
             LocalDate start = LocalDate.of(2025, 1, 1);
             LocalDate end = LocalDate.of(2025, 12, 31);
 
-            when(transactionService.findPaged(eq(USER_ID), isNull(), isNull(), isNull(), eq(start), eq(end), eq(0), eq(20)))
+            when(transactionService.findPaged(eq(USER_ID), isNull(), isNull(), isNull(), eq(start), eq(end),
+                    eq("date"), eq("desc"), eq(0), eq(20)))
                     .thenReturn(new PageImpl<>(new ArrayList<>(), PageRequest.of(0, 20), 0));
 
             mockMvc.perform(get("/transaction")
@@ -675,7 +681,8 @@ class TransactionControllerTest {
             LocalDate start = LocalDate.of(2025, 1, 1);
             LocalDate end = LocalDate.of(2025, 12, 31);
 
-            when(transactionService.findPaged(eq(USER_ID), eq(TransactionType.EXPENSE), eq(ACCOUNT_ID), eq(CATEGORY_ID), eq(start), eq(end), eq(0), eq(20)))
+            when(transactionService.findPaged(eq(USER_ID), eq(TransactionType.EXPENSE), eq(ACCOUNT_ID), eq(CATEGORY_ID), eq(start), eq(end),
+                    eq("date"), eq("desc"), eq(0), eq(20)))
                     .thenReturn(new PageImpl<>(new ArrayList<>(), PageRequest.of(0, 20), 0));
 
             mockMvc.perform(get("/transaction")
@@ -1378,11 +1385,9 @@ class TransactionControllerTest {
         }
 
         @Test
-        @DisplayName("200 – zero amount row: imported as income (zero is positive)")
+        @DisplayName("200 – zero amount row: skipped")
         void zeroAmountRow() throws Exception {
             when(categoryDao.findAllByUserIdOrderByNameAsc(USER_ID)).thenReturn(List.of());
-            when(transactionService.addIncome(any(), any(), any(), any(), any(), any(), anyBoolean()))
-                    .thenReturn(testTransaction);
 
             String content = APP_HEADER + "2026-01-15,Free item,0.00,\n";
 
@@ -1390,10 +1395,10 @@ class TransactionControllerTest {
                             .file(csvFile(content))
                             .requestAttr("userId", USER_ID))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.imported", is(1)));
+                    .andExpect(jsonPath("$.imported", is(0)))
+                    .andExpect(jsonPath("$.skipped", is(1)));
 
-            // 0 is not < 0 so it becomes INCOME
-            verify(transactionService).addIncome(any(), any(), any(), any(), any(), any(), anyBoolean());
+            verify(transactionService, never()).addIncome(any(), any(), any(), any(), any(), any(), anyBoolean());
         }
 
         @Test

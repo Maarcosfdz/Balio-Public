@@ -83,8 +83,8 @@ class JwtFilterTest {
     }
 
     @Test
-    @DisplayName("refresh token → context cleared, chain proceeds")
-    void refreshToken_contextClearedAndChainProceeds() throws Exception {
+    @DisplayName("refresh token → context cleared, returns 401 and stops chain")
+    void refreshToken_contextClearedAndReturns401() throws Exception {
         String token = "refresh.jwt.token";
         when(request.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + token);
         when(jwtGenerator.extractTokenType(token)).thenReturn("refresh");
@@ -92,13 +92,14 @@ class JwtFilterTest {
         jwtFilter.doFilterInternal(request, response, filterChain);
 
         assertNull(SecurityContextHolder.getContext().getAuthentication());
-        verify(filterChain).doFilter(request, response);
+        verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        verify(filterChain, never()).doFilter(request, response);
         verify(jwtGenerator, never()).extractUserId(any());
     }
 
     @Test
-    @DisplayName("invalid / expired token → exception caught, context cleared, chain proceeds")
-    void invalidToken_exceptionCaught_chainProceeds() throws Exception {
+    @DisplayName("invalid / expired token → exception caught, returns 401 and stops chain")
+    void invalidToken_exceptionCaught_returns401() throws Exception {
         String token = "corrupted.token";
         when(request.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + token);
         when(jwtGenerator.extractTokenType(token)).thenThrow(new RuntimeException("invalid JWT"));
@@ -106,6 +107,7 @@ class JwtFilterTest {
         jwtFilter.doFilterInternal(request, response, filterChain);
 
         assertNull(SecurityContextHolder.getContext().getAuthentication());
-        verify(filterChain).doFilter(request, response);
+        verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        verify(filterChain, never()).doFilter(request, response);
     }
 }
