@@ -25,6 +25,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -36,6 +38,7 @@ import java.util.UUID;
 public class BankServiceImpl implements BankService {
 
     private static final Logger log = LoggerFactory.getLogger(BankServiceImpl.class);
+    private static final int DEFAULT_LOOKBACK_DAYS = 365;
 
     private final AccountDao accountDao;
     private final BankConnectionDao bankConnectionDao;
@@ -68,15 +71,26 @@ public class BankServiceImpl implements BankService {
 
     @Override
     public int syncTransactions(UUID userId, UUID accountId) throws InstanceNotFoundException {
-        return syncTransactions(userId, accountId, 90);
+        return syncTransactions(userId, accountId, DEFAULT_LOOKBACK_DAYS);
     }
 
     @Override
     public int syncTransactions(UUID userId, UUID accountId, int lookBackDays) throws InstanceNotFoundException {
+        return syncTransactions(userId, accountId, lookBackDays, false);
+    }
+
+    @Override
+    public int syncTransactions(UUID userId, UUID accountId, int lookBackDays, boolean ignoreSyncLimit)
+            throws InstanceNotFoundException {
         BankConnection connection = bankConnectionDao.findByAccountIdAndUserId(accountId, userId)
                 .orElseThrow(() -> new InstanceNotFoundException("BankConnection", accountId));
 
-        return enableBankingSyncService.sync(connection, lookBackDays);
+        int safeLookBackDays = normalizeLookBackDays(lookBackDays);
+        if (ignoreSyncLimit) {
+            return enableBankingSyncService.sync(connection, safeLookBackDays);
+        }
+
+        return syncIncremental(connection, safeLookBackDays);
     }
 
     @Override
@@ -93,9 +107,19 @@ public class BankServiceImpl implements BankService {
 
     @Override
     public int syncAllConnections(UUID userId) {
+        return syncAllConnections(userId, false, DEFAULT_LOOKBACK_DAYS);
+    }
+
+    @Override
+    public int syncAllConnections(UUID userId, boolean ignoreSyncLimit, int lookBackDays) {
         int imported = 0;
+        int safeLookBackDays = normalizeLookBackDays(lookBackDays);
         for (BankConnection connection : bankConnectionDao.findAllByUserId(userId)) {
-            imported += syncWithProvider(connection);
+            if (ignoreSyncLimit) {
+                imported += enableBankingSyncService.sync(connection, safeLookBackDays);
+            } else {
+                imported += syncIncremental(connection, safeLookBackDays);
+            }
         }
         return imported;
     }
@@ -107,7 +131,27 @@ public class BankServiceImpl implements BankService {
     }
 
     private int syncWithProvider(BankConnection connection) {
-        return enableBankingSyncService.sync(connection);
+        return syncIncremental(connection, DEFAULT_LOOKBACK_DAYS);
+    }
+
+    private int syncIncremental(BankConnection connection, int fallbackLookBackDays) {
+        Instant lastSync = connection.getLastSync();
+        if (lastSync == null) {
+            return enableBankingSyncService.sync(connection, fallbackLookBackDays);
+        }
+
+        if (lastSync.isAfter(Instant.now())) {
+            return enableBankingSyncService.sync(connection, fallbackLookBackDays);
+        }
+
+        return enableBankingSyncService.sync(connection, lastSync);
+    }
+
+    private int normalizeLookBackDays(int lookBackDays) {
+        if (lookBackDays <= 0) {
+            return DEFAULT_LOOKBACK_DAYS;
+        }
+        return Math.min(lookBackDays, 3650);
     }
 
     // ── ENABLE BANKING: INIT ─────────────────────────────────────────────
@@ -208,6 +252,7 @@ public class BankServiceImpl implements BankService {
     public RuleCreationResult createRule(UUID userId, UUID accountId, String namePattern,
                                          String bankCategory, TransactionType transactionType,
                                          String mappedName, UUID mappedCategoryId,
+                                         boolean excludeMatch, BigDecimal amountMultiplier,
                                          boolean applyToExisting, Integer applyWindowDays)
             throws InstanceNotFoundException {
 
@@ -215,7 +260,9 @@ public class BankServiceImpl implements BankService {
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
         Account account = resolveBankAccount(accountId, userId);
 
-        validateRulePayload(namePattern, bankCategory, mappedName, mappedCategoryId);
+        BigDecimal normalizedMultiplier = normalizeMultiplier(amountMultiplier);
+        validateRulePayload(namePattern, bankCategory, mappedName, mappedCategoryId,
+            excludeMatch, normalizedMultiplier);
 
         Category category = resolveCategory(mappedCategoryId, userId);
         if (category != null && transactionType != null && category.getType() != transactionType) {
@@ -229,7 +276,8 @@ public class BankServiceImpl implements BankService {
         BankTransactionRule rule = new BankTransactionRule(
                 user, account,
                 normalizedNamePattern, normalizedBankCategory,
-                transactionType, normalizedMappedName, category, computedPriority);
+            transactionType, normalizedMappedName, category, computedPriority,
+            excludeMatch, normalizedMultiplier);
         ruleDao.save(rule);
 
         int appliedTransactions = applyToExisting
@@ -239,10 +287,20 @@ public class BankServiceImpl implements BankService {
         return new RuleCreationResult(rule, appliedTransactions);
     }
 
+    public RuleCreationResult createRule(UUID userId, UUID accountId, String namePattern,
+                                         String bankCategory, TransactionType transactionType,
+                                         String mappedName, UUID mappedCategoryId,
+                                         boolean applyToExisting, Integer applyWindowDays)
+            throws InstanceNotFoundException {
+        return createRule(userId, accountId, namePattern, bankCategory, transactionType,
+                mappedName, mappedCategoryId, false, null, applyToExisting, applyWindowDays);
+    }
+
     @Override
     public RuleUpdateResult updateRule(UUID userId, UUID accountId, UUID ruleId, String namePattern,
                                        String bankCategory, TransactionType transactionType,
                                        String mappedName, UUID mappedCategoryId,
+                                       Boolean excludeMatch, BigDecimal amountMultiplier,
                                        boolean applyToExisting, Integer applyWindowDays)
             throws InstanceNotFoundException {
 
@@ -271,6 +329,17 @@ public class BankServiceImpl implements BankService {
         if (mappedCategoryId != null) {
             rule.setMappedCategory(resolvedMappedCategory);
         }
+        if (excludeMatch != null) {
+            rule.setExcludeMatch(excludeMatch);
+        }
+        if (amountMultiplier != null) {
+            rule.setAmountMultiplier(normalizeMultiplier(amountMultiplier));
+        }
+
+        validateRulePayload(rule.getNamePattern(), rule.getBankCategory(),
+                rule.getMappedName(),
+                rule.getMappedCategory() != null ? rule.getMappedCategory().getId() : null,
+                rule.isExcludeMatch(), rule.getAmountMultiplier());
 
         rule.setPriority(calculatePriority(
                 rule.getNamePattern(), rule.getBankCategory(), rule.getTransactionType()));
@@ -281,6 +350,16 @@ public class BankServiceImpl implements BankService {
                 : 0;
 
         return new RuleUpdateResult(rule, appliedTransactions);
+    }
+
+    public RuleUpdateResult updateRule(UUID userId, UUID accountId, UUID ruleId, String namePattern,
+                                       String bankCategory, TransactionType transactionType,
+                                       String mappedName, UUID mappedCategoryId,
+                                       boolean applyToExisting, Integer applyWindowDays)
+            throws InstanceNotFoundException {
+        return updateRule(userId, accountId, ruleId, namePattern, bankCategory,
+                transactionType, mappedName, mappedCategoryId,
+                null, null, applyToExisting, applyWindowDays);
     }
 
     @Override
@@ -309,12 +388,15 @@ public class BankServiceImpl implements BankService {
     }
 
     private void validateRulePayload(String namePattern, String bankCategory,
-                                     String mappedName, UUID mappedCategoryId) {
+                                     String mappedName, UUID mappedCategoryId,
+                                     boolean excludeMatch, BigDecimal amountMultiplier) {
         if (normalize(namePattern) == null && normalize(bankCategory) == null) {
             throw new IllegalArgumentException("A rule must define a name pattern or bank category");
         }
-        if (normalize(mappedName) == null && mappedCategoryId == null) {
-            throw new IllegalArgumentException("A rule must map a name or a category");
+        boolean adjustsAmount = amountMultiplier != null
+                && amountMultiplier.compareTo(BigDecimal.ONE) != 0;
+        if (normalize(mappedName) == null && mappedCategoryId == null && !excludeMatch && !adjustsAmount) {
+            throw new IllegalArgumentException("A rule must map a name/category, exclude or adjust amount");
         }
     }
 
@@ -345,9 +427,17 @@ public class BankServiceImpl implements BankService {
         }
         boolean nameResolved = false;
         boolean categoryResolved = false;
+        boolean changed = false;
 
         for (BankTransactionRule rule : rules) {
             if (matchesRule(rule, originalName, transaction.getBankCategory(), transaction.getType())) {
+                if (rule.isExcludeMatch()) {
+                    if (transaction.isAffectsBalance() && transaction.getAccount() != null) {
+                        applyBalance(transaction.getAccount(), transaction.getAmount(), transaction.getType(), true);
+                    }
+                    transactionDao.delete(transaction);
+                    return true;
+                }
                 if (!nameResolved && normalize(rule.getMappedName()) != null) {
                     resolvedName = rule.getMappedName();
                     nameResolved = true;
@@ -357,6 +447,24 @@ public class BankServiceImpl implements BankService {
                     resolvedCategory = rule.getMappedCategory();
                     categoryResolved = true;
                 }
+                BigDecimal multiplier = normalizeMultiplier(rule.getAmountMultiplier());
+                if (multiplier.compareTo(BigDecimal.ONE) != 0) {
+                    BigDecimal newAmount = transaction.getAmount()
+                            .multiply(multiplier)
+                            .setScale(2, RoundingMode.HALF_UP)
+                            .abs();
+                    if (newAmount.compareTo(BigDecimal.ZERO) > 0
+                            && transaction.getAmount().compareTo(newAmount) != 0) {
+                        if (transaction.isAffectsBalance() && transaction.getAccount() != null) {
+                            applyBalance(transaction.getAccount(), transaction.getAmount(), transaction.getType(), true);
+                            transaction.setAmount(newAmount);
+                            applyBalance(transaction.getAccount(), transaction.getAmount(), transaction.getType(), false);
+                        } else {
+                            transaction.setAmount(newAmount);
+                        }
+                        changed = true;
+                    }
+                }
                 // Keep scanning lower-priority matches to resolve missing fields.
                 if (nameResolved && categoryResolved) {
                     break;
@@ -364,7 +472,6 @@ public class BankServiceImpl implements BankService {
             }
         }
 
-        boolean changed = false;
         if (!resolvedName.equals(transaction.getName())) {
             transaction.setName(resolvedName);
             changed = true;
@@ -398,6 +505,25 @@ public class BankServiceImpl implements BankService {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private BigDecimal normalizeMultiplier(BigDecimal value) {
+        if (value == null || value.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ONE;
+        }
+        return value.setScale(4, RoundingMode.HALF_UP);
+    }
+
+    private void applyBalance(Account account, BigDecimal amount, TransactionType type, boolean revert) {
+        if (type == TransactionType.INCOME) {
+            account.setBalance(revert
+                    ? account.getBalance().subtract(amount)
+                    : account.getBalance().add(amount));
+        } else {
+            account.setBalance(revert
+                    ? account.getBalance().add(amount)
+                    : account.getBalance().subtract(amount));
+        }
     }
 
     private int calculatePriority(String namePattern, String bankCategory, TransactionType transactionType) {

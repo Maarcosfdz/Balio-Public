@@ -8,6 +8,12 @@ import { typeIcon } from "../utils";
 import { FieldError } from "@/components/ui/field-error";
 import { GradientButton } from "@/components/ui/gradient-button";
 
+const BALANCE_EPSILON = 0.00001;
+
+function roundToCents(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
 interface AccountFormDialogProps {
   open: boolean;
   initial?: AccountSummaryDto | null;
@@ -25,6 +31,7 @@ export default function AccountFormDialog({ open, initial, onClose, onSaved }: A
   const [currency, setCurrency] = useState(initial?.currency ?? "EUR");
   const [balance, setBalance] = useState<string>(initial ? initial.balance.toFixed(2) : "0.00");
   const [setDefault, setSetDefault] = useState(false);
+  const [syncDeletedTransactions, setSyncDeletedTransactions] = useState(initial?.syncDeletedTransactions ?? false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -43,6 +50,7 @@ export default function AccountFormDialog({ open, initial, onClose, onSaved }: A
       setCurrency(initial?.currency ?? "EUR");
       setBalance(initial ? initial.balance.toFixed(2) : "0.00");
       setSetDefault(false);
+      setSyncDeletedTransactions(initial?.syncDeletedTransactions ?? false);
       setLoading(false);
       setError("");
       setSelectedBank(null);
@@ -99,21 +107,46 @@ export default function AccountFormDialog({ open, initial, onClose, onSaved }: A
     }
     setLoading(true);
     setError("");
+    const normalizedCurrency = type === "BANK" ? "EUR" : currency.toUpperCase();
     const dto: AccountDto = {
       name: name.trim(),
       type,
-      currency: type === "BANK" ? "EUR" : currency.toUpperCase(),
+      currency: normalizedCurrency,
       setDefault: setDefault || undefined,
+      syncDeletedTransactions: type === "BANK" ? syncDeletedTransactions : undefined,
     };
-    const parsedBalance = parseFloat(balance.replace(",", "."));
+    const parsedBalance = Number.parseFloat(balance.replace(",", "."));
+    const hasValidBalance = Number.isFinite(parsedBalance);
+
+    if (type !== "BANK" && !hasValidBalance) {
+      setError(t("accountsPage.balanceError", "Introduce un saldo valido"));
+      setLoading(false);
+      return;
+    }
 
     try {
       if (isEdit && initial) {
-        await accountService.update(initial.id, dto);
-        // Adjust balance if changed and account is not BANK
-        if (type !== "BANK" && !isNaN(parsedBalance) && parsedBalance !== initial.balance) {
-          await accountService.adjustBalance(initial.id, parsedBalance);
+        const roundedCurrentBalance = roundToCents(initial.balance);
+        const roundedTargetBalance = hasValidBalance ? roundToCents(parsedBalance) : roundedCurrentBalance;
+
+        const hasMetaChanges =
+          name.trim() !== initial.name ||
+          type !== initial.type ||
+          normalizedCurrency !== initial.currency;
+
+        const shouldAdjustBalance =
+          initial.type !== "BANK" &&
+          hasValidBalance &&
+          Math.abs(roundedTargetBalance - roundedCurrentBalance) > BALANCE_EPSILON;
+
+        if (hasMetaChanges) {
+          await accountService.update(initial.id, dto);
         }
+
+        if (shouldAdjustBalance) {
+          await accountService.adjustBalance(initial.id, roundedTargetBalance);
+        }
+
         onSaved();
       } else if (type === "BANK") {
         const created = await accountService.create(dto);
@@ -132,13 +165,13 @@ export default function AccountFormDialog({ open, initial, onClose, onSaved }: A
       } else {
         const created = await accountService.create(dto);
         // Set initial balance if different from 0
-        if (!isNaN(parsedBalance) && parsedBalance !== 0) {
-          await accountService.adjustBalance(created.id, parsedBalance);
+        if (hasValidBalance && Math.abs(roundToCents(parsedBalance)) > BALANCE_EPSILON) {
+          await accountService.adjustBalance(created.id, roundToCents(parsedBalance));
         }
         onSaved();
       }
-    } catch {
-      setError(t("common.error"));
+    } catch (err: any) {
+      setError(err?.response?.data?.message ?? t("common.error"));
       setLoading(false);
     }
   };
@@ -147,8 +180,8 @@ export default function AccountFormDialog({ open, initial, onClose, onSaved }: A
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md rounded-2xl bg-white shadow-xl">
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-md rounded-2xl bg-white shadow-xl max-h-[90dvh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4">
           <h2 className="text-lg font-bold text-slate-800">
@@ -300,6 +333,26 @@ export default function AccountFormDialog({ open, initial, onClose, onSaved }: A
                 </span>
               </div>
             </div>
+          )}
+
+          {/* Sync preference (only for BANK accounts) */}
+          {type === "BANK" && (
+            <label className="flex cursor-pointer items-center gap-3">
+              <div
+                onClick={() => setSyncDeletedTransactions((v) => !v)}
+                className={`flex h-5 w-5 items-center justify-center rounded border-2 transition ${
+                  syncDeletedTransactions ? "border-sky-500 bg-sky-500" : "border-slate-300"
+                }`}
+              >
+                {syncDeletedTransactions && <Check className="h-3 w-3 text-white" />}
+              </div>
+              <div>
+                <span className="text-sm text-slate-600">{t("accounts.syncDeleted", "Sincronizar también transacciones eliminadas")}</span>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {t("accounts.syncDeletedDesc", "Si está desactivado, solo se sincronizan las nuevas transacciones")}
+                </p>
+              </div>
+            </label>
           )}
 
           {/* Set default (only on create) */}

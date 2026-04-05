@@ -57,6 +57,12 @@ function ruleSummary(rule: BankRuleResponseDto) {
   if (rule.mappedCategoryName) {
     effects.push(`categorizar como ${rule.mappedCategoryName}`);
   }
+  if (rule.excludeMatch) {
+    effects.push("no importar");
+  }
+  if (rule.amountMultiplier !== null && rule.amountMultiplier !== undefined && rule.amountMultiplier !== 1) {
+    effects.push(`importe × ${rule.amountMultiplier}`);
+  }
 
   return {
     when: conditions.join(" y ") || "sin condición",
@@ -102,6 +108,8 @@ export default function BankRulesPanel({ account, open, onClose, onRulesChanged 
   const [transactionType, setTransactionType] = useState<RuleTransactionType>("ANY");
   const [mappedName, setMappedName] = useState("");
   const [mappedCategoryId, setMappedCategoryId] = useState("");
+  const [excludeMatch, setExcludeMatch] = useState(false);
+  const [amountMultiplier, setAmountMultiplier] = useState("1");
   const [applyToExisting, setApplyToExisting] = useState(false);
   const [applyWindow, setApplyWindow] = useState<ApplyWindow>("365");
 
@@ -130,6 +138,8 @@ export default function BankRulesPanel({ account, open, onClose, onRulesChanged 
     setTransactionType("ANY");
     setMappedName("");
     setMappedCategoryId("");
+    setExcludeMatch(false);
+    setAmountMultiplier("1");
     setApplyToExisting(false);
     setApplyWindow("365");
   };
@@ -154,6 +164,12 @@ export default function BankRulesPanel({ account, open, onClose, onRulesChanged 
     setTransactionType(rule.transactionType ?? "ANY");
     setMappedName(rule.mappedName ?? "");
     setMappedCategoryId(rule.mappedCategoryId ?? "");
+    setExcludeMatch(Boolean(rule.excludeMatch));
+    setAmountMultiplier(
+      rule.amountMultiplier !== null && rule.amountMultiplier !== undefined
+        ? String(rule.amountMultiplier)
+        : "1",
+    );
     setApplyToExisting(false);
     setApplyWindow("365");
     setError("");
@@ -174,6 +190,8 @@ export default function BankRulesPanel({ account, open, onClose, onRulesChanged 
         transactionType: rule.transactionType ?? undefined,
         mappedName: rule.mappedName ?? undefined,
         mappedCategoryId: rule.mappedCategoryId ?? undefined,
+        excludeMatch: rule.excludeMatch ?? undefined,
+        amountMultiplier: rule.amountMultiplier ?? undefined,
         applyToExisting: true,
         applyWindowDays: windowDays,
       };
@@ -206,6 +224,10 @@ export default function BankRulesPanel({ account, open, onClose, onRulesChanged 
     transactionType: toRuleType(transactionType),
     mappedName: mappedName.trim() || undefined,
     mappedCategoryId: mappedCategoryId || undefined,
+    excludeMatch,
+    amountMultiplier: amountMultiplier.trim()
+      ? Number.parseFloat(amountMultiplier)
+      : undefined,
     applyToExisting,
     applyWindowDays: applyToExisting
       ? (applyWindow === "all" ? 0 : Number.parseInt(applyWindow, 10))
@@ -218,8 +240,14 @@ export default function BankRulesPanel({ account, open, onClose, onRulesChanged 
       return false;
     }
 
-    if (!mappedName.trim() && !mappedCategoryId) {
-      setError("La regla debe cambiar el nombre o asignar una categoría.");
+    const parsedMultiplier = amountMultiplier.trim() ? Number.parseFloat(amountMultiplier) : 1;
+    if (!Number.isFinite(parsedMultiplier) || parsedMultiplier <= 0) {
+      setError("El multiplicador de importe debe ser un número mayor que 0.");
+      return false;
+    }
+
+    if (!mappedName.trim() && !mappedCategoryId && !excludeMatch && parsedMultiplier === 1) {
+      setError("La regla debe cambiar nombre/categoría, excluir o ajustar importe.");
       return false;
     }
 
@@ -294,7 +322,7 @@ export default function BankRulesPanel({ account, open, onClose, onRulesChanged 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/35 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/35 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
           <div className="min-w-0">
@@ -398,6 +426,16 @@ export default function BankRulesPanel({ account, open, onClose, onRulesChanged 
                           {rule.mappedCategoryName && (
                             <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-emerald-600 ring-1 ring-emerald-200">
                               Categoría: {rule.mappedCategoryName}
+                            </span>
+                          )}
+                          {rule.excludeMatch && (
+                            <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-red-600 ring-1 ring-red-200">
+                              No importar
+                            </span>
+                          )}
+                          {rule.amountMultiplier !== null && rule.amountMultiplier !== undefined && rule.amountMultiplier !== 1 && (
+                            <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-sky-700 ring-1 ring-sky-200">
+                              Importe × {rule.amountMultiplier}
                             </span>
                           )}
                         </div>
@@ -535,6 +573,29 @@ export default function BankRulesPanel({ account, open, onClose, onRulesChanged 
                   );
                 })()}
               </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-500">Multiplicador de importe</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={amountMultiplier}
+                  onChange={(e) => setAmountMultiplier(e.target.value)}
+                  placeholder="1.00 = sin cambios"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                />
+              </div>
+
+              <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={excludeMatch}
+                  onChange={(e) => setExcludeMatch(e.target.checked)}
+                  className="h-4 w-4 rounded accent-sky-500"
+                />
+                No importar si coincide
+              </label>
 
               <>
                 <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">

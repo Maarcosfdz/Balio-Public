@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import ExpandDiagonalIcon from "./ExpandDiagonalIcon";
 import { getWidgetRenderer, renderWidget } from "../registry";
-import type { AnalysisTransaction, AnalysisWidget, WidgetSize } from "../types";
+import type { AnalysisTransaction, AnalysisWidget, WidgetLayout, WidgetSize } from "../types";
 import { useTranslation } from "react-i18next";
 
 const COLS = 4;
@@ -31,6 +31,19 @@ function gridToSize(w: number, h: number): WidgetSize {
   if (h >= 2) return "lg";
   if (w >= 2) return "md";
   return "sm";
+}
+
+function sanitizeLayout(layout: WidgetLayout | undefined, fallbackSize: WidgetSize): { x: number; y: number; w: number; h: number } {
+  const fallback = SIZE_MAP[fallbackSize];
+  if (!layout) {
+    return { x: 0, y: 0, w: fallback.w, h: fallback.h };
+  }
+
+  const safeW = Math.min(COLS, Math.max(1, Math.round(layout.w)));
+  const safeH = Math.min(3, Math.max(1, Math.round(layout.h)));
+  const safeX = Math.min(COLS - safeW, Math.max(0, Math.round(layout.x)));
+  const safeY = Math.max(0, Math.round(layout.y));
+  return { x: safeX, y: safeY, w: safeW, h: safeH };
 }
 
 interface LayoutItem {
@@ -52,25 +65,31 @@ function buildLayout(widgets: AnalysisWidget[]): LayoutItem[] {
   const colHeights = new Array(COLS).fill(0) as number[];
 
   for (const widget of sorted) {
-    const dim = SIZE_MAP[widget.size];
-    // Find the first position where this widget fits
-    let bestX = 0;
-    let bestY = Infinity;
+    const explicit = sanitizeLayout(widget.layout, widget.size);
+    let bestX = explicit.x;
+    let bestY = explicit.y;
+    let width = explicit.w;
+    let height = explicit.h;
 
-    for (let x = 0; x <= COLS - dim.w; x++) {
-      const maxY = Math.max(...colHeights.slice(x, x + dim.w));
-      if (maxY < bestY) {
-        bestY = maxY;
-        bestX = x;
+    if (!widget.layout) {
+      // Find the first position where this widget fits
+      let computedBestY = Infinity;
+      for (let x = 0; x <= COLS - width; x++) {
+        const maxY = Math.max(...colHeights.slice(x, x + width));
+        if (maxY < computedBestY) {
+          computedBestY = maxY;
+          bestX = x;
+        }
       }
+      bestY = computedBestY;
     }
 
     layout.push({
       i: widget.id,
       x: bestX,
       y: bestY,
-      w: dim.w,
-      h: dim.h,
+      w: width,
+      h: height,
       minW: 1,
       minH: 1,
       maxW: COLS,
@@ -78,8 +97,8 @@ function buildLayout(widgets: AnalysisWidget[]): LayoutItem[] {
     });
 
     // Update column heights
-    for (let c = bestX; c < bestX + dim.w; c++) {
-      colHeights[c] = bestY + dim.h;
+    for (let c = bestX; c < bestX + width; c++) {
+      colHeights[c] = Math.max(colHeights[c], bestY + height);
     }
   }
 
@@ -95,7 +114,7 @@ interface AnalysisBoardProps {
   onCreate: () => void;
   onEdit: (widgetId: string) => void;
   onDelete: (widgetId: string) => void;
-  onLayoutChange: (updates: { id: string; order: number; size: WidgetSize }[]) => void;
+  onLayoutChange: (updates: { id: string; order: number; size: WidgetSize; layout: WidgetLayout }[]) => void;
 }
 
 export default function AnalysisBoard({
@@ -123,6 +142,12 @@ export default function AnalysisBoard({
       id: item.i,
       order: idx,
       size: gridToSize(item.w, item.h),
+      layout: {
+        x: item.x,
+        y: item.y,
+        w: item.w,
+        h: item.h,
+      },
     }));
     onLayoutChange(updates);
   };
@@ -134,6 +159,12 @@ export default function AnalysisBoard({
       id: item.i,
       order: idx,
       size: gridToSize(item.w, item.h),
+      layout: {
+        x: item.x,
+        y: item.y,
+        w: item.w,
+        h: item.h,
+      },
     }));
     onLayoutChange(updates);
   };

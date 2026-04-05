@@ -2,6 +2,7 @@ package Balio.web.rest.dtos;
 
 import Balio.web.enums.TransactionType;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -18,6 +19,8 @@ public class TransactionBatchRuleDto {
     // ── Actions ──────────────────────────────────────────────────────────
     private String newName;
     private UUID newCategoryId;
+    private Boolean excludeMatch;
+    private BigDecimal amountMultiplier;
 
     public TransactionBatchRuleDto() {}
 
@@ -41,4 +44,10 @@ public class TransactionBatchRuleDto {
 
     public UUID getNewCategoryId() { return newCategoryId; }
     public void setNewCategoryId(UUID newCategoryId) { this.newCategoryId = newCategoryId; }
+
+    public Boolean getExcludeMatch() { return excludeMatch; }
+    public void setExcludeMatch(Boolean excludeMatch) { this.excludeMatch = excludeMatch; }
+
+    public BigDecimal getAmountMultiplier() { return amountMultiplier; }
+    public void setAmountMultiplier(BigDecimal amountMultiplier) { this.amountMultiplier = amountMultiplier; }
 }

@@ -9,6 +9,8 @@ import Balio.web.model.entities.AccountDao;
 import Balio.web.model.entities.BankConnectionDao;
 import Balio.web.model.entities.BankTransactionRule;
 import Balio.web.model.entities.BankTransactionRuleDao;
+import Balio.web.model.entities.ScheduledTransaction;
+import Balio.web.model.entities.ScheduledTransactionDao;
 import Balio.web.model.entities.Transaction;
 import Balio.web.model.entities.TransactionDao;
 import Balio.web.model.entities.User;
@@ -31,18 +33,21 @@ public class AccountServiceImpl implements AccountService {
     private final TransactionDao transactionDao;
     private final BankConnectionDao bankConnectionDao;
     private final BankTransactionRuleDao bankTransactionRuleDao;
+    private final ScheduledTransactionDao scheduledTransactionDao;
 
     public AccountServiceImpl(UserDao userDao, AccountDao accountDao, TransactionDao transactionDao,
-                              BankConnectionDao bankConnectionDao, BankTransactionRuleDao bankTransactionRuleDao) {
+                              BankConnectionDao bankConnectionDao, BankTransactionRuleDao bankTransactionRuleDao,
+                              ScheduledTransactionDao scheduledTransactionDao) {
         this.userDao = userDao;
         this.accountDao = accountDao;
         this.transactionDao = transactionDao;
         this.bankConnectionDao = bankConnectionDao;
         this.bankTransactionRuleDao = bankTransactionRuleDao;
+        this.scheduledTransactionDao = scheduledTransactionDao;
     }
 
     @Override
-    public Account createAccount(UUID userId, String name, AccountType type, String currency, Boolean setDefault) {
+    public Account createAccount(UUID userId, String name, AccountType type, String currency, Boolean setDefault, Boolean syncDeletedTransactions) {
 
         User user = userDao.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
@@ -65,6 +70,9 @@ public class AccountServiceImpl implements AccountService {
         }
 
         Account account = new Account(name, type, currency, BigDecimal.ZERO, user);
+        if (type == AccountType.BANK && Boolean.TRUE.equals(syncDeletedTransactions)) {
+            account.setSyncDeletedTransactions(true);
+        }
         accountDao.save(account);
 
         if (Boolean.TRUE.equals(setDefault)) {
@@ -115,11 +123,21 @@ public class AccountServiceImpl implements AccountService {
             }
         }
 
+        // Keep scheduled rules even if the account is removed.
+        // This avoids FK issues in environments where ON DELETE SET NULL
+        // is missing or inconsistent.
+        List<ScheduledTransaction> scheduledTransactions = scheduledTransactionDao
+                .findAllByUserIdAndAccountIdOrderByStartDateAsc(userId, accountId);
+        if (!scheduledTransactions.isEmpty()) {
+            scheduledTransactions.forEach(st -> st.setAccount(null));
+            scheduledTransactionDao.saveAll(scheduledTransactions);
+        }
+
         accountDao.delete(account);
     }
 
     @Override
-    public Account modifyAccount(UUID userId, UUID accountId, String name, AccountType type, String currency)
+    public Account modifyAccount(UUID userId, UUID accountId, String name, AccountType type, String currency, Boolean syncDeletedTransactions)
             throws InstanceNotFoundException {
 
         Account account = accountDao.findByIdAndUserId(accountId, userId)
@@ -139,6 +157,9 @@ public class AccountServiceImpl implements AccountService {
                 throw new AccountInvalidException("Currency cannot be blank");
             }
             account.setCurrency(currency);
+        }
+        if (syncDeletedTransactions != null && account.getType() == AccountType.BANK) {
+            account.setSyncDeletedTransactions(syncDeletedTransactions);
         }
 
         accountDao.save(account);

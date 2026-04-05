@@ -3,6 +3,8 @@ package Balio.web.rest.dtos;
 import Balio.web.enums.TransactionType;
 import jakarta.validation.constraints.Size;
 
+import java.math.BigDecimal;
+
 public class BankRuleDto {
 
     @Size(max = 200)
@@ -23,6 +25,10 @@ public class BankRuleDto {
     private Integer applyWindowDays;
 
     private TransactionType transactionType;
+
+    private Boolean excludeMatch;
+
+    private BigDecimal amountMultiplier;
 
     public String getNamePattern() { return namePattern; }
     public void setNamePattern(String namePattern) { this.namePattern = namePattern; }
@@ -49,4 +55,10 @@ public class BankRuleDto {
 
     public TransactionType getTransactionType() { return transactionType; }
     public void setTransactionType(TransactionType transactionType) { this.transactionType = transactionType; }
+
+    public Boolean getExcludeMatch() { return excludeMatch; }
+    public void setExcludeMatch(Boolean excludeMatch) { this.excludeMatch = excludeMatch; }
+
+    public BigDecimal getAmountMultiplier() { return amountMultiplier; }
+    public void setAmountMultiplier(BigDecimal amountMultiplier) { this.amountMultiplier = amountMultiplier; }
 }

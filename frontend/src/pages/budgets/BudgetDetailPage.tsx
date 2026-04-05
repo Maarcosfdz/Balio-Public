@@ -38,8 +38,8 @@ import {
   DEFAULT_ICON_BG_COLOR,
   normalizeIconBgColor,
   resolveEntityIconName,
-  suggestIconFromText,
 } from "@/components/icons/iconRegistry";
+import { suggestIconNameFromText } from "@/components/icons/iconSuggestions";
 
 const MAX_CATEGORIES = 40;
 const TX_FETCH_PAGE_SIZE = 200;
@@ -154,7 +154,7 @@ function CategoryFormDialog({
   );
 
   const defaultIconName = useMemo(
-    () => suggestIconFromText(name || initial?.name || "category"),
+    () => suggestIconNameFromText(name || initial?.name || "category"),
     [name, initial?.name],
   );
 
@@ -200,7 +200,7 @@ function CategoryFormDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-800">
@@ -381,7 +381,7 @@ function AddTransactionDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl max-h-[80vh] flex flex-col">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-800">

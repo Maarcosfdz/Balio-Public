@@ -8,7 +8,11 @@
 .budgets-page-shell::before {
   content: "";
   position: absolute;
-  inset: -2rem -2rem -1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  top: -2rem;
+  bottom: -1rem;
+  width: 100vw;
   z-index: -1;
   pointer-events: none;
   background:
@@ -73,9 +77,22 @@
 /* ── Hero header section ─────────────────────────────────────────── */
 .budgets-hero-section {
   position: relative;
+  isolation: isolate;
   overflow: visible;
   margin: -1.5rem -1.5rem 0;
   padding: 0 1.5rem 3.25rem;
+}
+
+.budgets-hero-section::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 0;
+  bottom: 0;
+  width: 100vw;
+  pointer-events: none;
+  z-index: 0;
   background: linear-gradient(
     160deg,
     #e8f5ef 0%,
@@ -106,9 +123,10 @@
 .budgets-hero-section::after {
   content: "";
   position: absolute;
-  left: 0;
-  right: 0;
+  left: 50%;
+  transform: translateX(-50%);
   bottom: -4.8rem;
+  width: 100vw;
   height: 10rem;
   pointer-events: none;
   z-index: 0;

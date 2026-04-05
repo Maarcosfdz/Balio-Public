@@ -264,17 +264,17 @@ export default function FiltersPage() {
 
   const pageRef = useRef(0);
 
-  const fetchFilters = useCallback(async (p: number) => {
-    setLoading(true);
+  const fetchFilters = useCallback(async (p: number, showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const data = await filterService.getPaged(p, PAGE_SIZE);
       setFilters(data.content);
       setTotalPages(data.totalPages || 1);
       setTotalElements(data.totalElements);
     } catch {
-      setFilters([]);
+      if (showLoading) setFilters([]);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, []);
 
@@ -282,16 +282,16 @@ export default function FiltersPage() {
 
   // Refresh when other parts of the app create/update filters
   useEffect(() => {
-    const handler = () => fetchFilters(pageRef.current);
+    const handler = () => fetchFilters(pageRef.current, false);
     window.addEventListener("balio:filters-updated", handler as EventListener);
     return () => window.removeEventListener("balio:filters-updated", handler as EventListener);
   }, [fetchFilters]);
 
-  // Auto-refresh 30 s + visibilidad
+  // Auto-refresh 30 s + visibility — silent to preserve in-progress form state
   useEffect(() => {
-    const interval = setInterval(() => fetchFilters(pageRef.current), 30_000);
+    const interval = setInterval(() => fetchFilters(pageRef.current, false), 30_000);
     const handleVis = () => {
-      if (document.visibilityState === "visible") fetchFilters(pageRef.current);
+      if (document.visibilityState === "visible") fetchFilters(pageRef.current, false);
     };
     document.addEventListener("visibilitychange", handleVis);
     return () => { clearInterval(interval); document.removeEventListener("visibilitychange", handleVis); };

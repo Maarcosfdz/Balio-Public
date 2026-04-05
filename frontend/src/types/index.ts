@@ -57,6 +57,7 @@ export interface AccountDto {
   type?: AccountType;
   currency?: string;
   setDefault?: boolean;
+  syncDeletedTransactions?: boolean;
 }
 
 export interface AccountSummaryDto {
@@ -66,6 +67,7 @@ export interface AccountSummaryDto {
   currency: string;
   balance: number;
   isDefault: boolean;
+  syncDeletedTransactions?: boolean;
 }
 
 export interface AccountResponseDto {
@@ -104,6 +106,8 @@ export interface BankRuleDto {
   transactionType?: TransactionType;
   mappedName?: string;
   mappedCategoryId?: string;
+  excludeMatch?: boolean;
+  amountMultiplier?: number;
   priority?: number;
   applyToExisting?: boolean;
   applyWindowDays?: number;
@@ -119,6 +123,8 @@ export interface BankRuleResponseDto {
   mappedName: string | null;
   mappedCategoryId: string | null;
   mappedCategoryName: string | null;
+  excludeMatch: boolean;
+  amountMultiplier: number | null;
   priority: number;
   appliedTransactions: number;
 }
@@ -179,6 +185,8 @@ export interface TransactionFilters {
   categoryId?: string;
   startDate?: string;
   endDate?: string;
+  sortBy?: "date" | "amount" | "name";
+  sortDir?: "asc" | "desc";
 }
 
 export interface TransactionPage {
@@ -478,6 +486,8 @@ export interface CsvImportRuleDto {
   categoryId: string;
   transactionType?: string; // "EXPENSE" | "INCOME" | undefined (both)
   mappedName?: string;
+  excludeMatch?: boolean;
+  amountMultiplier?: number;
 }
 
 // ============================================
@@ -494,6 +504,8 @@ export interface TransactionBatchRuleDto {
   // Actions
   newName?: string;
   newCategoryId?: string;
+  excludeMatch?: boolean;
+  amountMultiplier?: number;
 }
 
 export interface CsvImportResultDto {

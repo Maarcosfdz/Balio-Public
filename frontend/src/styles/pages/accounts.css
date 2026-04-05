@@ -2,9 +2,22 @@
 
 .accounts-hero-section {
   position: relative;
+  isolation: isolate;
   overflow: visible;
   margin: -1.5rem -1.5rem 0;
   padding: 0 1.5rem 2rem;
+}
+
+.accounts-hero-section::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 0;
+  bottom: 0;
+  width: 100vw;
+  pointer-events: none;
+  z-index: 0;
   background: linear-gradient(
     180deg,
     #f0f4f8 0%,
@@ -12,6 +25,25 @@
     #f2f5f8 80%,
     transparent 100%
   );
+}
+
+.accounts-hero-section::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -3.2rem;
+  width: 100vw;
+  height: 7rem;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(232, 237, 244, 0.6) 0%,
+    rgba(242, 245, 248, 0.2) 56%,
+    rgba(242, 245, 248, 0) 100%
+  );
+  filter: blur(28px);
 }
 
 @media (min-width: 768px) {
@@ -25,6 +57,27 @@
   position: relative;
   z-index: 3;
   padding: 2rem 0 0;
+}
+
+.accounts-hero-actions > * {
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .accounts-hero-actions {
+    width: 100%;
+  }
+
+  .accounts-hero-actions .accounts-glass-btn {
+    flex: 1 1 calc(50% - 0.25rem);
+    justify-content: center;
+    padding: 0.55rem 0.8rem;
+  }
+
+  .accounts-hero-actions .app-gradient-btn {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
 }
 
 /* ── Glass-style action buttons ─────────────────────────────────── */

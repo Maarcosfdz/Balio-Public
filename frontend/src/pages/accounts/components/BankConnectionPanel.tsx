@@ -1,21 +1,27 @@
 import { useEffect, useState } from "react";
-import { Building2, Link2, Loader2, RefreshCw, Search, X } from "lucide-react";
+import { Building2, Check, Link2, Loader2, RefreshCw, Search, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { bankService, type BankInstitution } from "@/backend/bankService";
-import type { BankConnectionDto } from "@/types";
+import { accountService } from "@/backend/accountService";
+import type { BankConnectionDto, AccountSummaryDto } from "@/types";
 import SingleSelectDropdown from "@/components/ui/SelectDropdown";
 
 interface BankConnectionPanelProps {
-  accountId: string;
+  account: AccountSummaryDto;
   onSynced?: () => void;
 }
 
-export default function BankConnectionPanel({ accountId, onSynced }: BankConnectionPanelProps) {
+export default function BankConnectionPanel({ account, onSynced }: BankConnectionPanelProps) {
+  const { t } = useTranslation();
+  const accountId = account.id;
   const [status, setStatus] = useState<BankConnectionDto | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [syncResult, setSyncResult] = useState<number | null>(null);
   const [lookBackDays, setLookBackDays] = useState(90);
+  const [syncDeleted, setSyncDeleted] = useState(account.syncDeletedTransactions ?? false);
+  const [updatingPreference, setUpdatingPreference] = useState(false);
 
   // Institution picker state
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -66,11 +72,23 @@ export default function BankConnectionPanel({ accountId, onSynced }: BankConnect
     }
   };
 
+  const handleToggleSyncDeleted = async () => {
+    setUpdatingPreference(true);
+    try {
+      await accountService.update(accountId, { syncDeletedTransactions: !syncDeleted });
+      setSyncDeleted(!syncDeleted);
+    } catch {
+      // ignore
+    } finally {
+      setUpdatingPreference(false);
+    }
+  };
+
   const handleSync = async () => {
     setSyncing(true);
     setSyncResult(null);
     try {
-      const result = await bankService.sync(accountId, lookBackDays);
+      const result = await bankService.sync(accountId, lookBackDays, false, syncDeleted);
       setSyncResult(result.imported);
       onSynced?.();
       const newStatus = await bankService.getStatus(accountId);
@@ -170,6 +188,30 @@ export default function BankConnectionPanel({ accountId, onSynced }: BankConnect
           )}
         </div>
 
+        {isLinked && (
+          <label className="mt-3 flex cursor-pointer items-center gap-2 p-2">
+            <div
+              onClick={handleToggleSyncDeleted}
+              disabled={updatingPreference}
+              className={`flex h-4 w-4 items-center justify-center rounded border-2 transition ${
+                syncDeleted ? "border-sky-500 bg-sky-500" : "border-slate-300"
+              } ${updatingPreference ? "opacity-50" : ""}`}
+            >
+              {syncDeleted && <Check className="h-3 w-3 text-white" />}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-medium text-slate-700">
+                {t("accounts.syncDeleted", "Sincronizar también transacciones eliminadas")}
+              </div>
+              <div className="text-[10px] text-slate-500">
+                {syncDeleted
+                  ? "Se reimportarán las transacciones eliminadas"
+                  : "Solo se sincronizan transacciones nuevas"}
+              </div>
+            </div>
+          </label>
+        )}
+
         {syncResult !== null && (
           <p className="mt-2 text-[10px] font-semibold text-emerald-600">
             ✓{" "}
@@ -184,7 +226,7 @@ export default function BankConnectionPanel({ accountId, onSynced }: BankConnect
       {pickerOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm"
             onClick={() => setPickerOpen(false)}
           />
           <div className="relative z-10 flex max-h-[80vh] w-full max-w-md flex-col rounded-2xl bg-white shadow-xl">

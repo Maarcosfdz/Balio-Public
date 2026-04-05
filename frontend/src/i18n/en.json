@@ -98,6 +98,9 @@
     "aboutFrontendSub": "TypeScript · Vite",
     "aboutBackend": "Backend",
     "aboutBackendSub": "Boot · PostgreSQL",
+    "aboutStat1Label": "Tracked per month",
+    "aboutStat2Label": "Budget accuracy",
+    "aboutStat3Label": "Goals completed",
     "ctaLine1": "1 app.",
     "ctaHighlight": "5 tools.",
     "ctaLine2": "Everything you need.",
@@ -120,6 +123,11 @@
     "error": "An error occurred",
     "success": "Operation completed successfully",
     "currency": "€"
+  },
+  "infoCard": {
+    "badge": "Guide",
+    "dismiss": "Dismiss",
+    "gotIt": "Got it"
   },
   "auth": {
     "login": "Log in",
@@ -370,6 +378,40 @@
         "viewAll": "View all",
         "createBudget": "Create budget"
       }
+      ,
+      "infoCard": {
+        "title": "Welcome to Balio 👋",
+        "description": "Balio is your personal finance manager. Manage bank and manual accounts, track income/expenses, and analyze your finances visually. Use the navigation to explore each section. This page shows a general overview of your financial situation. 💡 Change language and currency in Settings.",
+        "items": [
+          "Guide",
+          "Analytics",
+          "Visualize income and expenses",
+          "See category distribution",
+          "Analyze trends over time",
+          "You can customize your dashboard with different charts.",
+          "Transactions",
+          "Create and edit income and expenses",
+          "Organize them with categories (food, rent, etc.)",
+          "Filter and search your transactions",
+          "Save filters for quick access",
+          "You can also automate changes using rules.",
+          "Accounts",
+          "Add accounts manually",
+          "Connect your bank account",
+          "Import and export transactions",
+          "Rules are automatically applied to transactions.",
+          "Budgets",
+          "Set spending limits",
+          "Link budgets to categories",
+          "Choose a time period",
+          "You will be notified if you exceed your budget.",
+          "Goals",
+          "Define savings goals",
+          "Add money progressively",
+          "Track your progress",
+          "This does not affect your real balance, it is only for tracking purposes."
+        ]
+      }
     }
   },
   "accounts": {
@@ -398,6 +440,21 @@
     "ruleTransactionsUpdated_other": "{{count}} transactions updated."
   },
   "accountsPage": {
+    "infoCardTitle": "Accounts",
+    "infoCardItems": [
+      "Add accounts manually",
+      "Connect your bank account",
+      "Import and export transactions"
+    ],
+    "infoCardDescription": "Rules are automatically applied to transactions.",
+    "deleteDialog": {
+      "title": "Delete account",
+      "description": "You are about to delete the account {{accountName}}. Bank links and associated rules will be removed automatically.",
+      "deleteTransactionsLabel": "Delete associated transactions too",
+      "deleteTransactionsHelp": "If unchecked, transactions will be kept but left without an associated account.",
+      "confirmLabel": "Type the exact account name to confirm",
+      "deleteError": "Could not delete the account. Please try again."
+    },
     "totalNetWorth": "Total Net Worth",
     "liquidAssets": "Liquid Assets",
     "totalLiabilities": "Total Liabilities",
@@ -453,6 +510,13 @@
   "goals": {
     "title": "Savings Goals",
     "subtitle": "Track your savings progress and reach your targets faster.",
+    "infoCardTitle": "Goals",
+    "infoCardItems": [
+      "Define savings goals",
+      "Add money progressively",
+      "Track your progress"
+    ],
+    "infoCardDescription": "This does not affect your real balance, it is only for tracking purposes.",
     "create": "New Goal",
     "editGoal": "Edit Goal",
     "createNew": "Create New Goal",
@@ -534,12 +598,23 @@
     "preferredCurrency": "Preferred Currency",
     "currencyDesc": "Choose the default currency for dashboard and analytics.",
     "currencyUpdated": "Preferred currency updated",
+    "onboardingTitle": "Page Guides",
+    "onboardingDesc": "Show the contextual help cards again on each page.",
+    "onboardingHint": "Each page shows a guide card the first time you visit it. Reset to see them again.",
+    "onboardingResetBtn": "Reset guides",
+    "onboardingReset": "Guide cards reset — they will show again on your next visit.",
+    "infoCardTitle": "Settings",
+    "infoCardItem1": "Change language and currency",
+    "infoCardItem2": "Update personal data",
+    "infoCardItem3": "Customize interface preferences",
     "dangerZone": "Danger Zone",
     "dangerDesc": "Once you delete your account, there is no going back. Please be certain.",
     "deleteAccount": "Delete Account",
     "deleteConfirmTitle": "Delete your account?",
     "deleteConfirmDesc": "This action is irreversible. Type \"delete\" to confirm.",
     "deleteTypePlaceholder": "Type \"delete\"",
+    "deleteConfirmWord": "delete",
+    "deleteError": "Could not delete your account. Please try again.",
     "errors": {
       "emailInUse": "This email is already in use",
       "wrongPassword": "Current password is incorrect",
@@ -552,6 +627,13 @@
   "budgets": {
     "title": "Budgets",
     "subtitle": "Plan and track your spending with custom budgets.",
+    "infoCardTitle": "Budgets",
+    "infoCardItems": [
+      "Set spending limits",
+      "Link budgets to categories",
+      "Choose a time period"
+    ],
+    "infoCardDescription": "You will be notified if you exceed your budget.",
     "create": "New Budget",
     "editBudget": "Edit Budget",
     "createNew": "Create Budget",
@@ -620,6 +702,14 @@
     }
   },
   "txPage": {
+    "infoCardTitle": "Transactions",
+    "infoCardItems": [
+      "Create and edit income and expenses",
+      "Organize them with categories (food, rent, etc.)",
+      "Filter and search your transactions",
+      "Save filters for quick access"
+    ],
+    "infoCardDescription": "You can also automate changes using rules.",
     "addExpense": "New Expense",
     "addIncome": "New Income",
     "addEntry": "Add Entry",
@@ -643,6 +733,8 @@
     "clearFilters": "Clear",
     "syncBanks": "Sync banks",
     "syncingBanks": "Syncing banks...",
+    "syncLimitPrompt": "Ignore last sync limit?\nAccept = fetch full history\nCancel = fetch only since last sync",
+    "syncIgnoreLimitTag": "(no date limit)",
     "filterTransactions": "Filter transactions",
     "addFilterTab": "Add filter to tabs",
     "removeFilterTabAria": "Remove {{name}}",
@@ -794,6 +886,13 @@
   "analysis": {
     "title": "Analysis",
     "subtitle": "Create, preview and arrange your widgets using the same filters you use in transactions.",
+    "infoCardTitle": "Analytics",
+    "infoCardItems": [
+      "Visualize income and expenses",
+      "See category distribution",
+      "Analyze trends over time"
+    ],
+    "infoCardDescription": "You can customize your dashboard with different charts.",
     "loading": "Loading analysis...",
     "actions": {
       "sync": "Sync",

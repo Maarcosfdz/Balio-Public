@@ -32,6 +32,8 @@ interface RuleRow {
   categoryId: string;
   transactionType: string;
   mappedName: string;
+  excludeMatch: boolean;
+  amountMultiplier: string;
 }
 
 export default function ImportCsvModal({
@@ -71,10 +73,17 @@ export default function ImportCsvModal({
   }, [open, loadCategories]);
 
   const addRule = () => {
-    setRules((prev) => [...prev, { pattern: "", categoryId: "", transactionType: "", mappedName: "" }]);
+    setRules((prev) => [...prev, {
+      pattern: "",
+      categoryId: "",
+      transactionType: "",
+      mappedName: "",
+      excludeMatch: false,
+      amountMultiplier: "",
+    }]);
   };
 
-  const updateRule = (idx: number, field: keyof RuleRow, value: string) => {
+  const updateRule = (idx: number, field: keyof RuleRow, value: string | boolean) => {
     setRules((prev) =>
       prev.map((r, i) => (i === idx ? { ...r, [field]: value } : r)),
     );
@@ -111,6 +120,11 @@ export default function ImportCsvModal({
         categoryId: r.categoryId || undefined!,
         transactionType: r.transactionType || undefined,
         mappedName: r.mappedName.trim() || undefined,
+        excludeMatch: r.excludeMatch || undefined,
+        amountMultiplier:
+          r.amountMultiplier.trim() && Number.isFinite(Number.parseFloat(r.amountMultiplier))
+            ? Number.parseFloat(r.amountMultiplier)
+            : undefined,
       }));
 
     try {
@@ -133,7 +147,7 @@ export default function ImportCsvModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm"
         onClick={onClose}
       />
       <div className="relative z-10 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-xl">
@@ -293,6 +307,27 @@ export default function ImportCsvModal({
                       </>
                     );
                   })()}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={rule.amountMultiplier}
+                    onChange={(e) => updateRule(idx, "amountMultiplier", e.target.value)}
+                    placeholder={t("csv.amountMultiplier", "Multiplicador (1.00 = sin cambios)")}
+                    className="h-8 flex-1 rounded-md border border-slate-200 bg-white px-2 text-xs outline-none focus:border-sky-400"
+                  />
+                  <label className="flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600">
+                    <input
+                      type="checkbox"
+                      checked={rule.excludeMatch}
+                      onChange={(e) => updateRule(idx, "excludeMatch", e.target.checked)}
+                      className="h-3.5 w-3.5 rounded accent-sky-500"
+                    />
+                    {t("csv.excludeMatch", "No importar")}
+                  </label>
                 </div>
               </div>
             ))}

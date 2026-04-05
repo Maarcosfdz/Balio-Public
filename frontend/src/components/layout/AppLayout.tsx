@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
+import { ROUTES } from "@/config/routes";
 
 type NavStyle = "vertical" | "horizontal";
 
@@ -11,6 +12,9 @@ function getNavStyle(): NavStyle {
 
 export default function AppLayout() {
   const [navStyle, setNavStyle] = useState<NavStyle>(getNavStyle);
+  const { pathname } = useLocation();
+  const isDashboardRoute = pathname === ROUTES.DASHBOARD;
+  const mainClassName = `flex-1 overflow-y-auto p-6 md:p-8 app-main${isDashboardRoute ? " app-main--dashboard" : ""}`;
 
   // Listen for navStyle changes dispatched from SettingsPage
   useEffect(() => {
@@ -21,9 +25,9 @@ export default function AppLayout() {
 
   if (navStyle === "horizontal") {
     return (
-      <div className="flex h-screen flex-col bg-background">
+      <div className="flex h-screen flex-col bg-background app-layout-horizontal">
         <TopBar />
-        <main className="flex-1 overflow-y-auto p-6 md:p-8">
+        <main className={mainClassName}>
           <Outlet />
         </main>
       </div>
@@ -31,9 +35,9 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background app-layout-vertical">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto p-6 md:p-8">
+      <main className={mainClassName}>
         <Outlet />
       </main>
     </div>

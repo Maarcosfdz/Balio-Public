@@ -1,4 +1,5 @@
 import api from "./api";
+import { normalizePageResponse } from "./pageUtils";
 import type {
   FilterDto,
   FilterPage,
@@ -14,7 +15,9 @@ export const filterService = {
   },
 
   getPaged(page: number, size: number): Promise<FilterPage> {
-    return api.get("/filter/paged", { params: { page, size } }).then((r) => r.data);
+    return api
+      .get("/filter/paged", { params: { page, size } })
+      .then((r) => normalizePageResponse(r.data, page, size));
   },
 
   getById(filterId: string): Promise<FilterResponseDto> {

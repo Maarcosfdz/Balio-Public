@@ -98,6 +98,9 @@
     "aboutFrontendSub": "TypeScript · Vite",
     "aboutBackend": "Backend",
     "aboutBackendSub": "Boot · PostgreSQL",
+    "aboutStat1Label": "Rastrexado ao mes",
+    "aboutStat2Label": "Precisión do orzamento",
+    "aboutStat3Label": "Obxectivos completados",
     "ctaLine1": "1 app.",
     "ctaHighlight": "5 ferramentas.",
     "ctaLine2": "Todo o que necesitas.",
@@ -120,6 +123,11 @@
     "error": "Produciuse un erro",
     "success": "Operación realizada correctamente",
     "currency": "€"
+  },
+  "infoCard": {
+    "badge": "Guía",
+    "dismiss": "Pechar",
+    "gotIt": "Entendido"
   },
   "auth": {
     "login": "Iniciar sesión",
@@ -370,6 +378,40 @@
         "viewAll": "Ver todos",
         "createBudget": "Crear orzamento"
       }
+      ,
+      "infoCard": {
+        "title": "Benvido a Balio 👋",
+        "description": "Balio é o teu xestor de finanzas persoais. Xestiona contas bancarias e manuais, rexistra ingresos/gastos e analiza as túas finanzas de forma visual. Usa a navegación para explorar cada sección. Esta páxina mostra unha visión xeral da túa situación financeira. 💡 Cambia o idioma e a moeda en Axustes.",
+        "items": [
+          "Guía",
+          "Análise",
+          "Visualiza ingresos e gastos",
+          "Vexa a distribución por categorías",
+          "Analiza tendencias ao longo do tempo",
+          "Podes personalizar o teu panel con distintos gráficos.",
+          "Transaccións",
+          "Crear e editar ingresos e gastos",
+          "Organízaas con categorías (comida, aluguer, etc.)",
+          "Filtra e busca as túas transaccións",
+          "Garda filtros para acceso rápido",
+          "Tamén podes automatizar cambios usando regras.",
+          "Contas",
+          "Engadir contas manualmente",
+          "Conectar a túa conta bancaria",
+          "Importar e exportar transaccións",
+          "As regras aplicanse automaticamente ás transaccións.",
+          "Orzamentos",
+          "Establecer límites de gasto",
+          "Vincular orzamentos a categorías",
+          "Escoller un período de tempo",
+          "Serás notificado se excedes o teu orzamento.",
+          "Metas",
+          "Define obxectivos de aforro",
+          "Engade diñeiro progresivamente",
+          "Segue o teu progreso",
+          "Isto non afecta ao teu saldo real, é só para seguimento."
+        ]
+      }
     }
   },
   "accounts": {
@@ -392,6 +434,21 @@
     "default": "Predeterminada"
   },
   "accountsPage": {
+    "infoCardTitle": "Contas",
+    "infoCardItems": [
+      "Engadir contas manualmente",
+      "Conectar a túa conta bancaria",
+      "Importar e exportar transaccións"
+    ],
+    "infoCardDescription": "As regras aplícanse automaticamente ás transaccións.",
+    "deleteDialog": {
+      "title": "Eliminar conta",
+      "description": "Vas eliminar a conta {{accountName}}. As ligazóns bancarias e as regras asociadas borraranse automaticamente.",
+      "deleteTransactionsLabel": "Eliminar tamén as transaccións asociadas",
+      "deleteTransactionsHelp": "Se o deixas desmarcado, as transaccións conservaranse pero quedarán sen conta asociada.",
+      "confirmLabel": "Escribe exactamente o nome da conta para confirmar",
+      "deleteError": "Non se puido eliminar a conta. Téntao de novo."
+    },
     "totalNetWorth": "Patrimonio neto total",
     "liquidAssets": "Activos líquidos",
     "totalLiabilities": "Pasivos totais",
@@ -447,6 +504,13 @@
   "goals": {
     "title": "Metas de aforro",
     "subtitle": "Sigue o teu progreso e alcanza os teus obxectivos antes do previsto.",
+    "infoCardTitle": "Metas",
+    "infoCardItems": [
+      "Define obxectivos de aforro",
+      "Engade diñeiro progresivamente",
+      "Segue o teu progreso"
+    ],
+    "infoCardDescription": "Isto non afecta ao teu saldo real, é só para seguimento.",
     "create": "Nova meta",
     "editGoal": "Editar meta",
     "createNew": "Crear nova meta",
@@ -528,12 +592,23 @@
     "preferredCurrency": "Moeda preferida",
     "currencyDesc": "Escolle a moeda predeterminada para o panel e as estatísticas.",
     "currencyUpdated": "Moeda preferida actualizada",
+    "onboardingTitle": "Guías da páxina",
+    "onboardingDesc": "Amosar de novo as tarxetas de axuda contextual en cada páxina.",
+    "onboardingHint": "Cada páxina mostra unha tarxeta de axuda a primeira vez que a visitas. Restablece para vela de novo.",
+    "onboardingResetBtn": "Restablecer guías",
+    "onboardingReset": "Tarxetas de axuda restablecidas — amosaranse de novo na túa próxima visita.",
+    "infoCardTitle": "Axustes",
+    "infoCardItem1": "Cambiar idioma e moeda",
+    "infoCardItem2": "Actualizar datos persoais",
+    "infoCardItem3": "Personalizar as preferencias da interface",
     "dangerZone": "Zona de risco",
     "dangerDesc": "Unha vez que elimines a túa conta, non hai volta atrás. Por favor, actúa con cautela.",
     "deleteAccount": "Eliminar conta",
     "deleteConfirmTitle": "Eliminar a túa conta?",
     "deleteConfirmDesc": "Esta acción é irreversible. Escribe \"eliminar\" para confirmar.",
     "deleteTypePlaceholder": "Escribe \"eliminar\"",
+    "deleteConfirmWord": "eliminar",
+    "deleteError": "Non se puido eliminar a túa conta. Téntao de novo.",
     "errors": {
       "emailInUse": "Esta dirección de correo xa está en uso",
       "wrongPassword": "O contrasinal actual non é correcto",
@@ -546,6 +621,13 @@
   "budgets": {
     "title": "Orzamentos",
     "subtitle": "Planifica e controla os teus gastos con orzamentos personalizados.",
+    "infoCardTitle": "Orzamentos",
+    "infoCardItems": [
+      "Establecer límites de gasto",
+      "Vincular orzamentos a categorías",
+      "Escoller un período de tempo"
+    ],
+    "infoCardDescription": "Serás notificado se excedes o teu orzamento.",
     "create": "Novo orzamento",
     "editBudget": "Editar orzamento",
     "createNew": "Crear orzamento",
@@ -614,6 +696,14 @@
     }
   },
   "txPage": {
+    "infoCardTitle": "Transaccións",
+    "infoCardItems": [
+      "Crear e editar ingresos e gastos",
+      "Organízaas con categorías (comida, aluguer, etc.)",
+      "Filtra e busca as túas transaccións",
+      "Garda filtros para acceso rápido"
+    ],
+    "infoCardDescription": "Tamén podes automatizar cambios usando regras.",
     "addExpense": "Novo gasto",
     "addIncome": "Novo ingreso",
     "addEntry": "Novo apunte",
@@ -637,6 +727,8 @@
     "clearFilters": "Limpar",
     "syncBanks": "Sincronizar bancos",
     "syncingBanks": "Sincronizando bancos...",
+    "syncLimitPrompt": "Ignorar o limite da ultima sincronizacion?\nAceptar = traer historico completo\nCancelar = traer so desde a ultima sincronizacion",
+    "syncIgnoreLimitTag": "(sen limite por data)",
     "filterTransactions": "Filtrar transaccións",
     "addFilterTab": "Engadir filtro a lapelas",
     "removeFilterTabAria": "Quitar {{name}}",
@@ -788,6 +880,13 @@
   "analysis": {
     "title": "Análise",
     "subtitle": "Crea, previsualiza e organiza os teus widgets usando os mesmos filtros ca en transaccións.",
+    "infoCardTitle": "Análise",
+    "infoCardItems": [
+      "Visualiza ingresos e gastos",
+      "Ve a distribución por categorías",
+      "Analiza tendencias ao longo do tempo"
+    ],
+    "infoCardDescription": "Podes personalizar o teu panel con distintos gráficos.",
     "loading": "Cargando análise...",
     "actions": {
       "sync": "Sincronizar",

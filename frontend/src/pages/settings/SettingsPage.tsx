@@ -1,19 +1,24 @@
 import React, {
   type FormEvent,
+  useCallback,
   useEffect,
   useRef,
   useState,
 } from "react";
+import { gsap } from "gsap";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import {
   AlignLeft,
   CircleDollarSign,
   Eye,
   EyeOff,
+  HelpCircle,
   KeyRound,
   LayoutTemplate,
   Loader2,
   Pencil,
+  RotateCcw,
   Save,
   ShieldAlert,
   User,
@@ -21,11 +26,10 @@ import {
 } from "lucide-react";
 import { authService } from "@/backend/authService";
 import { useAuth } from "@/contexts/AuthContext";
-import { clearAllUserState } from "@/lib/session";
-import { ROUTES } from "@/config/routes";
 import { ToastBanner, type ToastBannerTone } from "@/components/ui/toast-banner";
 import { FieldError } from "@/components/ui/field-error";
 import { GradientButton } from "@/components/ui/gradient-button";
+import InfoCard, { resetAllInfoCards } from "@/components/ui/InfoCard";
 
 // ── Small reusable components ────────────────────────────────────────────
 
@@ -41,19 +45,19 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-100 px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-100 px-5 py-3">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
             {icon}
           </div>
           <div>
-            <h2 className="text-base font-bold text-slate-800">{title}</h2>
+            <h2 className="text-sm font-bold text-slate-800">{title}</h2>
             {desc && <p className="text-xs text-slate-400">{desc}</p>}
           </div>
         </div>
       </div>
-      <div className="px-6 py-5">{children}</div>
+      <div className="px-5 py-4">{children}</div>
     </div>
   );
 }
@@ -79,7 +83,7 @@ function PasswordInput({
         onChange={(e) => onChange(e.target.value)}
         required={required}
         autoComplete="off"
-        className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 pr-10 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+        className="h-9 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 pr-10 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
       />
       <button
         type="button"
@@ -178,7 +182,7 @@ function ProfileSection({ onToast }: { onToast: (t: Toast) => void }) {
 
   return (
     <SectionCard icon={<User className="h-5 w-5" />} title={t("settings.profileDetails")}>
-      <form onSubmit={handleSave} className="space-y-4">
+      <form onSubmit={handleSave} className="space-y-3">
         {fields.map(({ key, label, value, setter, type, fieldError }) => (
           <div key={key} className="space-y-1">
             <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -191,17 +195,17 @@ function ProfileSection({ onToast }: { onToast: (t: Toast) => void }) {
                   type={type}
                   value={value}
                   onChange={(e) => setter(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-sky-400 bg-sky-50/50 px-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-sky-100"
+                  className="h-9 w-full rounded-lg border border-sky-400 bg-sky-50/50 px-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-sky-100"
                 />
               ) : (
-                <span className="flex h-10 flex-1 items-center rounded-lg border border-slate-100 bg-slate-50 px-3 text-sm font-medium text-slate-800">
+                <span className="flex h-9 flex-1 items-center rounded-lg border border-slate-100 bg-slate-50 px-3 text-sm font-medium text-slate-800">
                   {value}
                 </span>
               )}
               <button
                 type="button"
                 onClick={() => setEditingField(editingField === key ? null : key)}
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition ${
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition ${
                   editingField === key
                     ? "border-sky-300 bg-sky-50 text-sky-600"
                     : "border-slate-200 text-slate-400 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600"
@@ -286,7 +290,7 @@ function PasswordSection({ onToast }: { onToast: (t: Toast) => void }) {
       title={t("settings.changePassword")}
       desc={t("settings.changePwdDesc")}
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3">
         <div className="space-y-1">
           <label htmlFor="oldPwd" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
             {t("settings.oldPassword")}
@@ -366,7 +370,7 @@ function PreferencesSection({ onToast }: { onToast: (t: Toast) => void }) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Navigation Style */}
       <SectionCard
         icon={<LayoutTemplate className="h-5 w-5" />}
@@ -379,7 +383,7 @@ function PreferencesSection({ onToast }: { onToast: (t: Toast) => void }) {
               key={n}
               type="button"
               onClick={() => setNav(n)}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-medium transition ${
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg border py-2 text-sm font-medium transition ${
                 nav === n
                   ? "border-transparent bg-gradient-to-r from-sky-500 to-emerald-500 text-white shadow"
                   : "border-slate-200 text-slate-600 hover:border-sky-300 hover:bg-sky-50"
@@ -420,7 +424,7 @@ function PreferencesSection({ onToast }: { onToast: (t: Toast) => void }) {
                 key={code}
                 type="button"
                 onClick={() => setLang(code)}
-                className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition ${
+                className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
                   lang === code
                     ? "border-transparent bg-gradient-to-r from-sky-500 to-emerald-500 text-white shadow"
                     : "border-slate-200 text-slate-600 hover:border-sky-300 hover:bg-sky-50"
@@ -507,7 +511,7 @@ function CurrencySection({ onToast }: { onToast: (t: Toast) => void }) {
             key={c}
             type="button"
             onClick={() => setCurrency(c)}
-            className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+            className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
               currency === c
                 ? "border-transparent bg-gradient-to-r from-sky-500 to-emerald-500 text-white shadow"
                 : "border-slate-200 text-slate-600 hover:border-sky-300 hover:bg-sky-50"
@@ -544,16 +548,16 @@ function CurrencySection({ onToast }: { onToast: (t: Toast) => void }) {
 // ── Danger Zone ──────────────────────────────────────────────────────────
 
 function DangerSection() {
-  const { t, i18n } = useTranslation();
-  const { user } = useAuth();
+  const { t } = useTranslation();
+  const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const CONFIRM_WORD = i18n.language?.startsWith("en") ? "delete" : "eliminar";
-  const canDelete = typed.toLowerCase() === CONFIRM_WORD;
+  const confirmWord = t("settings.deleteConfirmWord", "delete").toLowerCase();
+  const canDelete = typed.trim().toLowerCase() === confirmWord;
 
   const openDialog = () => {
     setTyped("");
@@ -583,18 +587,17 @@ function DangerSection() {
     setError("");
     try {
       await authService.deleteAccount(user.id);
-      clearAllUserState();
-      window.location.assign(ROUTES.HOME);
+      await logout();
     } catch {
-      setError(t("common.error"));
+      setError(t("settings.deleteError", "Could not delete your account. Please try again."));
       setLoading(false);
     }
   };
 
   return (
     <>
-      <div className="overflow-hidden rounded-2xl border border-red-200 bg-red-50/50 shadow-sm">
-        <div className="flex flex-col gap-3 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="overflow-hidden rounded-xl border border-red-200 bg-red-50/50 shadow-sm">
+        <div className="flex flex-col gap-3 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
             <div>
@@ -611,73 +614,113 @@ function DangerSection() {
         </div>
       </div>
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {open && createPortal(
+        <div className="fixed inset-0 z-[90]">
           <div
-            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm"
             onClick={closeDialog}
           />
-          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-start justify-between">
-              <div className="flex items-center gap-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-red-100">
-                  <ShieldAlert className="h-5 w-5 text-red-600" />
+          <div className="fixed inset-0 flex items-center justify-center p-4">
+            <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+              <div className="mb-4 flex items-start justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-red-100">
+                    <ShieldAlert className="h-5 w-5 text-red-600" />
+                  </div>
+                  <h2 className="text-base font-bold text-slate-800">
+                    {t("settings.deleteConfirmTitle")}
+                  </h2>
                 </div>
-                <h2 className="text-base font-bold text-slate-800">
-                  {t("settings.deleteConfirmTitle")}
-                </h2>
+                <button
+                  onClick={closeDialog}
+                  className="rounded-full p-1 text-slate-400 hover:bg-slate-100"
+                >
+                  <X className="h-5 w-5" />
+                </button>
               </div>
-              <button
-                onClick={closeDialog}
-                className="rounded-full p-1 text-slate-400 hover:bg-slate-100"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
 
-            <p className="mb-4 text-sm text-slate-600">{t("settings.deleteConfirmDesc")}</p>
+              <p className="mb-4 text-sm text-slate-600">{t("settings.deleteConfirmDesc")}</p>
 
-            <input
-              ref={inputRef}
-              type="text"
-              value={typed}
-              onChange={(e) => setTyped(e.target.value)}
-              disabled={loading}
-              placeholder={t("settings.deleteTypePlaceholder")}
-              className={`h-10 w-full rounded-lg border px-3 text-sm outline-none transition ${
-                typed.length > 0 && !canDelete
-                  ? "border-red-300 bg-red-50 focus:ring-2 focus:ring-red-100"
-                  : "border-slate-300 bg-slate-50 focus:border-red-400 focus:ring-2 focus:ring-red-100"
-              }`}
-            />
-
-            {error && (
-              <p className="mt-2 text-sm text-red-600">{error}</p>
-            )}
-
-            <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                onClick={closeDialog}
+              <input
+                ref={inputRef}
+                type="text"
+                value={typed}
+                onChange={(e) => setTyped(e.target.value)}
                 disabled={loading}
-                className="btn-cancel-draw flex-1 justify-center"
-              >
-                {t("common.cancel")}
-              </button>
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={!canDelete || loading}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-500 py-2.5 text-sm font-bold text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {t("settings.deleteAccount")}
-              </button>
+                placeholder={t("settings.deleteTypePlaceholder")}
+                className={`h-9 w-full rounded-lg border px-3 text-sm outline-none transition ${
+                  typed.length > 0 && !canDelete
+                    ? "border-red-300 bg-red-50 focus:ring-2 focus:ring-red-100"
+                    : "border-slate-300 bg-slate-50 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                }`}
+              />
+
+              {error && (
+                <p className="mt-2 text-sm text-red-600">{error}</p>
+              )}
+
+              <div className="mt-4 flex gap-2">
+                <button
+                  type="button"
+                  onClick={closeDialog}
+                  disabled={loading}
+                  className="btn-cancel-draw flex-1 justify-center"
+                >
+                  {t("common.cancel")}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={!canDelete || loading}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-500 py-2.5 text-sm font-bold text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {t("settings.deleteAccount")}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
+  );
+}
+
+// ── Onboarding / Help Reset section ─────────────────────────────────────────
+
+function OnboardingSection({ onToast }: { onToast: (t: Toast) => void }) {
+  const { t } = useTranslation();
+  const [resetDone, setResetDone] = useState(false);
+
+  const handleReset = () => {
+    resetAllInfoCards();
+    setResetDone(true);
+    onToast({ type: "success", message: t("settings.onboardingReset", "Guide cards reset — they will show again on your next visit.") });
+    setTimeout(() => setResetDone(false), 3000);
+  };
+
+  return (
+    <SectionCard
+      icon={<HelpCircle className="h-5 w-5" />}
+      title={t("settings.onboardingTitle", "Page Guides")}
+      desc={t("settings.onboardingDesc", "Show the contextual help cards again on each page.")}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-slate-500">
+          {t("settings.onboardingHint", "Each page shows a guide card the first time you visit it. Reset to see them again.")}
+        </p>
+        <button
+          type="button"
+          onClick={handleReset}
+          disabled={resetDone}
+          className="flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-sky-400 hover:bg-sky-50 hover:text-sky-700 disabled:opacity-50"
+        >
+          <RotateCcw className={`h-4 w-4 ${resetDone ? "animate-spin" : ""}`} />
+          {t("settings.onboardingResetBtn", "Reset guides")}
+        </button>
+      </div>
+    </SectionCard>
   );
 }
 
@@ -686,24 +729,53 @@ function DangerSection() {
 export default function SettingsPage() {
   const { t } = useTranslation();
   const [toast, setToast] = useState<Toast | null>(null);
+  const pageRef = useRef<HTMLDivElement>(null);
 
-  const showToast = (newToast: Toast) => {
+  const showToast = useCallback((newToast: Toast) => {
     setToast(newToast);
     setTimeout(() => setToast(null), 4000);
-  };
+  }, []);
+
+  useEffect(() => {
+    const el = pageRef.current;
+    if (!el) return;
+    const cards = el.querySelectorAll<HTMLElement>(":scope > div");
+    const ctx = gsap.context(() => {
+      gsap.from(cards, {
+        y: 18,
+        opacity: 0,
+        duration: 0.4,
+        ease: "power2.out",
+        stagger: 0.07,
+        clearProps: "all",
+      });
+    }, el);
+    return () => ctx.revert();
+  }, []);
 
   return (
     <>
-      <div className="mx-auto max-w-2xl space-y-6">
+      <div ref={pageRef} className="mx-auto w-full space-y-4" style={{ maxWidth: "680px" }}>
+        <InfoCard
+          id="settings"
+          accentColor="violet"
+          title={t("settings.infoCardTitle", "Settings")}
+          items={[
+            t("settings.infoCardItem1", "Change language and currency"),
+            t("settings.infoCardItem2", "Update personal data"),
+            t("settings.infoCardItem3", "Customize interface preferences"),
+          ]}
+        />
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">{t("settings.title")}</h1>
-          <p className="mt-1 text-sm text-slate-400">{t("settings.subtitle")}</p>
+          <h1 className="text-xl font-bold text-slate-800">{t("settings.title")}</h1>
+          <p className="mt-0.5 text-xs text-slate-400">{t("settings.subtitle")}</p>
         </div>
 
         <ProfileSection onToast={showToast} />
         <PasswordSection onToast={showToast} />
         <PreferencesSection onToast={showToast} />
         <CurrencySection onToast={showToast} />
+        <OnboardingSection onToast={showToast} />
         <DangerSection />
 
         <p className="pb-4 text-center text-xs text-slate-300">

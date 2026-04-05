@@ -8,6 +8,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import InfoCard from "@/components/ui/InfoCard";
 import {
   Loader2,
   Palette,
@@ -32,8 +33,8 @@ import {
   DEFAULT_ICON_BG_COLOR,
   normalizeIconBgColor,
   resolveEntityIconName,
-  suggestIconFromText,
 } from "@/components/icons/iconRegistry";
+import { suggestIconNameFromText } from "@/components/icons/iconSuggestions";
 
 const MAX_BUDGETS = 10;
 const PRIMARY_BUDGET_STORAGE_KEY = "budgets.primaryId.v1";
@@ -130,7 +131,7 @@ function BudgetFormDialog({ open, initial, onClose, onSaved }: BudgetFormDialogP
   }, [open, initial, defaultStartDate]);
 
   const defaultIconName = useMemo(() => {
-    return suggestIconFromText(name || initial?.name || "budget");
+    return suggestIconNameFromText(name || initial?.name || "budget");
   }, [name, initial?.name]);
 
   const periodicityOptions = useMemo(
@@ -183,8 +184,8 @@ function BudgetFormDialog({ open, initial, onClose, onSaved }: BudgetFormDialogP
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl max-h-[90dvh] overflow-y-auto">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-800">
             {isEdit ? t("budgets.editBudget") : t("budgets.create")}
@@ -653,6 +654,7 @@ function EmptyBudgetCard({ onAdd }: { onAdd: () => void }) {
 
 export default function BudgetsPage() {
   const { t } = useTranslation();
+  const infoCardItems = t("budgets.infoCardItems", { returnObjects: true }) as string[];
   const navigate = useNavigate();
 
   const [budgets, setBudgets] = useState<BudgetSummaryDto[]>([]);
@@ -799,6 +801,13 @@ export default function BudgetsPage() {
   return (
     <>
       <div className="budgets-page-shell space-y-5">
+        <InfoCard
+          id="budgets"
+          accentColor="amber"
+          title={t("budgets.infoCardTitle", "Budgets")}
+          items={infoCardItems}
+          description={t("budgets.infoCardDescription", "You will be notified if you exceed your budget.")}
+        />
         {/* ── Hero header ── */}
         <div className="budgets-hero-section">
           <div className="budgets-hero-inner">

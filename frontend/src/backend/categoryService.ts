@@ -1,4 +1,5 @@
 import api from "./api";
+import { normalizePageResponse } from "./pageUtils";
 import type {
   CategoryDto,
   CategoryPage,
@@ -12,7 +13,9 @@ export const categoryService = {
   },
 
   getPaged(type: string, page: number, size: number): Promise<CategoryPage> {
-    return api.get("/category/paged", { params: { type, page, size } }).then((r) => r.data);
+    return api
+      .get("/category/paged", { params: { type, page, size } })
+      .then((r) => normalizePageResponse(r.data, page, size));
   },
 
   getById(categoryId: string): Promise<CategoryResponseDto> {

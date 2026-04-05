@@ -12,6 +12,12 @@ export interface BankInstitution {
   logo: string;
 }
 
+export interface BankSyncOptions {
+  ignoreSyncLimit?: boolean;
+  lookBackDays?: number;
+  syncDeletedTransactions?: boolean;
+}
+
 export const bankService = {
   initConnection(accountId: string): Promise<{ authUrl: string }> {
     return api.get(`/bank/connect/${accountId}`).then((r) => r.data);
@@ -21,9 +27,9 @@ export const bankService = {
     return api.get(`/bank/accounts/${accountId}/status`).then((r) => r.data);
   },
 
-  sync(accountId: string, lookBackDays = 90): Promise<BankSyncResultDto> {
+  sync(accountId: string, lookBackDays = 365, ignoreSyncLimit = false, syncDeletedTransactions = false): Promise<BankSyncResultDto> {
     return api
-      .post(`/bank/accounts/${accountId}/sync`, null, { params: { lookBackDays } })
+      .post(`/bank/accounts/${accountId}/sync`, null, { params: { lookBackDays, ignoreSyncLimit, syncDeletedTransactions } })
       .then((r) => r.data);
   },
 
@@ -31,8 +37,11 @@ export const bankService = {
     return api.post(`/bank/sync-stale`, null, { params: { minutes } }).then((r) => r.data);
   },
 
-  syncAll(): Promise<BankSyncResultDto> {
-    return api.post(`/bank/sync-all`).then((r) => r.data);
+  syncAll(options?: BankSyncOptions): Promise<BankSyncResultDto> {
+    const lookBackDays = options?.lookBackDays ?? 365;
+    const ignoreSyncLimit = options?.ignoreSyncLimit ?? false;
+    const syncDeletedTransactions = options?.syncDeletedTransactions ?? false;
+    return api.post(`/bank/sync-all`, null, { params: { lookBackDays, ignoreSyncLimit, syncDeletedTransactions } }).then((r) => r.data);
   },
 
   unlink(accountId: string): Promise<void> {

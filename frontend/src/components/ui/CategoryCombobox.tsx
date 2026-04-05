@@ -3,6 +3,7 @@ import { Plus, Search, Tag, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { CategorySummaryDto, TransactionType } from "@/types";
 import { categoryService } from "@/backend/categoryService";
+import { IconAvatar } from "@/components/icons/IconAvatar";
 
 interface CategoryComboboxProps {
   categories: CategorySummaryDto[];
@@ -53,10 +54,11 @@ export default function CategoryCombobox({
     [categories, debouncedQuery]
   );
 
-  const selectedLabel = useMemo(
-    () => categories.find((c) => c.id === value)?.name ?? "",
-    [categories, value]
+  const selectedCategory = useMemo(
+    () => categories.find((c) => c.id === value) ?? null,
+    [categories, value],
   );
+  const selectedLabel = selectedCategory?.name ?? "";
 
   // Close on outside click
   useEffect(() => {
@@ -77,7 +79,13 @@ export default function CategoryCombobox({
         name: query.trim(),
         type: transactionType,
       });
-      const summary: CategorySummaryDto = { id: created.id, name: created.name };
+      const summary: CategorySummaryDto = {
+        id: created.id,
+        name: created.name,
+        type: created.type,
+        iconName: created.iconName ?? null,
+        iconBgColor: created.iconBgColor ?? null,
+      };
       onCategoryCreated(summary);
       // Notify other pages that categories changed so they can refresh automatically
       try {
@@ -104,7 +112,17 @@ export default function CategoryCombobox({
           setTimeout(() => inputRef.current?.focus(), 0);
         }}
       >
-        <Tag className="h-4 w-4 text-slate-400" />
+        {selectedCategory ? (
+          <IconAvatar
+            iconName={selectedCategory.iconName ?? null}
+            iconBgColor={selectedCategory.iconBgColor ?? null}
+            fallbackText={selectedCategory.name}
+            className="h-5 w-5 rounded-lg"
+            iconClassName="h-3.5 w-3.5"
+          />
+        ) : (
+          <Tag className="h-4 w-4 text-slate-400" />
+        )}
         {open ? (
           <input
             ref={inputRef}
@@ -145,7 +163,13 @@ export default function CategoryCombobox({
                 setOpen(false);
               }}
             >
-              <Tag className="h-3.5 w-3.5" />
+              <IconAvatar
+                iconName={cat.iconName ?? null}
+                iconBgColor={cat.iconBgColor ?? null}
+                fallbackText={cat.name}
+                className="h-5 w-5 rounded-lg"
+                iconClassName="h-3.5 w-3.5"
+              />
               {cat.name}
             </li>
           ))}

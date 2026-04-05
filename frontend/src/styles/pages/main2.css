@@ -23,6 +23,27 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ── Page shell: keep sticky slices flush and prevent horizontal drift ── */
+.m2-page {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+  background: #fff;
+}
+@supports not (overflow: clip) {
+  .m2-page {
+    overflow-x: hidden;
+  }
+}
+.m2-slices {
+  width: 100%;
+  isolation: isolate;
+}
+.m2-slice,
+.m2-sticky-frame {
+  width: 100%;
+}
+
 /* ══════════════════════════════════════════════════════════════
  * REVEAL + STAGGER SYSTEM
  * ══════════════════════════════════════════════════════════════ */
@@ -1162,4 +1183,171 @@ html {
   inset: 0;
   pointer-events: none;
   overflow: hidden;
+}
+
+/* ══════════════════════════════════════════════════════════════
+ * CURSOR GLOW — smooth GSAP-tracked radial blob
+ * ══════════════════════════════════════════════════════════════ */
+.m2-cursor-glow {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 560px;
+  height: 560px;
+  border-radius: 50%;
+  background: radial-gradient(circle at center,
+    rgba(56, 189, 248, 0.09) 0%,
+    rgba(52, 211, 153, 0.06) 35%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 9999;
+  will-change: transform;
+  filter: blur(10px);
+}
+
+/* ══════════════════════════════════════════════════════════════
+ * CTA ANIMATED ORBS
+ * ══════════════════════════════════════════════════════════════ */
+.m2-cta-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(70px);
+  animation: m2OrbDrift 9s ease-in-out infinite alternate;
+}
+.m2-cta-orb-1 {
+  width: 340px; height: 340px;
+  background: rgba(255, 255, 255, 0.18);
+  top: -80px; left: -100px;
+  animation-duration: 10s;
+}
+.m2-cta-orb-2 {
+  width: 280px; height: 280px;
+  background: rgba(255, 255, 255, 0.13);
+  bottom: -80px; right: -60px;
+  animation-duration: 12s;
+  animation-delay: -4s;
+}
+.m2-cta-orb-3 {
+  width: 220px; height: 220px;
+  background: rgba(255, 255, 255, 0.09);
+  top: 35%; left: 50%;
+  animation-duration: 8s;
+  animation-delay: -2s;
+}
+@keyframes m2OrbDrift {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(40px, 25px) scale(1.15); }
+}
+
+/* ══════════════════════════════════════════════════════════════
+ * ARCHITECTURE LAYERS DIAGRAM
+ * ══════════════════════════════════════════════════════════════ */
+.m2-arch-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.m2-arch-layer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 0 0 0 transparent;
+  overflow: hidden;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.m2-arch-layer:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+  border-color: rgba(148, 163, 184, 0.5);
+}
+
+/* 3px left accent bar */
+.m2-arch-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 14px 0 0 14px;
+}
+
+.m2-arch-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.m2-arch-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.2;
+}
+
+.m2-arch-sub {
+  font-size: 10.5px;
+  color: #94a3b8;
+  font-family: ui-monospace, monospace;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Arrow connector between layers */
+.m2-arch-connector {
+  display: flex;
+  justify-content: flex-start;
+  padding-left: 28px;
+  height: 18px;
+  align-items: center;
+}
+
+/* ══════════════════════════════════════════════════════════════
+ * ABOUT ANIMATED STAT CARDS (old grid — kept for reference)
+ * ══════════════════════════════════════════════════════════════ */
+.m2-about-stat {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  padding: 1.5rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.m2-about-stat:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+.m2-about-stat-bar {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  border-radius: 20px 0 0 20px;
+}
+.m2-about-stat-val {
+  font-size: 2.5rem;
+  font-weight: 900;
+  line-height: 1;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.m2-about-stat-label {
+  margin-top: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #94a3b8;
+  letter-spacing: 0.02em;
 }

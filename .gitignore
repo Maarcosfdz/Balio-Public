@@ -40,8 +40,6 @@ frontend/.vite/
 frontend/playwright-report/
 frontend/test-results/
 
-### Local AI Tooling ###
-.claude/
 
 ### Environment / Secrets ###
 .env

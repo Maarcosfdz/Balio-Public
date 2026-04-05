@@ -2,6 +2,8 @@ package Balio.web.rest.dtos;
 
 import Balio.web.enums.TransactionType;
 
+import java.math.BigDecimal;
+
 public class BankRuleResponseDto {
 
     private String id;
@@ -13,6 +15,8 @@ public class BankRuleResponseDto {
     private String mappedName;
     private String mappedCategoryId;
     private String mappedCategoryName;
+    private boolean excludeMatch;
+    private BigDecimal amountMultiplier;
     private int priority;
     private int appliedTransactions;
 
@@ -46,6 +50,12 @@ public class BankRuleResponseDto {
     public void setMappedCategoryName(String mappedCategoryName) {
         this.mappedCategoryName = mappedCategoryName;
     }
+
+    public boolean isExcludeMatch() { return excludeMatch; }
+    public void setExcludeMatch(boolean excludeMatch) { this.excludeMatch = excludeMatch; }
+
+    public BigDecimal getAmountMultiplier() { return amountMultiplier; }
+    public void setAmountMultiplier(BigDecimal amountMultiplier) { this.amountMultiplier = amountMultiplier; }
 
     public int getPriority() { return priority; }
     public void setPriority(int priority) { this.priority = priority; }

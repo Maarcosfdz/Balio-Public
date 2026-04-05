@@ -16,6 +16,8 @@ public class AccountDto {
 
     private Boolean setDefault;
 
+    private Boolean syncDeletedTransactions;
+
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
@@ -27,4 +29,7 @@ public class AccountDto {
 
     public Boolean getSetDefault() { return setDefault; }
     public void setSetDefault(Boolean setDefault) { this.setDefault = setDefault; }
+
+    public Boolean getSyncDeletedTransactions() { return syncDeletedTransactions; }
+    public void setSyncDeletedTransactions(Boolean syncDeletedTransactions) { this.syncDeletedTransactions = syncDeletedTransactions; }
 }

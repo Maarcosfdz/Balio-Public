@@ -46,7 +46,7 @@ export default function AccountsSummary({
           </div>
 
           {/* Action buttons */}
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <div className="accounts-hero-actions flex w-full flex-wrap items-center gap-2 sm:w-auto sm:shrink-0">
             <button
               onClick={onExport}
               className="accounts-glass-btn"

@@ -12,6 +12,13 @@ export type WidgetType =
 
 export type WidgetSize = "sm" | "md" | "lg";
 
+export interface WidgetLayout {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 export interface WidgetCommonConfig {
   dateRange: DateRangePreset;
   transactionType?: "INCOME" | "EXPENSE";
@@ -105,6 +112,7 @@ export interface AnalysisWidget {
   description: string;
   type: WidgetType;
   size: WidgetSize;
+  layout?: WidgetLayout;
   visible: boolean;
   order: number;
   config: WidgetConfig;

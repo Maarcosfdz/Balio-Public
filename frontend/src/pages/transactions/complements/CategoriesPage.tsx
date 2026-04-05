@@ -26,9 +26,10 @@ import { IconPicker } from "@/components/icons/IconPicker";
 import {
   DEFAULT_ICON_BG_COLOR,
   normalizeIconBgColor,
+  readEmojiFromIconName,
   resolveEntityIconName,
-  suggestIconFromText,
 } from "@/components/icons/iconRegistry";
+import { suggestIconNameFromText } from "@/components/icons/iconSuggestions";
 
 // ── Inline editable chip ──────────────────────────────────────────────────
 
@@ -68,7 +69,7 @@ function CategoryChip({ category, onDeleted, onUpdated }: CategoryChipProps) {
     setIconBgColor(normalizeIconBgColor(category.iconBgColor, defaultCategoryBgColor(category.type)));
   }, [category]);
 
-  const defaultIconName = suggestIconFromText(name || category.name);
+  const defaultIconName = suggestIconNameFromText(name || category.name);
 
   const handleSave = async () => {
     const trimmedName = name.trim();
@@ -235,7 +236,7 @@ function CreateChip({ type, onCreated }: CreateChipProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [iconName, setIconName] = useState<string>(suggestIconFromText("category"));
+  const [iconName, setIconName] = useState<string>(suggestIconNameFromText("category"));
   const [iconBgColor, setIconBgColor] = useState<string>(defaultCategoryBgColor(type));
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -263,7 +264,7 @@ function CreateChip({ type, onCreated }: CreateChipProps) {
         iconBgColor: created.iconBgColor,
       });
       setName("");
-      setIconName(suggestIconFromText("category"));
+      setIconName(suggestIconNameFromText("category"));
       setIconBgColor(defaultCategoryBgColor(type));
       setOpen(false);
     } catch {
@@ -296,8 +297,8 @@ function CreateChip({ type, onCreated }: CreateChipProps) {
           value={name}
           onChange={(e) => {
             setName(e.target.value);
-            if (!readEmojiIcon(iconName)) {
-              setIconName(suggestIconFromText(e.target.value || "category"));
+            if (!readEmojiFromIconName(iconName)) {
+              setIconName(suggestIconNameFromText(e.target.value || "category"));
             }
           }}
           onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
@@ -320,7 +321,7 @@ function CreateChip({ type, onCreated }: CreateChipProps) {
       <IconPicker
         iconName={iconName}
         iconBgColor={iconBgColor}
-        defaultIconName={suggestIconFromText(name || "category")}
+        defaultIconName={suggestIconNameFromText(name || "category")}
         defaultIconBgColor={defaultCategoryBgColor(type)}
         onChange={(value) => {
           setIconName(value.iconName);
@@ -329,10 +330,6 @@ function CreateChip({ type, onCreated }: CreateChipProps) {
       />
     </form>
   );
-}
-
-function readEmojiIcon(iconName: string): string | null {
-  return iconName.startsWith("emoji:") ? iconName.slice("emoji:".length) : null;
 }
 
 // ── Column section ────────────────────────────────────────────────────────
@@ -422,6 +419,10 @@ export default function CategoriesPage() {
   const [incomeTotalElements, setIncomeTotalElements] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  // Refs to track current pages for background refresh without stale closures
+  const expensePageRef = useRef(0);
+  const incomePageRef = useRef(0);
+
   const fetchExpense = useCallback(async (page: number) => {
     const data = await categoryService.getPaged("EXPENSE", page, PAGE_SIZE);
     setExpenseCategories(data.content);
@@ -440,37 +441,52 @@ export default function CategoriesPage() {
     setLoading(true);
     try {
       await Promise.all([fetchExpense(0), fetchIncome(0)]);
+      expensePageRef.current = 0;
+      incomePageRef.current = 0;
       setExpensePage(0);
       setIncomePage(0);
     } catch { /* ignore */ }
     finally { setLoading(false); }
   }, [fetchExpense, fetchIncome]);
 
+  // Silent background refresh: no loading spinner, keeps current pages intact
+  // This preserves any open forms/in-progress state
+  const fetchAllSilent = useCallback(async () => {
+    try {
+      await Promise.all([
+        fetchExpense(expensePageRef.current),
+        fetchIncome(incomePageRef.current),
+      ]);
+    } catch { /* ignore */ }
+  }, [fetchExpense, fetchIncome]);
+
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   // Refresh when categories are created/updated elsewhere in the app
   useEffect(() => {
-    const handler = () => fetchAll();
+    const handler = () => fetchAllSilent();
     window.addEventListener("balio:categories-updated", handler as EventListener);
     return () => window.removeEventListener("balio:categories-updated", handler as EventListener);
-  }, [fetchAll]);
+  }, [fetchAllSilent]);
 
-  // Auto-refresh 30 s + visibilidad
+  // Auto-refresh 30 s + visibility — silent to preserve in-progress form state
   useEffect(() => {
-    const interval = setInterval(fetchAll, 30_000);
+    const interval = setInterval(fetchAllSilent, 30_000);
     const handleVis = () => {
-      if (document.visibilityState === "visible") fetchAll();
+      if (document.visibilityState === "visible") fetchAllSilent();
     };
     document.addEventListener("visibilitychange", handleVis);
     return () => { clearInterval(interval); document.removeEventListener("visibilitychange", handleVis); };
-  }, [fetchAll]);
+  }, [fetchAllSilent]);
 
   const handleExpensePageChange = (p: number) => {
+    expensePageRef.current = p;
     setExpensePage(p);
     fetchExpense(p);
   };
 
   const handleIncomePageChange = (p: number) => {
+    incomePageRef.current = p;
     setIncomePage(p);
     fetchIncome(p);
   };

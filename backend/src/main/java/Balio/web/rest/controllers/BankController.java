@@ -133,9 +133,10 @@ public class BankController {
     @PostMapping("/accounts/{accountId}/sync")
     public BankSyncResultDto syncTransactions(@RequestAttribute UUID userId,
                                               @PathVariable UUID accountId,
-                                              @RequestParam(defaultValue = "90") int lookBackDays)
+                                              @RequestParam(defaultValue = "365") int lookBackDays,
+                                              @RequestParam(defaultValue = "false") boolean ignoreSyncLimit)
             throws InstanceNotFoundException {
-        int imported = bankService.syncTransactions(userId, accountId, lookBackDays);
+        int imported = bankService.syncTransactions(userId, accountId, lookBackDays, ignoreSyncLimit);
         return new BankSyncResultDto(imported, 1);
     }
 
@@ -147,8 +148,10 @@ public class BankController {
     }
 
     @PostMapping("/sync-all")
-    public BankSyncResultDto syncAllTransactions(@RequestAttribute UUID userId) {
-        int imported = bankService.syncAllConnections(userId);
+    public BankSyncResultDto syncAllTransactions(@RequestAttribute UUID userId,
+                                                 @RequestParam(defaultValue = "false") boolean ignoreSyncLimit,
+                                                 @RequestParam(defaultValue = "365") int lookBackDays) {
+        int imported = bankService.syncAllConnections(userId, ignoreSyncLimit, lookBackDays);
         return new BankSyncResultDto(imported, bankService.findLinkedConnections(userId).size());
     }
 
@@ -191,6 +194,8 @@ public class BankController {
                 dto.getTransactionType(),
                 dto.getMappedName(),
                 categoryId,
+                Boolean.TRUE.equals(dto.getExcludeMatch()),
+                dto.getAmountMultiplier(),
                 Boolean.TRUE.equals(dto.getApplyToExisting()),
                 dto.getApplyWindowDays());
 
@@ -215,9 +220,11 @@ public class BankController {
                 dto.getBankCategory(),
                 dto.getTransactionType(),
                 dto.getMappedName(),
-            categoryId,
-            Boolean.TRUE.equals(dto.getApplyToExisting()),
-            dto.getApplyWindowDays());
+                categoryId,
+                dto.getExcludeMatch(),
+                dto.getAmountMultiplier(),
+                Boolean.TRUE.equals(dto.getApplyToExisting()),
+                dto.getApplyWindowDays());
 
         BankRuleResponseDto response = bankConverter.toRuleResponseDto(result.rule());
         response.setAppliedTransactions(result.appliedTransactions());

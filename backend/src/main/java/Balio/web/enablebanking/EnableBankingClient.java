@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -21,6 +22,8 @@ import java.security.PrivateKey;
 import java.security.Signature;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Map;
@@ -41,6 +44,8 @@ import java.util.Map;
 public class EnableBankingClient {
 
     private static final Logger log = LoggerFactory.getLogger(EnableBankingClient.class);
+    private static final int MAX_TRANSACTION_PAGES = 200;
+    private static final int DEFAULT_LOOKBACK_DAYS = 365;
 
     private final EnableBankingProperties props;
     private final HttpClient httpClient;
@@ -107,18 +112,73 @@ public class EnableBankingClient {
         return sendRequest(request);
     }
 
-    /** Fetches transactions for a connected account (last 90 days). */
+    /** Fetches transactions for a connected account (last 365 days). */
     public JsonNode fetchTransactions(String accountId) {
-        return fetchTransactions(accountId, 90);
+        return fetchTransactions(accountId, DEFAULT_LOOKBACK_DAYS);
     }
 
     /** Fetches transactions for a connected account going back {@code lookBackDays} days. */
     public JsonNode fetchTransactions(String accountId, int lookBackDays) {
-        String dateFrom = Instant.now().minus(lookBackDays, ChronoUnit.DAYS)
-                .toString().substring(0, 10);
-        HttpRequest request = authGet(
-                "/accounts/" + accountId + "/transactions?date_from=" + dateFrom);
-        return sendRequest(request);
+        int safeLookBackDays = Math.max(1, lookBackDays);
+        LocalDate dateFrom = Instant.now()
+                .minus(safeLookBackDays, ChronoUnit.DAYS)
+                .atZone(ZoneOffset.UTC)
+                .toLocalDate();
+
+        return fetchTransactionsFromDate(accountId, dateFrom);
+    }
+
+    /** Fetches transactions from an exact timestamp onward (using UTC date_from). */
+    public JsonNode fetchTransactionsSince(String accountId, Instant syncedAt) {
+        LocalDate dateFrom = syncedAt
+                .atZone(ZoneOffset.UTC)
+                .toLocalDate();
+
+        return fetchTransactionsFromDate(accountId, dateFrom);
+    }
+
+    private JsonNode fetchTransactionsFromDate(String accountId, LocalDate dateFrom) {
+        String dateFromParam = dateFrom.toString();
+
+        com.fasterxml.jackson.databind.node.ArrayNode allTransactions =
+                objectMapper.createArrayNode();
+
+        String continuationKey = null;
+        int page = 0;
+
+        do {
+            StringBuilder path = new StringBuilder(
+                    "/accounts/" + accountId + "/transactions?date_from="
+                    + urlEncode(dateFromParam)
+                    + "&strategy=longest");
+
+            if (continuationKey != null && !continuationKey.isBlank()) {
+                path.append("&continuation_key=").append(urlEncode(continuationKey));
+            }
+
+            JsonNode pageResponse = sendRequest(authGet(path.toString()));
+            JsonNode pageTransactions = pageResponse.path("transactions");
+            if (pageTransactions.isArray()) {
+                allTransactions.addAll((com.fasterxml.jackson.databind.node.ArrayNode) pageTransactions);
+            }
+
+            String next = pageResponse.path("continuation_key").asText(null);
+            continuationKey = (next == null || next.isBlank()) ? null : next;
+            page++;
+        } while (continuationKey != null && page < MAX_TRANSACTION_PAGES);
+
+        if (continuationKey != null) {
+            log.warn("Stopped Enable Banking transaction pagination at {} pages for account {}",
+                    MAX_TRANSACTION_PAGES, accountId);
+        }
+
+        com.fasterxml.jackson.databind.node.ObjectNode merged = objectMapper.createObjectNode();
+        merged.set("transactions", allTransactions);
+        return merged;
+    }
+
+    private String urlEncode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
     // ── JWT ──────────────────────────────────────────────────────────────

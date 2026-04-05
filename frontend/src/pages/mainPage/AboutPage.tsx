@@ -432,7 +432,7 @@ export default function AboutPage() {
 
             <div className="ab-stagger ab-sd4 mt-10 flex flex-wrap items-center justify-center gap-4">
               <Link
-                to={ROUTES.HOME}
+                to={ROUTES.SIGNUP}
                 className={gradientButtonClass({
                   iconVariant: "other",
                   className: "rounded-xl px-6 py-3 text-sm font-semibold",

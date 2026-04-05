@@ -36,7 +36,7 @@ export default function SaveFilterDialog({ open, onClose, onSave }: SaveFilterDi
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop with fade */}
       <div
-        className={`absolute inset-0 bg-black/30 transition-opacity duration-200 ${visible ? "opacity-100" : "opacity-0"}`}
+        className={`fixed inset-0 bg-black/30 transition-opacity duration-200 ${visible ? "opacity-100" : "opacity-0"}`}
         onClick={onClose}
       />
       {/* Dialog with scale-up + fade */}

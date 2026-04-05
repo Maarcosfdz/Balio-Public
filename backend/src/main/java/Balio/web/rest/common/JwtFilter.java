@@ -41,7 +41,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 String tokenType = jwtGenerator.extractTokenType(token);
                 if (!"access".equals(tokenType)) {
                     SecurityContextHolder.clearContext();
-                    filterChain.doFilter(request, response);
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     return;
                 }
 
@@ -64,6 +64,8 @@ public class JwtFilter extends OncePerRequestFilter {
 
             } catch (Exception e) {
                 SecurityContextHolder.clearContext();
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
             }
         }
 

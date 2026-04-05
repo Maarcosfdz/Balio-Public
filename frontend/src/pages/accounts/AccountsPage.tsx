@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { ToastBanner } from "@/components/ui/toast-banner";
+import InfoCard from "@/components/ui/InfoCard";
 import type { AccountSummaryDto } from "@/types";
 import { accountService } from "@/backend/accountService";
 import { transactionService } from "@/backend/transactionService";
@@ -130,7 +131,7 @@ export default function AccountsPage() {
       setDeleteState((current) => current ? {
         ...current,
         submitting: false,
-        error: "No se pudo eliminar la cuenta. Inténtalo de nuevo.",
+        error: t("accountsPage.deleteDialog.deleteError", "Could not delete the account. Please try again."),
       } : current);
     }
   };
@@ -169,10 +170,18 @@ export default function AccountsPage() {
   const canAdd = accounts.length < MAX_ACCOUNTS;
   const canConfirmDelete = deleteState !== null
     && deleteState.confirmName.trim() === deleteState.account.name;
+  const infoCardItems = t("accountsPage.infoCardItems", { returnObjects: true }) as string[];
 
   return (
     <>
       <div className="space-y-6">
+        <InfoCard
+          id="accounts"
+          accentColor="emerald"
+          title={t("accountsPage.infoCardTitle", "Accounts")}
+          items={infoCardItems}
+          description={t("accountsPage.infoCardDescription", "Rules are automatically applied to transactions.")}
+        />
         {/* ── Linked bank account banner ── */}
         {linkedBanner && (
           <ToastBanner
@@ -253,16 +262,19 @@ export default function AccountsPage() {
 
       {deleteState && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/35 backdrop-blur-sm" onClick={closeDeleteDialog} />
+          <div className="fixed inset-0 bg-black/35 backdrop-blur-sm" onClick={closeDeleteDialog} />
           <div className="relative z-10 w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
             <div className="flex items-start gap-3">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-500">
                 <AlertCircle className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-800">Eliminar cuenta</h3>
+                <h3 className="text-lg font-bold text-slate-800">{t("accountsPage.deleteDialog.title", "Delete account")}</h3>
                 <p className="mt-1 text-sm text-slate-500">
-                  Vas a eliminar la cuenta {deleteState.account.name}. Los enlaces bancarios y las reglas asociadas se borrarán automáticamente.
+                  {t("accountsPage.deleteDialog.description", {
+                    accountName: deleteState.account.name,
+                    defaultValue: "You are about to delete the account {{accountName}}. Bank links and associated rules will be removed automatically.",
+                  })}
                 </p>
               </div>
             </div>
@@ -279,16 +291,16 @@ export default function AccountsPage() {
                   className="mt-1 h-4 w-4 rounded border-slate-300 text-red-500 focus:ring-red-200"
                 />
                 <span>
-                  <span className="block text-sm font-semibold text-slate-700">Eliminar también las transacciones asociadas</span>
+                  <span className="block text-sm font-semibold text-slate-700">{t("accountsPage.deleteDialog.deleteTransactionsLabel", "Delete associated transactions too")}</span>
                   <span className="mt-1 block text-xs text-slate-400">
-                    Si lo dejas desmarcado, las transacciones se conservarán pero quedarán sin cuenta asociada.
+                    {t("accountsPage.deleteDialog.deleteTransactionsHelp", "If unchecked, transactions will be kept but left without an associated account.")}
                   </span>
                 </span>
               </label>
 
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-slate-500">
-                  Escribe exactamente el nombre de la cuenta para confirmar
+                  {t("accountsPage.deleteDialog.confirmLabel", "Type the exact account name to confirm")}
                 </label>
                 <input
                   type="text"

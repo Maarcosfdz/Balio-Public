@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Area,
   AreaChart,
@@ -111,6 +111,37 @@ interface ChartDataset {
 interface ChartPreview {
   labels: string[];
   datasets: ChartDataset[];
+}
+
+function useElementSize<T extends HTMLElement>() {
+  const ref = useRef<T | null>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+
+    const update = (width: number, height: number) => {
+      setSize({
+        width: Math.max(0, Math.round(width)),
+        height: Math.max(0, Math.round(height)),
+      });
+    };
+
+    const rect = element.getBoundingClientRect();
+    update(rect.width, rect.height);
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        update(entry.contentRect.width, entry.contentRect.height);
+      }
+    });
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  return { ref, size };
 }
 
 function toRecord(value: unknown): Record<string, unknown> | null {
@@ -473,6 +504,8 @@ function DonutWithAdaptiveLegend({
   const isLarge = widget.size === "lg";
   const isMedium = widget.size === "md";
   const manyItems = data.length > DONUT_LEGEND_COLLAPSE_THRESHOLD;
+  const { ref: chartHostRef, size: chartHostSize } = useElementSize<HTMLDivElement>();
+  const canRenderChart = chartHostSize.width > 16 && chartHostSize.height > 16;
 
   const pieContent = (innerR: string, outerR: string) => (
     <PieChart margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
@@ -516,6 +549,9 @@ function DonutWithAdaptiveLegend({
 
   const legendItem = (entry: DonutDatum, index: number) => {
     const pct = total <= 0 ? 0 : (entry.value / total) * 100;
+    const valueText = config.valueMode === "count"
+      ? String(Math.round(entry.value))
+      : toCompactMoney(entry.value);
     const isActive = activeIndex === null ? true : index === activeIndex;
     return (
       <div
@@ -529,7 +565,8 @@ function DonutWithAdaptiveLegend({
           style={{ backgroundColor: getSeriesColor(config.seriesColors, entry.name, index) }}
         />
         <span className="min-w-0 flex-1 truncate text-[11px] text-slate-600">{entry.name}</span>
-        <span className="shrink-0 text-[11px] font-bold tabular-nums text-slate-700">{pct.toFixed(1)}%</span>
+        <span className="shrink-0 text-[11px] font-bold tabular-nums text-slate-700">{valueText}</span>
+        <span className="shrink-0 text-[11px] font-bold tabular-nums text-slate-500">{pct.toFixed(1)}%</span>
       </div>
     );
   };
@@ -537,10 +574,12 @@ function DonutWithAdaptiveLegend({
   if (isLarge || isMedium) {
     return (
       <div className="flex h-full w-full flex-row items-stretch gap-3">
-        <div className={`min-h-0 ${isLarge ? "w-[62%]" : "w-[58%]"}`}>
-          <ResponsiveContainer width="100%" height="100%">
-            {pieContent(isLarge ? "40%" : "36%", isLarge ? "86%" : "84%")}
-          </ResponsiveContainer>
+        <div ref={chartHostRef} className={`h-full min-h-[180px] min-w-0 ${isLarge ? "w-[62%]" : "w-[58%]"}`}>
+          {canRenderChart ? (
+            <ResponsiveContainer width={chartHostSize.width} height={chartHostSize.height} minWidth={0} minHeight={180}>
+              {pieContent(isLarge ? "40%" : "36%", isLarge ? "86%" : "84%")}
+            </ResponsiveContainer>
+          ) : null}
         </div>
 
         <div
@@ -561,10 +600,12 @@ function DonutWithAdaptiveLegend({
   // sm: donut left, legend right
   return (
     <div className="flex h-full w-full flex-row items-stretch gap-2">
-      <div className={`h-full shrink-0 ${isMedium ? "w-[52%]" : "w-[50%]"}`}>
-        <ResponsiveContainer width="100%" height="100%">
-          {pieContent(isMedium ? "34%" : "32%", isMedium ? "80%" : "76%")}
-        </ResponsiveContainer>
+      <div ref={chartHostRef} className={`h-full min-h-[130px] min-w-0 shrink-0 ${isMedium ? "w-[52%]" : "w-[50%]"}`}>
+        {canRenderChart ? (
+          <ResponsiveContainer width={chartHostSize.width} height={chartHostSize.height} minWidth={0} minHeight={130}>
+            {pieContent(isMedium ? "34%" : "32%", isMedium ? "80%" : "76%")}
+          </ResponsiveContainer>
+        ) : null}
       </div>
       <div className="style-1 flex min-w-0 flex-1 flex-col justify-center gap-0.5 overflow-y-auto py-1">
         {data.map((entry, index) => legendItem(entry, index))}
@@ -830,11 +871,22 @@ function comparePeriods(
   ];
 }
 
+function gradientId(prefix: string, color: string): string {
+  let hash = 0;
+  for (let i = 0; i < color.length; i += 1) {
+    hash = ((hash << 5) - hash) + color.charCodeAt(i);
+    hash |= 0;
+  }
+  const hex = Math.abs(hash).toString(16);
+  return `${prefix}-${hex}`;
+}
+
 function barGradDefs(colors: string[]) {
+  const uniqueColors = Array.from(new Set(colors.filter((color) => typeof color === "string" && color.length > 0)));
   return (
     <defs>
-      {colors.map((color) => {
-        const id = `bgrad-${color.replace(/[^a-f0-9]/gi, "")}`;
+      {uniqueColors.map((color) => {
+        const id = gradientId("bgrad", color);
         return (
           <linearGradient key={id} id={id} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity={0.9} />
@@ -848,7 +900,7 @@ function barGradDefs(colors: string[]) {
 
 function barFill(color: string, useGradient: boolean): string {
   if (!useGradient) return color;
-  return `url(#bgrad-${color.replace(/[^a-f0-9]/gi, "")})`;
+  return `url(#${gradientId("bgrad", color)})`;
 }
 
 function areaGradDefs(colors: string[], blurFill: boolean) {

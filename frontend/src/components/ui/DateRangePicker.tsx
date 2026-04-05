@@ -239,6 +239,7 @@ export default function DateRangePicker({
               <DayPicker
                 mode="single"
                 selected={parseIso(startDate)}
+                weekStartsOn={1}
                 classNames={dayPickerClassNames}
                 onSelect={(date) => {
                   const iso = date ? toInputDate(date) : "";
@@ -250,6 +251,7 @@ export default function DateRangePicker({
               <DayPicker
                 mode="range"
                 selected={rangeValue}
+                weekStartsOn={1}
                 classNames={dayPickerRangeClassNames}
                 onSelect={handleRangeSelect}
               />
@@ -270,7 +272,12 @@ export default function DateRangePicker({
               <div className="flex gap-1.5">
                 <button
                   type="button"
-                  onClick={() => { const iso = toInputDate(today); onChangeStart(iso); onChangeEnd(iso); }}
+                  onClick={() => {
+                    const now = new Date();
+                    const iso = toInputDate(now);
+                    onChangeStart(iso);
+                    onChangeEnd(iso);
+                  }}
                   className="tx-date-action-btn tx-date-action-btn--animated"
                 >
                   {t("txPage.today", "Today")}
@@ -278,12 +285,28 @@ export default function DateRangePicker({
                 <button
                   type="button"
                   onClick={() => {
-                    onChangeStart(toInputDate(new Date(today.getFullYear(), today.getMonth(), 1)));
-                    onChangeEnd(toInputDate(today));
+                    const now = new Date();
+                    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+                    const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                    onChangeStart(toInputDate(first));
+                    onChangeEnd(toInputDate(last));
                   }}
                   className="tx-date-action-btn tx-date-action-btn--animated"
                 >
-                  {t("txPage.thisMonth", "This month")}
+                  {t("txPage.currentMonth", "Mes actual")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const now = new Date();
+                    const first = new Date(now.getFullYear(), 0, 1);
+                    const last = new Date(now.getFullYear(), 11, 31);
+                    onChangeStart(toInputDate(first));
+                    onChangeEnd(toInputDate(last));
+                  }}
+                  className="tx-date-action-btn tx-date-action-btn--animated"
+                >
+                  {t("txPage.currentYear", "Año actual")}
                 </button>
               </div>
             )}
@@ -326,6 +349,7 @@ export default function DateRangePicker({
                   <DayPicker
                     mode="multiple"
                     selected={multipleDates}
+                    weekStartsOn={1}
                     classNames={dayPickerClassNames}
                     onSelect={handleMultipleSelect}
                   />

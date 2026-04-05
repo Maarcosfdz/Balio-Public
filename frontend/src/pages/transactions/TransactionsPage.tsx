@@ -1,13 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
+  AlertCircle,
   ArrowDownCircle,
   ArrowLeftRight,
+  ArrowUp,
   ArrowUpCircle,
   CalendarClock,
+  ChevronDown,
   ListChecks,
   Loader2,
+  ArrowUpDown,
   Pencil,
   Plus,
   RefreshCw,
@@ -32,8 +37,10 @@ import { filterService } from "@/backend/filterService";
 import { categoryService } from "@/backend/categoryService";
 import "@/styles/pages/transactions.css";
 import { ToastBanner } from "@/components/ui/toast-banner";
+import InfoCard from "@/components/ui/InfoCard";
 import AddTransactionModal from "@/components/transactions/AddTransactionModal";
 import ApplyRulesModal from "./components/ApplyRulesModal";
+import SyncModal from "./components/SyncModal";
 import Pagination from "@/components/ui/Pagination";
 import FilterPanel, {
   type ActiveFilters,
@@ -52,6 +59,9 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   GBP: "£",
 };
 
+type TransactionSortField = "date" | "amount" | "name";
+type TransactionSortDir = "asc" | "desc";
+
 function normalize(s: string) {
   return s.toLowerCase().replace(/\s+/g, "");
 }
@@ -63,6 +73,7 @@ function currencyLabel(code?: string) {
 
 export default function TransactionsPage() {
   const { t } = useTranslation();
+  const infoCardItems = t("txPage.infoCardItems", { returnObjects: true }) as string[];
   const location = useLocation();
   const navigate = useNavigate();
   const stateAccountId   = (location.state as { accountId?: string; filterId?: string; editFilterId?: string; filterName?: string } | null)?.accountId;
@@ -89,7 +100,10 @@ export default function TransactionsPage() {
   const [expenseOpen, setExpenseOpen] = useState(false);
   const [incomeOpen, setIncomeOpen] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [syncModalOpen, setSyncModalOpen] = useState(false);
   const [editingTx, setEditingTx] = useState<TransactionResponseDto | null>(null);
+  const [deleteTx, setDeleteTx] = useState<TransactionSummaryDto | null>(null);
+  const [deletingTx, setDeletingTx] = useState(false);
 
   // ── Pagination ──
   const [page, setPage] = useState(1);
@@ -110,7 +124,15 @@ export default function TransactionsPage() {
   const [allSavedFilters, setAllSavedFilters] = useState<FilterSummaryDto[]>([]);
   const [showAddPicker, setShowAddPicker] = useState(false);
   const addPickerRef = useRef<HTMLDivElement>(null);
+  const addPickerDropdownRef = useRef<HTMLDivElement>(null);
+  const [addPickerPos, setAddPickerPos] = useState<{ left: number; top: number } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<TransactionSortField>("date");
+  const [sortDir, setSortDir] = useState<TransactionSortDir>("desc");
+  const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
+  const sortBtnRef = useRef<HTMLButtonElement>(null);
+  const sortDropdownRef = useRef<HTMLDivElement>(null);
+  const [sortDropdownPos, setSortDropdownPos] = useState<{ left: number; top: number } | null>(null);
 
   // Fetch all saved filters for the add-to-tabs picker
   useEffect(() => {
@@ -123,15 +145,71 @@ export default function TransactionsPage() {
     if (!showAddPicker) return;
     // Refresh so newly-created filters appear without a page reload
     filterService.getAll().then(setAllSavedFilters).catch(() => {});
+
+    const updatePosition = () => {
+      if (!addPickerRef.current) return;
+      const rect = addPickerRef.current.getBoundingClientRect();
+      const menuWidth = 224; // 14rem
+      const viewportPadding = 8;
+      const left = Math.min(
+        Math.max(rect.left, viewportPadding),
+        window.innerWidth - menuWidth - viewportPadding,
+      );
+      const top = rect.bottom + 8;
+      setAddPickerPos({ left, top });
+    };
+    updatePosition();
+
     const handler = (e: MouseEvent) => {
-      if (addPickerRef.current && !addPickerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const clickedTrigger = !!addPickerRef.current?.contains(target);
+      const clickedMenu = !!addPickerDropdownRef.current?.contains(target);
+      if (!clickedTrigger && !clickedMenu) {
         setShowAddPicker(false);
       }
     };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
   }, [showAddPicker]);
 
+  // Sort dropdown — position + outside-click close
+  useEffect(() => {
+    if (!sortDropdownOpen) return;
+
+    const updatePosition = () => {
+      if (!sortBtnRef.current) return;
+      const rect = sortBtnRef.current.getBoundingClientRect();
+      const menuWidth = 192; // 12rem
+      const viewportPadding = 8;
+      const left = Math.min(
+        Math.max(rect.right - menuWidth, viewportPadding),
+        window.innerWidth - menuWidth - viewportPadding,
+      );
+      setSortDropdownPos({ left, top: rect.bottom + 8 });
+    };
+    updatePosition();
+
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (!sortBtnRef.current?.contains(target) && !sortDropdownRef.current?.contains(target)) {
+        setSortDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [sortDropdownOpen]);
 
   // Persist pinned filters
   useEffect(() => {
@@ -149,9 +227,16 @@ export default function TransactionsPage() {
   filtersRef.current = filters;
 
   const fetchTransactions = useCallback(
-    async (f: ActiveFilters, showLoading: boolean, pageIndex: number) => {
+    async (
+      f: ActiveFilters,
+      showLoading: boolean,
+      pageIndex: number,
+      sortOptions?: { sortBy: TransactionSortField; sortDir: TransactionSortDir },
+    ) => {
       if (showLoading) setLoading(true);
       try {
+        const effectiveSortBy = sortOptions?.sortBy ?? sortBy;
+        const effectiveSortDir = sortOptions?.sortDir ?? sortDir;
         const backendFilters: TransactionFilters = {};
         if (f.type) backendFilters.type = f.type;
         if (f.accountId) backendFilters.accountId = f.accountId;
@@ -160,6 +245,8 @@ export default function TransactionsPage() {
         }
         if (f.startDate) backendFilters.startDate = f.startDate;
         if (f.endDate) backendFilters.endDate = f.endDate;
+        backendFilters.sortBy = effectiveSortBy;
+        backendFilters.sortDir = effectiveSortDir;
 
         const hasClientOnlyFilters = !!(
           f.nameQuery ||
@@ -194,7 +281,7 @@ export default function TransactionsPage() {
         setLoading(false);
       }
     },
-    []
+      [sortBy, sortDir]
   );
 
   const syncStaleIfNeeded = useCallback(async () => {
@@ -315,7 +402,18 @@ export default function TransactionsPage() {
       );
     }
 
-    list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const collator = new Intl.Collator(undefined, { sensitivity: "base", numeric: true });
+    list.sort((a, b) => {
+      let cmp = 0;
+      if (sortBy === "amount") {
+        cmp = a.amount - b.amount;
+      } else if (sortBy === "name") {
+        cmp = collator.compare(a.name, b.name);
+      } else {
+        cmp = new Date(a.date).getTime() - new Date(b.date).getTime();
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
     return list;
   }, [
     transactions,
@@ -325,6 +423,8 @@ export default function TransactionsPage() {
     filters.amountMax,
     filters.specificDates,
     filters.categoryIds,
+    sortBy,
+    sortDir,
   ]);
 
   const totalPages = isServerPaged
@@ -377,14 +477,19 @@ export default function TransactionsPage() {
     }
   };
 
-  const handleSyncAll = async () => {
+  const handleSyncAll = () => {
     if (syncingAll) return;
+    setSyncModalOpen(true);
+  };
+
+  const handleSyncConfirm = async (ignoreSyncLimit: boolean) => {
+    setSyncModalOpen(false);
     setSyncingAll(true);
     setSyncSummary(null);
     try {
-      const result = await bankService.syncAll();
+      const result = await bankService.syncAll({ ignoreSyncLimit, lookBackDays: 365 });
       localStorage.setItem(LAST_AUTO_SYNC_KEY, String(Date.now()));
-      setSyncSummary(
+      const summary =
         result.syncedAccounts === 0
           ? t("txPage.syncNoLinkedAccounts")
           : result.imported === 0
@@ -392,7 +497,12 @@ export default function TransactionsPage() {
             : t("txPage.syncDoneWithImported", {
               accounts: result.syncedAccounts,
               imported: result.imported,
-            }),
+            });
+
+      setSyncSummary(
+        ignoreSyncLimit
+          ? `${summary} ${t("txPage.syncIgnoreLimitTag", "(sin limite por fecha)")}`
+          : summary,
       );
       const cp = isServerPagedRef.current ? pageRef.current - 1 : 0;
       await fetchTransactions(filtersRef.current, false, cp);
@@ -420,14 +530,18 @@ export default function TransactionsPage() {
     }
   };
 
-  const handleDeleteTransaction = async (tx: TransactionSummaryDto) => {
-    if (!window.confirm(t("transactions.deleteConfirm"))) return;
+  const handleDeleteTransaction = async () => {
+    if (!deleteTx || deletingTx) return;
+    setDeletingTx(true);
     try {
-      await transactionService.remove(tx.id, true);
+      await transactionService.remove(deleteTx.id, true);
+      setDeleteTx(null);
       const cp = isServerPagedRef.current ? pageRef.current - 1 : 0;
       fetchTransactions(filtersRef.current, false, cp);
     } catch {
       // Fail silently
+    } finally {
+      setDeletingTx(false);
     }
   };
 
@@ -440,11 +554,38 @@ export default function TransactionsPage() {
   };
 
   const handlePageChange = (newPage: number) => {
-    pageRef.current = newPage;
-    setPage(newPage);
+    if (!Number.isFinite(newPage)) return;
+    const safeTotal = Math.max(1, Number.isFinite(totalPages) ? Math.trunc(totalPages) : 1);
+    const safePage = Math.min(Math.max(1, Math.trunc(newPage)), safeTotal);
+
+    pageRef.current = safePage;
+    setPage(safePage);
     if (isServerPagedRef.current) {
-      fetchTransactions(filtersRef.current, false, newPage - 1);
+      fetchTransactions(filtersRef.current, false, safePage - 1);
     }
+  };
+
+  const toggleSortDir = () => {
+    const nextSortDir: TransactionSortDir = sortDir === "asc" ? "desc" : "asc";
+    setSortDir(nextSortDir);
+    pageRef.current = 1;
+    setPage(1);
+    void fetchTransactions(filtersRef.current, true, 0, { sortBy, sortDir: nextSortDir });
+  };
+
+  // Clicking a sort option: selects it (asc) or toggles direction if already selected
+  const handleSortOptionClick = (field: TransactionSortField) => {
+    if (field === sortBy) {
+      toggleSortDir();
+    } else {
+      const nextDir: TransactionSortDir = "asc";
+      setSortBy(field);
+      setSortDir(nextDir);
+      pageRef.current = 1;
+      setPage(1);
+      void fetchTransactions(filtersRef.current, true, 0, { sortBy: field, sortDir: nextDir });
+    }
+    // Dropdown stays open after selection - don't close it
   };
 
   const formatDate = (iso: string) => {
@@ -468,6 +609,13 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-2">
+      <InfoCard
+        id="transactions"
+        accentColor="violet"
+        title={t("txPage.infoCardTitle", "Transactions")}
+        items={infoCardItems}
+        description={t("txPage.infoCardDescription", "You can also automate changes using rules.")}
+      />
       {syncSummary && (
         <ToastBanner
           tone="info"
@@ -534,29 +682,29 @@ export default function TransactionsPage() {
                 className="tx-action-pill"
                 onClick={() => navigate(ROUTES.CATEGORIES)}
               >
-                <Tag className="h-4 w-4" />
-                {t("nav.categories")}
+                <Tag className="h-4 w-4 shrink-0" />
+                <span className="tx-action-pill__label">{t("nav.categories")}</span>
               </button>
               <button
                 className="tx-action-pill"
                 onClick={() => navigate(ROUTES.SCHEDULED_TRANSACTIONS)}
               >
-                <CalendarClock className="h-4 w-4" />
-                {t("scheduled.title")}
+                <CalendarClock className="h-5 w-5 shrink-0" />
+                <span className="tx-action-pill__label">{t("scheduled.title")}</span>
               </button>
               <button
                 className="tx-action-pill"
                 onClick={() => setRulesOpen(true)}
               >
-                <ListChecks className="h-4 w-4" />
-                {t("rules.title")}
+                <ListChecks className="h-4 w-4 shrink-0" />
+                <span className="tx-action-pill__label">{t("rules.title")}</span>
               </button>
               <button
                 className="tx-action-pill"
                 onClick={() => navigate(ROUTES.FILTERS)}
               >
-                <ListChecks className="h-4 w-4" />
-                {t("txPage.savedFilters")}
+                <ListChecks className="h-4 w-4 shrink-0" />
+                <span className="tx-action-pill__label">{t("txPage.savedFilters")}</span>
               </button>
             </div>
           </div>
@@ -599,8 +747,12 @@ export default function TransactionsPage() {
                 >
                   <Plus className="tx-add-filter-tab-btn__icon h-3.5 w-3.5" />
                 </button>
-                {showAddPicker && (
-                  <div className="tx-filter-dropdown" style={{ left: 0, right: "auto" }}>
+                {showAddPicker && addPickerPos && createPortal(
+                  <div
+                    ref={addPickerDropdownRef}
+                    className="tx-filter-dropdown tx-filter-dropdown--floating"
+                    style={{ left: `${addPickerPos.left}px`, top: `${addPickerPos.top}px` }}
+                  >
                     {allSavedFilters.filter((sf) => !pinnedFilters.some((pf) => pf.id === sf.id)).length === 0 ? (
                       <p className="tx-filter-dropdown-empty">{t("txPage.noMoreFilters", "No hay más filtros")}</p>
                     ) : (
@@ -619,7 +771,8 @@ export default function TransactionsPage() {
                           </button>
                         ))
                     )}
-                  </div>
+                  </div>,
+                  document.body,
                 )}
               </div>
             </div>
@@ -636,32 +789,85 @@ export default function TransactionsPage() {
                 />
               </div>
 
+              <button
+                ref={sortBtnRef}
+                type="button"
+                onClick={() => setSortDropdownOpen((v) => !v)}
+                className={`tx-filter-dropdown-btn ${sortDropdownOpen ? "tx-filter-dropdown-btn--active" : ""}`}
+                title={t("txPage.sortBy", "Ordenar por")}
+                aria-label={t("txPage.sortBy", "Ordenar por")}
+              >
+                <ArrowUpDown className="h-4 w-4" />
+              </button>
+
+              {sortDropdownOpen && sortDropdownPos && createPortal(
+                <div
+                  ref={sortDropdownRef}
+                  className="tx-filter-dropdown tx-filter-dropdown--floating"
+                  style={{ left: `${sortDropdownPos.left}px`, top: `${sortDropdownPos.top}px`, width: "12rem" }}
+                >
+                  {(
+                    [
+                      { field: "date" as TransactionSortField, label: t("txPage.sortByDate", "Fecha") },
+                      { field: "amount" as TransactionSortField, label: t("txPage.sortByAmount", "Importe") },
+                      { field: "name" as TransactionSortField, label: t("txPage.sortByName", "Nombre") },
+                    ] as { field: TransactionSortField; label: string }[]
+                  ).map(({ field, label }) => {
+                    const isSelected = sortBy === field;
+                    return (
+                      <button
+                        key={field}
+                        className={`tx-filter-dropdown-item tx-sort-option ${isSelected ? "tx-sort-option--active" : ""}`}
+                        onClick={() => handleSortOptionClick(field)}
+                      >
+                        <span>{label}</span>
+                        {isSelected && (
+                          <ArrowUp
+                            className="tx-sort-arrow"
+                            style={{ transform: sortDir === "desc" ? "rotate(180deg)" : "rotate(0deg)" }}
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>,
+                document.body,
+              )}
+
               {/* Filter toggle button — opens/closes the filter panel */}
               <button
-                className={`tx-filter-dropdown-btn ${filtersOpen ? "tx-filter-dropdown-btn--active" : ""}`}
-                onClick={() => setFiltersOpen((v) => !v)}
+                className={`tx-filter-dropdown-btn tx-filter-toggle-btn ${filtersOpen ? "tx-filter-dropdown-btn--active tx-filter-toggle-btn--open" : ""}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setFiltersOpen(true);
+                }}
                 title={t("txPage.filterTransactions")}
+                aria-expanded={filtersOpen}
               >
-                <SlidersHorizontal className="h-4 w-4" />
+                <SlidersHorizontal className="tx-filter-btn-icon h-4 w-4" />
+                <ChevronDown className="tx-filter-btn-arrow h-3.5 w-3.5" />
               </button>
             </div>
           </div>
         </div>
 
-          {/* Filters — inside hero so gradient covers it */}
-          <FilterPanel
-            key={stateEditFilterId ?? "default"}
-            open={filtersOpen}
-            onToggle={() => setFiltersOpen((v) => !v)}
-            hideToggleButton
-            onApply={handleApplyFilters}
-            defaultAccountId={stateAccountId}
-            maxTransactionAmount={maxTxAmount || undefined}
-            initialFilters={editInitialFilters}
-            editFilterId={stateEditFilterId}
-            editFilterName={stateFilterName}
-            onUpdated={() => navigate(ROUTES.FILTERS)}
-          />
+          {/* Filters — dedicated layer above hero background */}
+          <div className="tx-filter-panel-layer">
+            <FilterPanel
+              key={stateEditFilterId ?? "default"}
+              open={filtersOpen}
+              onToggle={() => setFiltersOpen(true)}
+              hideToggleButton
+              onApply={handleApplyFilters}
+              defaultAccountId={stateAccountId}
+              maxTransactionAmount={maxTxAmount || undefined}
+              initialFilters={editInitialFilters}
+              editFilterId={stateEditFilterId}
+              editFilterName={stateFilterName}
+              onUpdated={() => navigate(ROUTES.FILTERS)}
+            />
+          </div>
       </div>
 
       {/* Transaction list — pulled up into background gradient */}
@@ -756,7 +962,7 @@ export default function TransactionsPage() {
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
                   <button
-                    onClick={() => handleDeleteTransaction(tx)}
+                    onClick={() => setDeleteTx(tx)}
                     className="rounded-md p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-500"
                     title={t("txPage.deleteTransaction")}
                   >
@@ -807,6 +1013,56 @@ export default function TransactionsPage() {
           fetchTransactions(filtersRef.current, false, cp);
         }}
       />
+
+      <SyncModal
+        open={syncModalOpen}
+        onConfirm={handleSyncConfirm}
+        onCancel={() => setSyncModalOpen(false)}
+        loading={syncingAll}
+      />
+
+      {deleteTx && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/35 backdrop-blur-sm"
+            onClick={() => {
+              if (!deletingTx) setDeleteTx(null);
+            }}
+          />
+
+          <div className="relative z-10 w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-500">
+                <AlertCircle className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">{t("txPage.deleteTransaction")}</h3>
+                <p className="mt-1 text-sm text-slate-500">{t("transactions.deleteConfirm")}</p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setDeleteTx(null)}
+                disabled={deletingTx}
+                className="btn-cancel-draw flex-1 justify-center disabled:opacity-60"
+              >
+                {t("common.cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteTransaction}
+                disabled={deletingTx}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {deletingTx && <Loader2 className="h-4 w-4 animate-spin" />}
+                {t("common.confirm")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
