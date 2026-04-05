@@ -115,7 +115,7 @@ class AccountServiceTest {
             when(accountDao.countByUserId(USER_ID)).thenReturn(0L);
 
             Account result = accountService.createAccount(
-                    USER_ID, VALID_NAME, AccountType.BANK, "USD", false);
+                    USER_ID, VALID_NAME, AccountType.BANK, "USD", false, null);
 
             assertNotNull(result);
             assertEquals(VALID_NAME, result.getName());
@@ -133,7 +133,7 @@ class AccountServiceTest {
             when(userDao.findById(USER_ID)).thenReturn(Optional.of(user));
             when(accountDao.countByUserId(USER_ID)).thenReturn(2L);
 
-            Account result = accountService.createAccount(USER_ID, null, AccountType.CASH, "EUR", false);
+            Account result = accountService.createAccount(USER_ID, null, AccountType.CASH, "EUR", false, null);
 
             assertEquals("Account 3", result.getName());
         }
@@ -144,7 +144,7 @@ class AccountServiceTest {
             when(userDao.findById(USER_ID)).thenReturn(Optional.of(user));
             when(accountDao.countByUserId(USER_ID)).thenReturn(0L);
 
-            Account result = accountService.createAccount(USER_ID, "   ", AccountType.CASH, "EUR", false);
+            Account result = accountService.createAccount(USER_ID, "   ", AccountType.CASH, "EUR", false, null);
 
             assertEquals("Account 1", result.getName());
         }
@@ -155,7 +155,7 @@ class AccountServiceTest {
             when(userDao.findById(USER_ID)).thenReturn(Optional.of(user));
             when(accountDao.countByUserId(USER_ID)).thenReturn(0L);
 
-            Account result = accountService.createAccount(USER_ID, VALID_NAME, null, "EUR", false);
+            Account result = accountService.createAccount(USER_ID, VALID_NAME, null, "EUR", false, null);
 
             assertEquals(AccountType.CASH, result.getType());
         }
@@ -166,7 +166,7 @@ class AccountServiceTest {
             when(userDao.findById(USER_ID)).thenReturn(Optional.of(user));
             when(accountDao.countByUserId(USER_ID)).thenReturn(0L);
 
-            Account result = accountService.createAccount(USER_ID, VALID_NAME, AccountType.BANK, null, false);
+            Account result = accountService.createAccount(USER_ID, VALID_NAME, AccountType.BANK, null, false, null);
 
             assertEquals("EUR", result.getCurrency());
         }
@@ -177,7 +177,7 @@ class AccountServiceTest {
             when(userDao.findById(USER_ID)).thenReturn(Optional.of(user));
             when(accountDao.countByUserId(USER_ID)).thenReturn(0L);
 
-            Account result = accountService.createAccount(USER_ID, VALID_NAME, AccountType.BANK, "  ", false);
+            Account result = accountService.createAccount(USER_ID, VALID_NAME, AccountType.BANK, "  ", false, null);
 
             assertEquals("EUR", result.getCurrency());
         }
@@ -189,7 +189,7 @@ class AccountServiceTest {
             when(accountDao.countByUserId(USER_ID)).thenReturn(0L);
 
             Account result = accountService.createAccount(
-                    USER_ID, VALID_NAME, AccountType.BANK, "EUR", true);
+                    USER_ID, VALID_NAME, AccountType.BANK, "EUR", true, null);
 
             assertEquals(result, user.getDefaultAccount());
             verify(userDao).save(user);
@@ -201,7 +201,7 @@ class AccountServiceTest {
             when(userDao.findById(USER_ID)).thenReturn(Optional.of(user));
             when(accountDao.countByUserId(USER_ID)).thenReturn(0L);
 
-            accountService.createAccount(USER_ID, VALID_NAME, AccountType.BANK, "EUR", false);
+            accountService.createAccount(USER_ID, VALID_NAME, AccountType.BANK, "EUR", false, null);
 
             assertNull(user.getDefaultAccount());
             verify(userDao, never()).save(any());
@@ -213,7 +213,7 @@ class AccountServiceTest {
             when(userDao.findById(USER_ID)).thenReturn(Optional.of(user));
             when(accountDao.countByUserId(USER_ID)).thenReturn(0L);
 
-            accountService.createAccount(USER_ID, VALID_NAME, AccountType.BANK, "EUR", null);
+            accountService.createAccount(USER_ID, VALID_NAME, AccountType.BANK, "EUR", null, null);
 
             assertNull(user.getDefaultAccount());
             verify(userDao, never()).save(any());
@@ -226,7 +226,7 @@ class AccountServiceTest {
             when(accountDao.countByUserId(USER_ID)).thenReturn(0L);
 
             Account result = accountService.createAccount(
-                    USER_ID, VALID_NAME, AccountType.OTHER, "GBP", false);
+                    USER_ID, VALID_NAME, AccountType.OTHER, "GBP", false, null);
 
             assertEquals(AccountType.OTHER, result.getType());
             assertEquals("GBP", result.getCurrency());
@@ -239,7 +239,7 @@ class AccountServiceTest {
             when(userDao.findById(unknownId)).thenReturn(Optional.empty());
 
             assertThrows(UserNotFoundException.class,
-                    () -> accountService.createAccount(unknownId, VALID_NAME, AccountType.BANK, "EUR", false));
+                    () -> accountService.createAccount(unknownId, VALID_NAME, AccountType.BANK, "EUR", false, null));
 
             verify(accountDao, never()).save(any());
         }
@@ -251,7 +251,7 @@ class AccountServiceTest {
             when(accountDao.countByUserId(USER_ID)).thenReturn(5L);
 
             AccountInvalidException ex = assertThrows(AccountInvalidException.class,
-                    () -> accountService.createAccount(USER_ID, VALID_NAME, AccountType.BANK, "EUR", false));
+                    () -> accountService.createAccount(USER_ID, VALID_NAME, AccountType.BANK, "EUR", false, null));
 
             assertTrue(ex.getMessage().contains("5"));
             verify(accountDao, never()).save(any());
@@ -264,7 +264,7 @@ class AccountServiceTest {
             when(accountDao.countByUserId(USER_ID)).thenReturn(4L);
 
             Account result = accountService.createAccount(
-                    USER_ID, VALID_NAME, AccountType.BANK, "EUR", false);
+                    USER_ID, VALID_NAME, AccountType.BANK, "EUR", false, null);
 
             assertNotNull(result);
             verify(accountDao).save(any(Account.class));
@@ -277,7 +277,7 @@ class AccountServiceTest {
             when(accountDao.countByUserId(USER_ID)).thenReturn(0L);
 
             Account result = accountService.createAccount(
-                    USER_ID, VALID_NAME, AccountType.BANK, "EUR", false);
+                    USER_ID, VALID_NAME, AccountType.BANK, "EUR", false, null);
 
             assertEquals(BigDecimal.ZERO, result.getBalance());
         }
@@ -411,7 +411,7 @@ class AccountServiceTest {
                     .thenReturn(Optional.of(existingAccount));
 
             Account result = accountService.modifyAccount(
-                    USER_ID, ACCOUNT_ID, "Savings", AccountType.OTHER, "USD");
+                    USER_ID, ACCOUNT_ID, "Savings", AccountType.OTHER, "USD", null);
 
             assertEquals("Savings", result.getName());
             assertEquals(AccountType.OTHER, result.getType());
@@ -426,7 +426,7 @@ class AccountServiceTest {
                     .thenReturn(Optional.of(existingAccount));
 
             Account result = accountService.modifyAccount(
-                    USER_ID, ACCOUNT_ID, "New Name", null, null);
+                    USER_ID, ACCOUNT_ID, "New Name", null, null, null);
 
             assertEquals("New Name", result.getName());
             assertEquals(AccountType.BANK, result.getType()); // unchanged
@@ -440,7 +440,7 @@ class AccountServiceTest {
                     .thenReturn(Optional.of(existingAccount));
 
             Account result = accountService.modifyAccount(
-                    USER_ID, ACCOUNT_ID, null, AccountType.CASH, null);
+                    USER_ID, ACCOUNT_ID, null, AccountType.CASH, null, null);
 
             assertEquals(VALID_NAME, result.getName()); // unchanged
             assertEquals(AccountType.CASH, result.getType());
@@ -454,7 +454,7 @@ class AccountServiceTest {
                     .thenReturn(Optional.of(existingAccount));
 
             Account result = accountService.modifyAccount(
-                    USER_ID, ACCOUNT_ID, null, null, "GBP");
+                    USER_ID, ACCOUNT_ID, null, null, "GBP", null);
 
             assertEquals(VALID_NAME, result.getName()); // unchanged
             assertEquals(AccountType.BANK, result.getType()); // unchanged
@@ -468,7 +468,7 @@ class AccountServiceTest {
                     .thenReturn(Optional.of(existingAccount));
 
             Account result = accountService.modifyAccount(
-                    USER_ID, ACCOUNT_ID, null, null, null);
+                    USER_ID, ACCOUNT_ID, null, null, null, null);
 
             assertEquals(VALID_NAME, result.getName());
             assertEquals(AccountType.BANK, result.getType());
@@ -485,7 +485,7 @@ class AccountServiceTest {
 
             assertThrows(InstanceNotFoundException.class,
                     () -> accountService.modifyAccount(
-                            USER_ID, unknownId, "Name", AccountType.BANK, "EUR"));
+                            USER_ID, unknownId, "Name", AccountType.BANK, "EUR", null));
 
             verify(accountDao, never()).save(any());
         }
@@ -499,7 +499,7 @@ class AccountServiceTest {
 
             assertThrows(InstanceNotFoundException.class,
                     () -> accountService.modifyAccount(
-                            otherUserId, ACCOUNT_ID, "Name", AccountType.BANK, "EUR"));
+                            otherUserId, ACCOUNT_ID, "Name", AccountType.BANK, "EUR", null));
 
             verify(accountDao, never()).save(any());
         }
@@ -513,7 +513,7 @@ class AccountServiceTest {
 
             AccountInvalidException ex = assertThrows(AccountInvalidException.class,
                     () -> accountService.modifyAccount(
-                            USER_ID, ACCOUNT_ID, blankName, null, null));
+                            USER_ID, ACCOUNT_ID, blankName, null, null, null));
 
             assertEquals("Account name cannot be blank", ex.getMessage());
             verify(accountDao, never()).save(any());
@@ -528,7 +528,7 @@ class AccountServiceTest {
 
             AccountInvalidException ex = assertThrows(AccountInvalidException.class,
                     () -> accountService.modifyAccount(
-                            USER_ID, ACCOUNT_ID, null, null, blankCurrency));
+                            USER_ID, ACCOUNT_ID, null, null, blankCurrency, null));
 
             assertEquals("Currency cannot be blank", ex.getMessage());
             verify(accountDao, never()).save(any());

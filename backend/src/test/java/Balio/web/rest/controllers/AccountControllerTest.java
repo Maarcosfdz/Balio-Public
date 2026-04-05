@@ -97,7 +97,7 @@ class AccountControllerTest {
         @DisplayName("201 – valid account with all explicit fields")
         void shouldReturn201_whenValidAccount() throws Exception {
             when(accountService.createAccount(
-                    eq(USER_ID), eq(VALID_NAME), eq(AccountType.BANK), eq("EUR"), eq(false)))
+                    eq(USER_ID), eq(VALID_NAME), eq(AccountType.BANK), eq("EUR"), eq(false), isNull()))
                     .thenReturn(testAccount);
 
             mockMvc.perform(post("/account")
@@ -120,7 +120,7 @@ class AccountControllerTest {
             setFieldViaReflection(cashAccount, "id", UUID.randomUUID());
 
             when(accountService.createAccount(
-                    eq(USER_ID), eq("Cash"), eq(AccountType.CASH), eq("USD"), isNull()))
+                    eq(USER_ID), eq("Cash"), eq(AccountType.CASH), eq("USD"), isNull(), isNull()))
                     .thenReturn(cashAccount);
 
             mockMvc.perform(post("/account")
@@ -139,7 +139,7 @@ class AccountControllerTest {
             setFieldViaReflection(otherAccount, "id", UUID.randomUUID());
 
             when(accountService.createAccount(
-                    eq(USER_ID), eq("Crypto"), eq(AccountType.OTHER), eq("BTC"), isNull()))
+                    eq(USER_ID), eq("Crypto"), eq(AccountType.OTHER), eq("BTC"), isNull(), isNull()))
                     .thenReturn(otherAccount);
 
             mockMvc.perform(post("/account")
@@ -157,7 +157,7 @@ class AccountControllerTest {
             setFieldViaReflection(defaultAccount, "id", UUID.randomUUID());
 
             when(accountService.createAccount(
-                    eq(USER_ID), isNull(), isNull(), isNull(), isNull()))
+                    eq(USER_ID), isNull(), isNull(), isNull(), isNull(), isNull()))
                     .thenReturn(defaultAccount);
 
             mockMvc.perform(post("/account")
@@ -172,7 +172,7 @@ class AccountControllerTest {
         @DisplayName("201 – setDefault=true sets account as default")
         void shouldReturn201_whenSetDefaultTrue() throws Exception {
             when(accountService.createAccount(
-                    eq(USER_ID), eq(VALID_NAME), eq(AccountType.BANK), eq("EUR"), eq(true)))
+                    eq(USER_ID), eq(VALID_NAME), eq(AccountType.BANK), eq("EUR"), eq(true), isNull()))
                     .thenReturn(testAccount);
 
             mockMvc.perform(post("/account")
@@ -181,7 +181,7 @@ class AccountControllerTest {
                             .content(accountJson(VALID_NAME, "BANK", "EUR", true)))
                     .andExpect(status().isCreated());
 
-            verify(accountService).createAccount(USER_ID, VALID_NAME, AccountType.BANK, "EUR", true);
+            verify(accountService).createAccount(USER_ID, VALID_NAME, AccountType.BANK, "EUR", true, null);
         }
 
         @Test
@@ -221,7 +221,7 @@ class AccountControllerTest {
         @DisplayName("404 – UserNotFoundException")
         void shouldReturn404_whenUserNotFound() throws Exception {
             when(accountService.createAccount(
-                    eq(USER_ID), eq(VALID_NAME), eq(AccountType.BANK), eq("EUR"), isNull()))
+                    eq(USER_ID), eq(VALID_NAME), eq(AccountType.BANK), eq("EUR"), isNull(), isNull()))
                     .thenThrow(new UserNotFoundException("User not found"));
 
             mockMvc.perform(post("/account")
@@ -236,7 +236,7 @@ class AccountControllerTest {
         @DisplayName("400 – AccountInvalidException (max accounts reached)")
         void shouldReturn400_whenMaxAccountsReached() throws Exception {
             when(accountService.createAccount(
-                    eq(USER_ID), eq(VALID_NAME), eq(AccountType.BANK), eq("EUR"), isNull()))
+                    eq(USER_ID), eq(VALID_NAME), eq(AccountType.BANK), eq("EUR"), isNull(), isNull()))
                     .thenThrow(new AccountInvalidException("Maximum number of accounts (5) reached"));
 
             mockMvc.perform(post("/account")
@@ -263,7 +263,7 @@ class AccountControllerTest {
             setFieldViaReflection(updated, "id", ACCOUNT_ID);
 
             when(accountService.modifyAccount(
-                    eq(USER_ID), eq(ACCOUNT_ID), eq("Savings"), eq(AccountType.OTHER), eq("USD")))
+                    eq(USER_ID), eq(ACCOUNT_ID), eq("Savings"), eq(AccountType.OTHER), eq("USD"), isNull()))
                     .thenReturn(updated);
 
             mockMvc.perform(put("/account/{accountId}", ACCOUNT_ID)
@@ -285,7 +285,7 @@ class AccountControllerTest {
             setFieldViaReflection(updated, "id", ACCOUNT_ID);
 
             when(accountService.modifyAccount(
-                    eq(USER_ID), eq(ACCOUNT_ID), eq("New Name"), isNull(), isNull()))
+                    eq(USER_ID), eq(ACCOUNT_ID), eq("New Name"), isNull(), isNull(), isNull()))
                     .thenReturn(updated);
 
             mockMvc.perform(put("/account/{accountId}", ACCOUNT_ID)
@@ -300,7 +300,7 @@ class AccountControllerTest {
         @DisplayName("200 – empty body is valid (all fields optional)")
         void shouldReturn200_whenEmptyBody() throws Exception {
             when(accountService.modifyAccount(
-                    eq(USER_ID), eq(ACCOUNT_ID), isNull(), isNull(), isNull()))
+                    eq(USER_ID), eq(ACCOUNT_ID), isNull(), isNull(), isNull(), isNull()))
                     .thenReturn(testAccount);
 
             mockMvc.perform(put("/account/{accountId}", ACCOUNT_ID)
@@ -314,7 +314,7 @@ class AccountControllerTest {
         @DisplayName("404 – account not found")
         void shouldReturn404_whenAccountNotFound() throws Exception {
             when(accountService.modifyAccount(
-                    eq(USER_ID), eq(ACCOUNT_ID), isNull(), isNull(), isNull()))
+                    eq(USER_ID), eq(ACCOUNT_ID), isNull(), isNull(), isNull(), isNull()))
                     .thenThrow(new InstanceNotFoundException("Account", ACCOUNT_ID));
 
             mockMvc.perform(put("/account/{accountId}", ACCOUNT_ID)
@@ -350,7 +350,7 @@ class AccountControllerTest {
         @DisplayName("400 – AccountInvalidException (blank name from service)")
         void shouldReturn400_whenBlankNameFromService() throws Exception {
             when(accountService.modifyAccount(
-                    eq(USER_ID), eq(ACCOUNT_ID), eq(VALID_NAME), isNull(), isNull()))
+                    eq(USER_ID), eq(ACCOUNT_ID), eq(VALID_NAME), isNull(), isNull(), isNull()))
                     .thenThrow(new AccountInvalidException("Account name cannot be blank"));
 
             mockMvc.perform(put("/account/{accountId}", ACCOUNT_ID)
