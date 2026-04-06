@@ -1,14 +1,15 @@
 package Balio.web.rest.dtos;
 
 import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.UUID;
 
+@Getter
+@Setter
 public class TransactionLinkDto {
 
     @NotNull
     private UUID transactionId;
-
-    public UUID getTransactionId() { return transactionId; }
-    public void setTransactionId(UUID transactionId) { this.transactionId = transactionId; }
 }

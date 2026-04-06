@@ -1,6 +1,7 @@
 package Balio.web.rest.controllers;
 
 import Balio.web.model.Exceptions.DuplicateInstanceException;
+import Balio.web.util.StringUtils;
 import Balio.web.model.Exceptions.IncorrectLoginException;
 import Balio.web.model.Exceptions.IncorrectPasswordException;
 import Balio.web.model.Exceptions.PermissionException;
@@ -91,7 +92,8 @@ public class UserController {
 
         if ( loginRateLimiter.isBlocked(params.getEmail()) ) {
             long remaining = loginRateLimiter.getRemainingBlockSeconds(params.getEmail());
-            log.warn("Login blocked due to rate limiting: email={}, remaining={}s", params.getEmail(), remaining);
+            log.warn("Login blocked due to rate limiting: email={}, remaining={}s",
+                    StringUtils.sanitizeLog(params.getEmail()), remaining);
             throw new IncorrectLoginException("Too many failed attempts. Try again in " + remaining + " seconds.");
         }
 
@@ -106,7 +108,7 @@ public class UserController {
             return userConverter.toAuthenticatedUserDto(user, accessToken, refreshToken.getToken());
         } catch (IncorrectLoginException e) {
             loginRateLimiter.registerFailedAttempt(params.getEmail());
-            log.warn("Failed login attempt: email={}", params.getEmail());
+            log.warn("Failed login attempt: email={}", StringUtils.sanitizeLog(params.getEmail()));
             throw e;
         }
     }

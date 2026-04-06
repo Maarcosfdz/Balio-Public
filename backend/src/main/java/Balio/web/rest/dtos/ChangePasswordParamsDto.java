@@ -3,7 +3,11 @@ package Balio.web.rest.dtos;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class ChangePasswordParamsDto {
 
     @NotBlank
@@ -16,10 +20,4 @@ public class ChangePasswordParamsDto {
         message = "Password must contain at least one uppercase letter, one lowercase letter, and one digit"
     )
     private String newPassword;
-
-    public String getOldPassword() { return oldPassword; }
-    public void setOldPassword(String oldPassword) { this.oldPassword = oldPassword; }
-
-    public String getNewPassword() { return newPassword; }
-    public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
 }

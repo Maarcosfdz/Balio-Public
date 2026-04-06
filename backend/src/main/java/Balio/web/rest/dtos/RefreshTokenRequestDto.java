@@ -1,12 +1,13 @@
 package Balio.web.rest.dtos;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class RefreshTokenRequestDto {
 
     @NotBlank
     private String refreshToken;
-
-    public String getRefreshToken() { return refreshToken; }
-    public void setRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
 }

@@ -2,12 +2,16 @@ package Balio.web.rest.dtos;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * DTO for creating a filter.
  * The definition is a JSON string with optional keys:
  * type, accountId, categoryId, startDate, endDate.
  */
+@Getter
+@Setter
 public class FilterDto {
 
     @NotBlank
@@ -16,10 +20,4 @@ public class FilterDto {
 
     @NotBlank
     private String definition;
-
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-
-    public String getDefinition() { return definition; }
-    public void setDefinition(String definition) { this.definition = definition; }
 }

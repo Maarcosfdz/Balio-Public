@@ -181,7 +181,8 @@ class GoalServiceImplIT {
         void addMoney() throws InstanceNotFoundException {
             Goal goal = goalService.createGoal(user.getId(), "Savings", new BigDecimal("1000"));
 
-            goalService.addMoney(user.getId(), goal.getId(), new BigDecimal("250"));
+            Goal updated = goalService.addMoney(user.getId(), goal.getId(), new BigDecimal("250"));
+            assertThat(updated).isNotNull();
 
             Goal fetched = goalDao.findById(goal.getId()).orElseThrow();
             assertThat(fetched.getCurrentAmount()).isEqualByComparingTo("250.00");
@@ -191,9 +192,10 @@ class GoalServiceImplIT {
         @DisplayName("withdrawMoney decreases currentAmount in DB")
         void withdrawMoney() throws InstanceNotFoundException {
             Goal goal = goalService.createGoal(user.getId(), "Savings", new BigDecimal("1000"));
-            goalService.addMoney(user.getId(), goal.getId(), new BigDecimal("500"));
+            assertThat(goalService.addMoney(user.getId(), goal.getId(), new BigDecimal("500"))).isNotNull();
 
-            goalService.withdrawMoney(user.getId(), goal.getId(), new BigDecimal("200"));
+            Goal afterWithdraw = goalService.withdrawMoney(user.getId(), goal.getId(), new BigDecimal("200"));
+            assertThat(afterWithdraw).isNotNull();
 
             Goal fetched = goalDao.findById(goal.getId()).orElseThrow();
             assertThat(fetched.getCurrentAmount()).isEqualByComparingTo("300.00");
@@ -203,7 +205,7 @@ class GoalServiceImplIT {
         @DisplayName("withdrawMoney throws when amount exceeds currentAmount")
         void withdrawExceeds() throws InstanceNotFoundException {
             Goal goal = goalService.createGoal(user.getId(), "Fund", new BigDecimal("1000"));
-            goalService.addMoney(user.getId(), goal.getId(), new BigDecimal("100"));
+            assertThat(goalService.addMoney(user.getId(), goal.getId(), new BigDecimal("100"))).isNotNull();
 
             assertThatThrownBy(() -> goalService.withdrawMoney(user.getId(), goal.getId(), new BigDecimal("500")))
                     .isInstanceOf(GoalInvalidException.class)

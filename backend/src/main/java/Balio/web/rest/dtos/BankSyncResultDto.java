@@ -1,5 +1,10 @@
 package Balio.web.rest.dtos;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class BankSyncResultDto {
 
     private int imported;
@@ -17,10 +22,4 @@ public class BankSyncResultDto {
         this.imported = imported;
         this.syncedAccounts = syncedAccounts;
     }
-
-    public int getImported() { return imported; }
-    public void setImported(int imported) { this.imported = imported; }
-
-    public int getSyncedAccounts() { return syncedAccounts; }
-    public void setSyncedAccounts(int syncedAccounts) { this.syncedAccounts = syncedAccounts; }
 }

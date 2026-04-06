@@ -1,6 +1,7 @@
 package Balio.web.rest.controllers;
 
 import Balio.web.model.Exceptions.InstanceNotFoundException;
+import Balio.web.util.StringUtils;
 import Balio.web.model.entities.Account;
 import Balio.web.model.services.AccountService;
 import Balio.web.rest.dtos.AccountConverter;
@@ -81,7 +82,8 @@ public class AccountController {
             dto.getSetDefault(),
             dto.getSyncDeletedTransactions());
 
-        log.info("Account created: accountId={}, userId={}, type={}", account.getId(), userId, dto.getType());
+        log.info("Account created: accountId={}, userId={}, type={}",
+                account.getId(), userId, StringUtils.sanitizeLog(dto.getType().name()));
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest().path("/{id}")

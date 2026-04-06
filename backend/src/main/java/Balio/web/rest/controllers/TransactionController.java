@@ -40,6 +40,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import Balio.web.enums.TransactionType;
+import Balio.web.util.StringUtils;
 import Balio.web.model.Exceptions.AccountInvalidException;
 import javax.management.InstanceNotFoundException;
 import Balio.web.model.Exceptions.UserNotFoundException;
@@ -316,7 +317,7 @@ public class TransactionController {
                                     if (ruleType != type) { continue; }
                                 } catch (IllegalArgumentException e) {
                                     log.debug("Unknown transaction type in rule, skipping: {}",
-                                            rule.getTransactionType());
+                                            StringUtils.sanitizeLog(rule.getTransactionType()));
                                 }
                             }
                             if (Boolean.TRUE.equals(rule.getExcludeMatch())) {
@@ -340,7 +341,8 @@ public class TransactionController {
                                         categoryId = ruleCategoryId;
                                     }
                                 } catch (IllegalArgumentException e) {
-                                    log.debug("Invalid category UUID in rule, skipping: {}", rule.getCategoryId());
+                                    log.debug("Invalid category UUID in rule, skipping: {}",
+                                            StringUtils.sanitizeLog(rule.getCategoryId()));
                                 }
                             }
                             if (rule.getMappedName() != null && !rule.getMappedName().isBlank()) {
@@ -449,7 +451,8 @@ public class TransactionController {
             try {
                 return LocalDate.parse(dateStr, fmt);
             } catch (DateTimeParseException e) {
-                log.debug("Date '{}' does not match format {}, trying next", dateStr, fmt);
+                log.debug("Date '{}' does not match format {}, trying next",
+                        StringUtils.sanitizeLog(dateStr), fmt);
             }
         }
 

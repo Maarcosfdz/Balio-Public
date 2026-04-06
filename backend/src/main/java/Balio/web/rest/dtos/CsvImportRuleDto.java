@@ -1,5 +1,10 @@
 package Balio.web.rest.dtos;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class CsvImportRuleDto {
 
     private String pattern;
@@ -10,24 +15,4 @@ public class CsvImportRuleDto {
     private java.math.BigDecimal amountMultiplier;
 
     public CsvImportRuleDto() {}
-
-    public String getPattern() { return pattern; }
-    public void setPattern(String pattern) { this.pattern = pattern; }
-
-    public String getCategoryId() { return categoryId; }
-    public void setCategoryId(String categoryId) { this.categoryId = categoryId; }
-
-    public String getTransactionType() { return transactionType; }
-    public void setTransactionType(String transactionType) { this.transactionType = transactionType; }
-
-    public String getMappedName() { return mappedName; }
-    public void setMappedName(String mappedName) { this.mappedName = mappedName; }
-
-    public Boolean getExcludeMatch() { return excludeMatch; }
-    public void setExcludeMatch(Boolean excludeMatch) { this.excludeMatch = excludeMatch; }
-
-    public java.math.BigDecimal getAmountMultiplier() { return amountMultiplier; }
-    public void setAmountMultiplier(java.math.BigDecimal amountMultiplier) {
-        this.amountMultiplier = amountMultiplier;
-    }
 }
