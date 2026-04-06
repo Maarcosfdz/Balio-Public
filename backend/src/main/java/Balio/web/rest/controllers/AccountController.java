@@ -1,7 +1,6 @@
 package Balio.web.rest.controllers;
 
 import Balio.web.model.Exceptions.InstanceNotFoundException;
-import Balio.web.util.StringUtils;
 import Balio.web.model.entities.Account;
 import Balio.web.model.services.AccountService;
 import Balio.web.rest.dtos.AccountConverter;
