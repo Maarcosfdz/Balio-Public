@@ -83,7 +83,8 @@ public class AccountController {
             dto.getSyncDeletedTransactions());
 
         log.info("Account created: accountId={}, userId={}, type={}",
-                account.getId(), userId, StringUtils.sanitizeLog(dto.getType().name()));
+                account.getId(), userId,
+                dto.getType() != null ? dto.getType().name() : null);
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest().path("/{id}")
