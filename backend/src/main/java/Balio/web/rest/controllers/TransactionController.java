@@ -314,7 +314,9 @@ public class TransactionController {
                                 try {
                                     TransactionType ruleType = TransactionType.valueOf(rule.getTransactionType());
                                     if (ruleType != type) { continue; }
-                                } catch (IllegalArgumentException ignored) {}
+                                } catch (IllegalArgumentException e) {
+                                    log.debug("Unknown transaction type in rule, skipping filter: {}", rule.getTransactionType());
+                                }
                             }
                             if (Boolean.TRUE.equals(rule.getExcludeMatch())) {
                                 excluded = true;
@@ -336,7 +338,9 @@ public class TransactionController {
                                     if (ruleCategory == null || ruleCategory.getType() == type) {
                                         categoryId = ruleCategoryId;
                                     }
-                                } catch (IllegalArgumentException ignored) {}
+                                } catch (IllegalArgumentException e) {
+                                    log.debug("Invalid category UUID in rule, skipping: {}", rule.getCategoryId());
+                                }
                             }
                             if (rule.getMappedName() != null && !rule.getMappedName().isBlank()) {
                                 finalName = rule.getMappedName().trim();
@@ -430,26 +434,23 @@ public class TransactionController {
         return row;
     }
 
+    private static final List<DateTimeFormatter> FLEXIBLE_DATE_FORMATS = List.of(
+            DateTimeFormatter.ISO_LOCAL_DATE,
+            DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+            DateTimeFormatter.ofPattern("dd-MM-yyyy"),
+            DateTimeFormatter.ofPattern("dd/MM/yy")
+    );
+
     private LocalDate parseDateFlexible(String dateStr) {
         if (dateStr == null || dateStr.isBlank()) { return LocalDate.now(); }
 
-        // Try ISO format first (yyyy-MM-dd)
-        try { return LocalDate.parse(dateStr); } catch (DateTimeParseException ignored) {}
-
-        // Try dd/MM/yyyy
-        try {
-            return LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-        } catch (DateTimeParseException ignored) {}
-
-        // Try dd-MM-yyyy
-        try {
-            return LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("dd-MM-yyyy"));
-        } catch (DateTimeParseException ignored) {}
-
-        // Try dd/MM/yy
-        try {
-            return LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("dd/MM/yy"));
-        } catch (DateTimeParseException ignored) {}
+        for (DateTimeFormatter fmt : FLEXIBLE_DATE_FORMATS) {
+            try {
+                return LocalDate.parse(dateStr, fmt);
+            } catch (DateTimeParseException e) {
+                log.debug("Date '{}' does not match format {}, trying next", dateStr, fmt);
+            }
+        }
 
         return LocalDate.now();
     }

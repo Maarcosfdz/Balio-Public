@@ -235,7 +235,7 @@ public class EnableBankingClient {
             String signaturePart = b64.encodeToString(signer.sign());
 
             String jwt = signingInput + "." + signaturePart;
-            log.info("Generated JWT (decode at jwt.io to verify): {}", jwt);
+            log.debug("Enable Banking JWT generated successfully");
             return jwt;
         } catch (Exception e) {
             throw new EnableBankingException("Failed to build Enable Banking JWT", e);
@@ -269,7 +269,7 @@ public class EnableBankingClient {
             byte[] der = Base64.getDecoder().decode(base64);
             PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(der);
             privateKey = KeyFactory.getInstance("RSA").generatePrivate(spec);
-            log.info("Enable Banking private key loaded from: {}", path);
+            log.debug("Enable Banking private key loaded successfully");
             return privateKey;
         } catch (Exception e) {
             throw new EnableBankingException(

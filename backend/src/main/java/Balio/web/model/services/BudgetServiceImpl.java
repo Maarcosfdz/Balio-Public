@@ -2,6 +2,7 @@ package Balio.web.model.services;
 
 import Balio.web.enums.BudgetPeriodicity;
 import Balio.web.model.Exceptions.BudgetInvalidException;
+import Balio.web.util.StringUtils;
 import Balio.web.model.Exceptions.InstanceNotFoundException;
 import Balio.web.model.Exceptions.UserNotFoundException;
 import Balio.web.model.entities.Budget;
@@ -74,7 +75,7 @@ public class BudgetServiceImpl implements BudgetService {
 
         Budget budget = new Budget(
                 name.trim(), periodicity, startDate, user,
-                sanitizeOptional(iconName), sanitizeOptional(iconBgColor));
+                StringUtils.sanitizeOptional(iconName), StringUtils.sanitizeOptional(iconBgColor));
         budgetDao.save(budget);
         return budget;
     }
@@ -113,10 +114,10 @@ public class BudgetServiceImpl implements BudgetService {
             budget.setStartDate(startDate);
         }
         if (iconName != null) {
-            budget.setIconName(sanitizeOptional(iconName));
+            budget.setIconName(StringUtils.sanitizeOptional(iconName));
         }
         if (iconBgColor != null) {
-            budget.setIconBgColor(sanitizeOptional(iconBgColor));
+            budget.setIconBgColor(StringUtils.sanitizeOptional(iconBgColor));
         }
 
         budgetDao.save(budget);
@@ -392,11 +393,4 @@ public class BudgetServiceImpl implements BudgetService {
         };
     }
 
-    private String sanitizeOptional(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
-    }
 }

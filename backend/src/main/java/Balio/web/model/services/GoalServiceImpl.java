@@ -7,6 +7,7 @@ import Balio.web.model.entities.Goal;
 import Balio.web.model.entities.GoalDao;
 import Balio.web.model.entities.User;
 import Balio.web.model.entities.UserDao;
+import Balio.web.util.StringUtils;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,7 +43,7 @@ public class GoalServiceImpl implements GoalService {
         }
 
         Goal goal = new Goal(
-                name.trim(), targetAmount, user, sanitizeOptional(iconName), sanitizeOptional(iconBgColor));
+                name.trim(), targetAmount, user, StringUtils.sanitizeOptional(iconName), StringUtils.sanitizeOptional(iconBgColor));
         goalDao.save(goal);
         return goal;
     }
@@ -82,10 +83,10 @@ public class GoalServiceImpl implements GoalService {
             goal.setTargetAmount(targetAmount);
         }
         if (iconName != null) {
-            goal.setIconName(sanitizeOptional(iconName));
+            goal.setIconName(StringUtils.sanitizeOptional(iconName));
         }
         if (iconBgColor != null) {
-            goal.setIconBgColor(sanitizeOptional(iconBgColor));
+            goal.setIconBgColor(StringUtils.sanitizeOptional(iconBgColor));
         }
 
         goalDao.save(goal);
@@ -146,11 +147,4 @@ public class GoalServiceImpl implements GoalService {
                 .orElseThrow(() -> new InstanceNotFoundException("Goal", goalId));
     }
 
-    private String sanitizeOptional(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
-    }
 }

@@ -8,6 +8,7 @@ import Balio.web.model.entities.Category;
 import Balio.web.model.entities.CategoryDao;
 import Balio.web.model.entities.User;
 import Balio.web.model.entities.UserDao;
+import Balio.web.util.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -43,7 +44,7 @@ public class CategoryServiceImpl implements CategoryService {
         }
 
         Category category = new Category(
-                name.trim(), type, user, sanitizeOptional(iconName), sanitizeOptional(iconBgColor));
+                name.trim(), type, user, StringUtils.sanitizeOptional(iconName), StringUtils.sanitizeOptional(iconBgColor));
         categoryDao.save(category);
 
         return category;
@@ -81,10 +82,10 @@ public class CategoryServiceImpl implements CategoryService {
             category.setType(type);
         }
         if (iconName != null) {
-            category.setIconName(sanitizeOptional(iconName));
+            category.setIconName(StringUtils.sanitizeOptional(iconName));
         }
         if (iconBgColor != null) {
-            category.setIconBgColor(sanitizeOptional(iconBgColor));
+            category.setIconBgColor(StringUtils.sanitizeOptional(iconBgColor));
         }
 
         categoryDao.save(category);
@@ -119,11 +120,4 @@ public class CategoryServiceImpl implements CategoryService {
                 .orElseThrow(() -> new InstanceNotFoundException("Category", categoryId));
     }
 
-    private String sanitizeOptional(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
-    }
 }
