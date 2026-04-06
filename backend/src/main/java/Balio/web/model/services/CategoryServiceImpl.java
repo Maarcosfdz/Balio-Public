@@ -44,7 +44,8 @@ public class CategoryServiceImpl implements CategoryService {
         }
 
         Category category = new Category(
-                name.trim(), type, user, StringUtils.sanitizeOptional(iconName), StringUtils.sanitizeOptional(iconBgColor));
+                name.trim(), type, user,
+                StringUtils.sanitizeOptional(iconName), StringUtils.sanitizeOptional(iconBgColor));
         categoryDao.save(category);
 
         return category;

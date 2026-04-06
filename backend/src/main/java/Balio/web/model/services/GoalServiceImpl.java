@@ -43,7 +43,8 @@ public class GoalServiceImpl implements GoalService {
         }
 
         Goal goal = new Goal(
-                name.trim(), targetAmount, user, StringUtils.sanitizeOptional(iconName), StringUtils.sanitizeOptional(iconBgColor));
+                name.trim(), targetAmount, user,
+                StringUtils.sanitizeOptional(iconName), StringUtils.sanitizeOptional(iconBgColor));
         goalDao.save(goal);
         return goal;
     }

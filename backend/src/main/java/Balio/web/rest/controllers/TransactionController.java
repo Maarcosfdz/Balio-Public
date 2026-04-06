@@ -315,7 +315,8 @@ public class TransactionController {
                                     TransactionType ruleType = TransactionType.valueOf(rule.getTransactionType());
                                     if (ruleType != type) { continue; }
                                 } catch (IllegalArgumentException e) {
-                                    log.debug("Unknown transaction type in rule, skipping filter: {}", rule.getTransactionType());
+                                    log.debug("Unknown transaction type in rule, skipping: {}",
+                                            rule.getTransactionType());
                                 }
                             }
                             if (Boolean.TRUE.equals(rule.getExcludeMatch())) {
