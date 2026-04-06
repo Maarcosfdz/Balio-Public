@@ -34,6 +34,27 @@
 
     <properties>
         <java.version>21</java.version>
+
+        <!-- SonarCloud -->
+        <sonar.organization>maarcosfdzfd377773123</sonar.organization>
+        <sonar.projectKey>Maarcosfdz_Balio</sonar.projectKey>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+        <sonar.coverage.jacoco.xmlReportPaths>
+            ${project.build.directory}/site/jacoco/jacoco.xml
+        </sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.exclusions>
+            **/config/FlywayConfig.java,
+            **/config/ScheduledTasks.java,
+            **/config/JacksonConfig.java,
+            **/config/OpenApiConfig.java,
+            **/config/SecurityConfig.java,
+            **/config/SecurityEnvironmentValidator.java,
+            **/model/Exceptions/**,
+            **/enablebanking/**,
+            **/oauth/**,
+            **/BalioApplication.java
+        </sonar.exclusions>
     </properties>
 
     <!-- ########################## DEPENDENCIES ########################## -->

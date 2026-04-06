@@ -1,0 +1,60 @@
+# ============================================================
+# SonarQube — Local analysis environment
+# ============================================================
+# Usage:
+#   docker compose -f docker-compose.sonar.yml up -d
+#   Open http://localhost:9000 (admin / admin on first run)
+#
+# After SonarQube is up, run analysis:
+#   Backend:  cd backend && ./mvnw sonar:sonar \
+#               -Dsonar.host.url=http://localhost:9000 \
+#               -Dsonar.token=<your-local-token> \
+#               -Dsonar.projectKey=balio-backend
+#   Frontend: npx sonar-scanner \
+#               -Dsonar.host.url=http://localhost:9000 \
+#               -Dsonar.token=<your-local-token> \
+#               -Dsonar.projectKey=balio-frontend
+# ============================================================
+
+services:
+  sonarqube:
+    image: sonarqube:community
+    container_name: balio-sonarqube
+    depends_on:
+      sonar-db:
+        condition: service_healthy
+    ports:
+      - "9000:9000"
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonar-db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+
+  sonar-db:
+    image: postgres:15-alpine
+    container_name: balio-sonar-db
+    environment:
+      POSTGRES_DB: sonar
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+    volumes:
+      - sonar_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonar -d sonar"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  sonarqube_data:
+  sonarqube_logs:
+  sonarqube_extensions:
+  sonar_postgres:
