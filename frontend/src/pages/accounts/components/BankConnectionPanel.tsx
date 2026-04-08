@@ -191,8 +191,7 @@ export default function BankConnectionPanel({ account, onSynced }: BankConnectio
         {isLinked && (
           <label className="mt-3 flex cursor-pointer items-center gap-2 p-2">
             <div
-              onClick={handleToggleSyncDeleted}
-              disabled={updatingPreference}
+              onClick={updatingPreference ? undefined : handleToggleSyncDeleted}
               className={`flex h-4 w-4 items-center justify-center rounded border-2 transition ${
                 syncDeleted ? "border-sky-500 bg-sky-500" : "border-slate-300"
               } ${updatingPreference ? "opacity-50" : ""}`}
