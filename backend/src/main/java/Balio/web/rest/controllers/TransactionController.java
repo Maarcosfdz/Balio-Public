@@ -188,7 +188,7 @@ public class TransactionController {
 
         transactionService.deleteTransaction(userId, transactionId, revertBalance);
         log.info("Transaction deleted: txId={}, userId={}, revertBalance={}",
-                transactionId, userId, revertBalance);
+                transactionId, userId, String.valueOf(revertBalance));
     }
 
     // ── APPLY BATCH RULES ──────────────────────────────────────────────
