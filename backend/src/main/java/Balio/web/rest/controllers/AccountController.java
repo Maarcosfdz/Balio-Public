@@ -1,6 +1,7 @@
 package Balio.web.rest.controllers;
 
 import Balio.web.model.Exceptions.InstanceNotFoundException;
+import Balio.web.util.StringUtils;
 import Balio.web.model.entities.Account;
 import Balio.web.model.services.AccountService;
 import Balio.web.rest.dtos.AccountConverter;
@@ -133,7 +134,8 @@ public class AccountController {
             throw new Balio.web.model.Exceptions.AccountInvalidException("balance is required");
         }
         Account account = accountService.adjustBalance(userId, accountId, newBalance);
-        log.info("Balance adjusted: accountId={}, userId={}, newBalance={}", accountId, userId, newBalance);
+        log.info("Balance adjusted: accountId={}, userId={}, newBalance={}",
+                accountId, userId, StringUtils.sanitizeLog(newBalance.toPlainString()));
         return accountConverter.toResponseDto(account);
     }
 

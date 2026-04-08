@@ -159,7 +159,8 @@ public class UserController {
         }
 
         userService.updatePreferredCurrency(id, body.get("preferredCurrency"));
-        log.info("Preferred currency updated: userId={}, currency={}", id, body.get("preferredCurrency"));
+        log.info("Preferred currency updated: userId={}, currency={}",
+                id, StringUtils.sanitizeLog(body.get("preferredCurrency")));
     }
 
     @PostMapping("/{id}/changePassword")

@@ -245,7 +245,8 @@ class GoalServiceImplIT {
 
             List<Goal> goals = goalService.findAllByUserId(user.getId());
 
-            assertThat(goals).allMatch(g -> g.getUser().getId().equals(user.getId()));
+            assertThat(goals).isNotEmpty()
+                    .allMatch(g -> g.getUser().getId().equals(user.getId()));
         }
     }
 

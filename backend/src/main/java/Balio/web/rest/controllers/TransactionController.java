@@ -123,7 +123,9 @@ public class TransactionController {
                 dto.getOriginalAmount(), dto.getOriginalCurrency(), dto.getExchangeRate());
 
         log.info("Expense created: txId={}, userId={}, amount={}, accountId={}",
-                transaction.getId(), userId, dto.getAmount(), dto.getAccountId());
+                transaction.getId(), userId,
+                StringUtils.sanitizeLog(dto.getAmount().toPlainString()),
+                StringUtils.sanitizeLog(String.valueOf(dto.getAccountId())));
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest().path("/{id}")
@@ -146,7 +148,9 @@ public class TransactionController {
                 dto.getOriginalAmount(), dto.getOriginalCurrency(), dto.getExchangeRate());
 
         log.info("Income created: txId={}, userId={}, amount={}, accountId={}",
-                transaction.getId(), userId, dto.getAmount(), dto.getAccountId());
+                transaction.getId(), userId,
+                StringUtils.sanitizeLog(dto.getAmount().toPlainString()),
+                StringUtils.sanitizeLog(String.valueOf(dto.getAccountId())));
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest().path("/{id}")
