@@ -1,0 +1,173 @@
+package Balio.web.model.entities;
+
+import Balio.web.enums.TransactionType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.UUID;
+
+@Entity
+@Table(name = "transactions")
+public class Transaction {
+
+    @Id
+    @GeneratedValue
+    private UUID id;
+
+    @Column(nullable = false, length = 120)
+    private String name;
+
+    @Column(nullable = false, precision = 14, scale = 2)
+    private BigDecimal amount;
+
+    @Column(nullable = false)
+    private LocalDate date;
+
+    @Column(nullable = false)
+    private boolean affectsBalance = true;
+
+    // -------- CURRENCY --------
+
+    @Column(name = "original_amount", nullable = false, precision = 14, scale = 2)
+    private BigDecimal originalAmount;
+
+    @Column(name = "original_currency", nullable = false, length = 3)
+    private String originalCurrency = "EUR";
+
+    @Column(name = "exchange_rate", nullable = false, precision = 18, scale = 8)
+    private BigDecimal exchangeRate = BigDecimal.ONE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private TransactionType type; // EXPENSE / INCOME
+
+    // -------- BANK METADATA --------
+
+    @Column(name = "bank_category", length = 100)
+    private String bankCategory;
+
+    @Column(name = "external_id", length = 150)
+    private String externalId;
+
+    // -------- RELATIONS --------
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @ManyToOne
+    @JoinColumn(name = "account_id")
+    private Account account;
+
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private Category category;
+
+    protected Transaction() {
+    }
+
+    public Transaction(String name, BigDecimal amount, LocalDate date, TransactionType type, User user) {
+        this.name = name;
+        this.amount = amount;
+        this.originalAmount = amount;
+        this.originalCurrency = "EUR";
+        this.exchangeRate = BigDecimal.ONE;
+        this.date = date;
+        this.type = type;
+        this.user = user;
+    }
+
+    // getters / setters
+
+    public UUID getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    public LocalDate getDate() {
+        return date;
+    }
+
+    public void setDate(LocalDate date) {
+        this.date = date;
+    }
+
+    public boolean isAffectsBalance() {
+        return affectsBalance;
+    }
+
+    public void setAffectsBalance(boolean affectsBalance) {
+        this.affectsBalance = affectsBalance;
+    }
+
+    public TransactionType getType() {
+        return type;
+    }
+
+    public void setType(TransactionType type) {
+        this.type = type;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public Account getAccount() {
+        return account;
+    }
+
+    public void setAccount(Account account) {
+        this.account = account;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
+    }
+
+    public BigDecimal getOriginalAmount() { return originalAmount; }
+    public void setOriginalAmount(BigDecimal originalAmount) { this.originalAmount = originalAmount; }
+
+    public String getOriginalCurrency() { return originalCurrency; }
+    public void setOriginalCurrency(String originalCurrency) { this.originalCurrency = originalCurrency; }
+
+    public BigDecimal getExchangeRate() { return exchangeRate; }
+    public void setExchangeRate(BigDecimal exchangeRate) { this.exchangeRate = exchangeRate; }
+
+    public String getBankCategory() { return bankCategory; }
+    public void setBankCategory(String bankCategory) { this.bankCategory = bankCategory; }
+
+    public String getExternalId() { return externalId; }
+    public void setExternalId(String externalId) { this.externalId = externalId; }
+}

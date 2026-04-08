@@ -1,0 +1,561 @@
+/*
+ * pages/analysis.css — Estilos específicos de la página de Análisis.
+ */
+
+/* ── Analysis hero (fade gris como Accounts) ───────────────────── */
+.analysis-hero-section {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  margin: -1.5rem -1.5rem 0;
+  padding: 0 1.5rem 1.5rem;
+}
+
+/* Full-bleed background behind the hero section to avoid visible white gutters */
+.analysis-hero-section::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 0;
+  bottom: 0;
+  width: 100vw;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    #f0f4f8 0%,
+    #e8edf4 45%,
+    #f2f5f8 82%,
+    rgba(242, 245, 248, 0) 100%
+  );
+  z-index: 0;
+}
+
+.analysis-hero-section::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -3.3rem;
+  width: 100vw;
+  height: 7.2rem;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(232, 237, 244, 0.62) 0%,
+    rgba(242, 245, 248, 0.24) 56%,
+    rgba(242, 245, 248, 0) 100%
+  );
+  filter: blur(30px);
+}
+
+@media (min-width: 768px) {
+  .analysis-hero-section {
+    margin: -2rem -2rem 0;
+    padding: 0 2rem 1.5rem;
+  }
+}
+
+.analysis-hero-inner {
+  position: relative;
+  z-index: 3;
+  padding-top: 2rem;
+}
+
+/* ── "Editar dashboard" — degradado azul → verde visible en reposo ── */
+.analysis-edit-btn {
+  background: linear-gradient(120deg, #0284c7 0%, #0ea5e9 40%, #10b981 80%, #34d399 100%);
+  background-size: 170% 100%;
+  background-position: 10% center; /* muestra azul y algo de verde en reposo */
+  color: #fff;
+  box-shadow: 0 2px 8px -2px rgba(2, 132, 199, 0.4);
+  transition:
+    background-position 500ms ease,
+    box-shadow 220ms ease,
+    transform 180ms ease;
+}
+
+.analysis-edit-btn:hover {
+  background-position: 100% center;
+  box-shadow: 0 6px 20px -6px rgba(16, 185, 129, 0.65);
+  transform: translateY(-1px);
+}
+
+/* Estado activo: verde predominante con algo de azul visible */
+.analysis-edit-btn.is-active {
+  background: linear-gradient(120deg, #059669 0%, #10b981 35%, #0ea5e9 80%, #0284c7 100%);
+  background-size: 170% 100%;
+  background-position: 10% center;
+  box-shadow: 0 2px 8px -2px rgba(16, 185, 129, 0.4);
+}
+
+.analysis-edit-btn.is-active:hover {
+  background-position: 100% center;
+  box-shadow: 0 6px 20px -6px rgba(2, 132, 199, 0.65);
+}
+
+/* ── Botón Sincronizar — hover gris neutro ───────────────────────── */
+.analysis-sync-btn {
+  margin-left: 0;
+}
+
+.analysis-sync-btn:hover:not(:disabled) {
+  transform: rotate(90deg);
+}
+
+/* ── Botón editar de tarjeta — hover gris, conserva wiggle del lápiz ── */
+/*
+ * Elimina el efecto de borde animado (tx-save-draw-btn) y usa hover gris suave.
+ * El pencil-wiggle del lápiz sigue funcionando a través de
+ * "button:hover .btn-edit-icon" definido en buttons.css.
+ */
+.analysis-edit-icon-btn {
+  border-color: #e2e8f0 !important;
+  color: #475569 !important;
+  background: #fff !important;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease !important;
+}
+
+.analysis-edit-icon-btn:hover {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.08) !important;
+  transform: none !important;
+  background-size: auto !important;
+}
+
+.analysis-edit-icon-btn {
+  /* ── Card edit button — neutral gray hover, keeps pencil wiggle ── */
+  /*
+   * Removes the animated border effect (tx-save-draw-btn) and uses a subtle
+   * gray hover. The pencil-wiggle still runs via
+   * "button:hover .btn-edit-icon" defined in buttons.css.
+   */
+}
+
+.analysis-card-edit:hover {
+  outline-color: #7dd3fc;
+}
+
+.analysis-card-edit.drag-over {
+  outline-color: #0ea5e9;
+  background-color: #f0f9ff;
+}
+
+/* ── react-grid-layout ─────────────────────────────────────────── */
+.analysis-grid .react-grid-item {
+  transition: all 200ms ease;
+}
+
+.analysis-grid .react-grid-item.react-draggable-dragging {
+  z-index: 100;
+  opacity: 0.85;
+  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.25);
+}
+
+.analysis-grid .react-grid-item > .react-resizable-handle {
+  background: none;
+  width: 14px;
+  height: 14px;
+}
+
+.analysis-grid .react-grid-item > .react-resizable-handle::after {
+  content: '';
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid #94a3b8;
+  border-bottom: 2px solid #94a3b8;
+  border-radius: 0 0 2px 0;
+  transition: border-color 150ms ease;
+}
+
+.analysis-grid .react-grid-item:hover > .react-resizable-handle::after {
+  border-color: #0ea5e9;
+}
+
+.analysis-grid-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.analysis-grid-card-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.analysis-drag-zone {
+  cursor: grab;
+}
+
+.analysis-drag-zone:active {
+  cursor: grabbing;
+}
+
+/* ── Lightbox chart override ──────────────────────────────────── */
+.analysis-lightbox-chart .recharts-responsive-container {
+  height: 100% !important;
+  min-height: 500px;
+}
+
+/* ── Size toggle S / M / L ───────────────────────────────────────── */
+.analysis-size-toggle {
+  display: inline-flex;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  background: #f8fafc;
+}
+
+.analysis-size-btn {
+  padding: 0.15rem 0.45rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  line-height: 1.6;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.analysis-size-btn:hover {
+  background-color: #e2e8f0;
+  color: #334155;
+}
+
+.analysis-size-btn.active {
+  background: linear-gradient(120deg, #0284c7, #10b981);
+  color: white;
+}
+
+/* ── Botón expandir / contraer ───────────────────────────────────── */
+.analysis-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.2rem;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition:
+    color 150ms ease,
+    transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.analysis-expand-btn:hover {
+  color: #0284c7;
+  transform: scale(1.15);
+}
+
+.analysis-expand-icon {
+  overflow: visible;
+}
+
+.analysis-expand-icon__nw,
+.analysis-expand-icon__se {
+  transform-box: fill-box;
+  transition: transform 230ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.analysis-expand-btn:hover .analysis-expand-icon__nw {
+  transform: translate(-1.35px, -1.35px);
+}
+
+.analysis-expand-btn:hover .analysis-expand-icon__se {
+  transform: translate(1.35px, 1.35px);
+}
+
+/* ── Banner de modo edición ──────────────────────────────────────── */
+.analysis-edit-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.625rem;
+  background: linear-gradient(90deg, #eff6ff 0%, #f0fdf4 100%);
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  animation: analysis-banner-in 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes analysis-banner-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Botón "Añadir gráfico" — estilo punteado vacío ─────────────── */
+.analysis-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  border-radius: 0.875rem;
+  border: 2px dashed #cbd5e1;
+  background: transparent;
+  color: #64748b;
+  padding: 1.125rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 200ms ease,
+    color 200ms ease,
+    background-color 200ms ease;
+}
+
+.analysis-add-btn:hover {
+  border-color: #0ea5e9;
+  color: #0284c7;
+  background-color: #f0f9ff;
+}
+
+/* ── Widget list item en panel de edición ────────────────────────── */
+.analysis-widget-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.625rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.analysis-widget-list-item:hover {
+  border-color: #7dd3fc;
+  background-color: #f0f9ff;
+  box-shadow: 0 2px 10px -4px rgba(2, 132, 199, 0.25);
+}
+
+.analysis-widget-list-item.is-muted {
+  background: #f8fafc;
+  border-style: dashed;
+  opacity: 0.9;
+}
+
+.analysis-widget-list-item.is-visible-list {
+  animation: analysis-item-slide-up 340ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.analysis-widget-list-item.is-hidden-list {
+  animation: analysis-item-slide-down 360ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes analysis-item-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes analysis-item-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.analysis-dashboard-toggle {
+  position: relative;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 0.3rem;
+  border: 1.5px solid #94a3b8;
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    border-color 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.analysis-dashboard-toggle__fill {
+  position: absolute;
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 0.18rem;
+  background: transparent;
+  transform: scale(0.4);
+  opacity: 0;
+  transition:
+    background-color 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.analysis-dashboard-toggle__check {
+  position: absolute;
+  color: #ffffff;
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity 230ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.analysis-dashboard-toggle__tooltip {
+  position: absolute;
+  right: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%) translateX(6px);
+  border-radius: 0.35rem;
+  background: #0f172a;
+  color: #f8fafc;
+  font-size: 0.68rem;
+  line-height: 1;
+  padding: 0.28rem 0.4rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 20;
+}
+
+.analysis-dashboard-toggle:hover {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14);
+}
+
+.analysis-dashboard-toggle:hover .analysis-dashboard-toggle__tooltip {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+.analysis-dashboard-toggle.is-active {
+  border-color: #10b981;
+  background: #ecfdf5;
+}
+
+.analysis-dashboard-toggle.is-active .analysis-dashboard-toggle__fill {
+  background: #10b981;
+  opacity: 1;
+  transform: scale(1);
+}
+
+.analysis-dashboard-toggle.is-active .analysis-dashboard-toggle__check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ── Card del configurador — borde superior animado ─────────────── */
+.analysis-configurator-card {
+  position: relative;
+}
+
+/* Barra superior dentro del Card — elemento real para permitir el recorte por border-radius */
+.analysis-configurator-strip {
+  height: 3px;
+  width: 100%;
+  border-top-left-radius: 0.75rem;
+  border-top-right-radius: 0.75rem;
+  background: linear-gradient(
+    90deg,
+    #0284c7 0%,
+    #0ea5e9 25%,
+    #34d399 50%,
+    #10b981 75%,
+    #0284c7 100%
+  );
+  background-size: 200% 100%;
+  animation: analysis-gradient-slide 3.5s linear infinite;
+}
+
+@keyframes analysis-gradient-slide {
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ── Type picker cards ───────────────────────────────────────────── */
+.analysis-type-card {
+  position: relative;
+  overflow: hidden;
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 200ms ease;
+}
+
+.analysis-type-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(2, 132, 199, 0.07) 0%,
+    rgba(16, 185, 129, 0.07) 100%
+  );
+  opacity: 0;
+  transition: opacity 200ms ease;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.analysis-type-card:hover {
+  border-color: #7dd3fc !important;
+  box-shadow: 0 4px 18px -8px rgba(2, 132, 199, 0.35);
+  transform: translateY(-2px);
+}
+
+.analysis-type-card:hover::after {
+  opacity: 1;
+}
+
+.analysis-type-card:hover .analysis-type-icon {
+  border-color: #bae6fd !important;
+  background-color: #e0f2fe !important;
+  color: #0284c7 !important;
+}
+
+/* ── Card de preview — borde animado ────────────────────────────── */
+.analysis-preview-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.analysis-preview-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  right: -100%;
+  height: 2px;
+  background: linear-gradient(90deg, #0ea5e9 0%, #10b981 50%, #0ea5e9 100%);
+  background-size: 200% 100%;
+  animation: analysis-gradient-slide 2.5s linear infinite;
+  z-index: 1;
+}

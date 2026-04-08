@@ -1,0 +1,91 @@
+/*
+ * base.css — Estilos base y fuentes.
+ *
+ * Contiene:
+ *   - Variables de fuente (--font-system, --font-app)
+ *   - Clases utilitarias de fuente (.font-system, .font-app)
+ *
+ * No meter aquí estilos de componentes concretos.
+ */
+
+@layer base {
+  :root {
+    --font-system: system-ui, -apple-system, sans-serif;
+    --font-app: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  .font-system {
+    font-family: var(--font-system);
+  }
+
+  .font-app {
+    font-family: var(--font-app);
+  }
+
+  /* ── Custom scrollbar (.style-1 only) ── */
+  #style-1,
+  .style-1 {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.55) transparent;
+    -ms-overflow-style: auto;
+  }
+
+  #style-1::-webkit-scrollbar-track,
+  .style-1::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  #style-1::-webkit-scrollbar,
+  .style-1::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+    display: block;
+  }
+
+  #style-1::-webkit-scrollbar-thumb,
+  .style-1::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.55);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  #style-1::-webkit-scrollbar-thumb:hover,
+  .style-1::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.75);
+  }
+
+  /* ── Dashboard InfoCard scrollbar: minimal light gray line, no arrows ── */
+  .style-dashboard-scroll {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .style-dashboard-scroll::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+
+  .style-dashboard-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .style-dashboard-scroll::-webkit-scrollbar-thumb {
+    background: transparent;
+  }
+
+  .style-dashboard-scroll::-webkit-scrollbar-thumb:hover {
+    background: transparent;
+  }
+
+  .style-dashboard-scroll::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  .style-dashboard-scroll::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}

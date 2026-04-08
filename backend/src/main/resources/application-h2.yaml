@@ -1,0 +1,67 @@
+CORS_ALLOWED_ORIGINS: "http://localhost:5173,http://localhost:3000"
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:balio;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    database-platform: org.hibernate.dialect.H2Dialect
+
+  flyway:
+    enabled: false
+
+  cache:
+    type: caffeine
+    cache-names: chartPreviewSaved,chartPreviewConfig
+    caffeine:
+      spec: maximumSize=${CHARTS_PREVIEW_CACHE_MAX_SIZE:300},expireAfterWrite=${CHARTS_PREVIEW_CACHE_TTL:5m}
+
+  h2:
+    console:
+      enabled: true          # accessible at /h2-console when running with h2 profile
+      path: /h2-console
+
+project:
+  jwt:
+    signKey: H2DevKey_ForLocalDevelopmentOnly_NotForProduction_AtLeast256Bits!!
+    accessExpirationMinutes: 15
+    refreshExpirationDays: 7
+
+logging:
+  level:
+    org.flywaydb: WARN
+    org.springframework.boot.autoconfigure: WARN
+
+charts:
+  preview:
+    max-points: 100
+    max-table-rows: 200
+
+# Frontend redirect URL used by the OAuth callback to redirect back to the SPA.
+# Fixed circular reference by using a literal default instead of self-reference
+FRONTEND_URL: http://localhost:5173
+
+# Enable Banking (Open Banking / PSD2) – local dev.
+# Get your Application ID and download the .pem from https://enablebanking.com/cp/applications
+enable-banking:
+  application-id: ${ENABLE_BANKING_APP_ID:9b6d5e63-03cd-4732-8b7a-75f298dc43fc}
+  # Path to the PKCS#8 RSA private key .pem downloaded when registering the app.
+  # By default points to backend/secrets/enablebanking.pem 
+  private-key-path: ${ENABLE_BANKING_PRIVATE_KEY_PATH:secrets/enablebanking.pem}
+  redirect-uri: ${ENABLE_BANKING_REDIRECT_URI:http://localhost:8080/bank/enablebanking/callback}
+  api-base-url: https://api.enablebanking.com
+  # Metadata for Enable Banking control panel (sandbox)
+  # Replace these example values with your real application URLs/emails when applying for production/trial
+  allowed-redirect-urls:
+    - http://localhost:8080/bank/enablebanking/callback
+    - http://localhost:5173/bank-link/callback
+  application-description: "Balio - Gestor personal de finanzas (TFG / sandbox). Uso educativo y de pruebas."
+  data-protection-email: dpo@balio.example.com
+  privacy-url: http://localhost:5173/privacy
+  teams-url: https://teams.microsoft.com/l/team/19:balio-team@thread.tacv2

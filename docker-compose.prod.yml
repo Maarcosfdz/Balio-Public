@@ -1,0 +1,20 @@
+# ============================================================
+# Balio — Production (Oracle Cloud Always Free VM)
+# ============================================================
+# Usage on the VM:
+#   cp .env.production.example .env.production
+#   nano .env.production          # fill in real values
+#   docker compose -f docker-compose.prod.yml up -d
+# ============================================================
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: balio-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env.production

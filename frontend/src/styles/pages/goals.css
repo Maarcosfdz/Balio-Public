@@ -1,0 +1,352 @@
+/* ── Goals page ─────────────────────────────────────────────────────── */
+
+/* ── "New Goal" button — squishy-tech style with goal gradient ── */
+/*
+ * Squishy technique: layered box-shadows create a 3D "stacked block" effect.
+ * On hover translateY(4px) moves the button down to simulate pressing.
+ * Shimmer: pseudo-element that travels left→right in a loop.
+ */
+.goal-new-btn {
+  position: relative;
+  font-size: 0.825rem;
+  padding: 0.38rem 0.9rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 180ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: linear-gradient(90deg, #0ea5e9 0%, #10b981 100%);
+  color: white;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 10px rgba(15,23,42,0.08);
+}
+
+/* Shimmer */
+.goal-new-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.10), transparent);
+  transform: translateX(-100%);
+  animation: goal-shimmer 2.5s linear infinite;
+  pointer-events: none;
+}
+
+/* Hover: baja el botón y reduce la sombra */
+.goal-new-btn:hover {
+  transform: translateY(1px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 6px 18px rgba(15,23,42,0.06);
+}
+
+.goal-new-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.goal-new-btn:hover .goal-new-icon {
+  animation: goal-bounce 0.85s ease-in-out 1;
+}
+
+@keyframes goal-shimmer {
+  100% { transform: translateX(100%); }
+}
+
+@keyframes goal-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-3px); }
+}
+
+/* ── Hero header section ─────────────────────────────────────────── */
+.goals-hero-section {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  margin: -1.5rem -1.5rem 0;
+  padding: 0 1.5rem 3.25rem;
+}
+
+.goals-hero-section::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 0;
+  bottom: 0;
+  width: 100vw;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(
+    160deg,
+    #e8f5ef 0%,
+    #e0eef9 40%,
+    #ede8f8 56%,
+    rgba(241, 245, 243, 0.78) 74%,
+    rgba(241, 245, 243, 0.4) 90%,
+    rgba(241, 245, 243, 0.12) 100%
+  );
+  background-size: 122% 100%;
+  background-position: right top;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 58%,
+    rgba(0, 0, 0, 0.82) 72%,
+    rgba(0, 0, 0, 0.45) 86%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 58%,
+    rgba(0, 0, 0, 0.82) 72%,
+    rgba(0, 0, 0, 0.45) 86%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+@media (min-width: 768px) {
+  .goals-hero-section {
+    margin: -2rem -2rem 0;
+    padding: 0 2rem 3.8rem;
+  }
+}
+
+.goals-hero-inner {
+  position: relative;
+  z-index: 3;
+  padding-top: 2rem;
+}
+
+.goals-hero-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.goals-hero-title-wrap {
+  min-width: 0;
+}
+
+.goals-hero-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.goals-hero-title h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  letter-spacing: -0.02em;
+}
+
+.goals-hero-subtitle {
+  margin-top: 0.35rem;
+  font-size: 0.92rem;
+  color: #64748b;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.goals-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.goals-total-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.58);
+  color: #0f172a;
+  font-size: 0.75rem;
+  font-weight: 700;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 14px -10px rgba(15, 23, 42, 0.35);
+}
+
+.goals-total-pill-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+}
+
+/* ── Status pills with gooey effect ───────────────────────────────── */
+/*
+ * Neutral (slate) colors so they don't compete with goal progress.
+ * The gooey effect is provided by the SVG <filter id="goal-goo"> in the DOM.
+ */
+.goal-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.38em 0.85em;
+  border-radius: 1.5em;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: default;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  z-index: 0;
+  transition: color 350ms ease;
+}
+
+.goal-pill::before,
+.goal-pill::after {
+  width: 2.2em;
+  height: 1.7em;
+  position: absolute;
+  content: "";
+  display: block;
+  border-radius: 50%;
+  transition: transform 700ms ease;
+  transform: scale(0);
+  z-index: -1;
+  background: #e2e8f0;
+}
+
+.goal-pill::before { top: -28%; left: 18%; }
+.goal-pill::after  { bottom: -28%; right: 18%; }
+
+.goal-pill:hover::before,
+.goal-pill:hover::after { transform: scale(1); }
+
+.goal-pill-active  { background: #f8fafc; border-color: #e6e9ef; color: #475569; }
+.goal-pill-active::before,
+.goal-pill-active::after  { background: #edf2f7; }
+
+.goal-pill-completed { background: #f8fafc; border-color: #e6e9ef; color: #475569; }
+.goal-pill-completed::before,
+.goal-pill-completed::after { background: #edf2f7; }
+
+/* Badge número */
+.goal-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25em;
+  height: 1.25em;
+  border-radius: 1em;
+  background: #94a3b8;
+  color: white;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0 0.25em;
+}
+.goal-pill-active   .goal-pill-badge { background: #94a3b8; }
+.goal-pill-completed .goal-pill-badge { background: #94a3b8; }
+
+/* ── Wide adjust buttons (used on the card) ───────────────────────── */
+/*
+ * `flex-1` is applied by the component via the `w-full` utility class.
+ * Color (border, bg, text) is passed dynamically as an inline style
+ * from the component to match the progress color.
+ */
+.goal-adjust-wide {
+  height: 2.375rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e6e9ef;
+  background: #ffffff;
+  color: #111827;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: filter 150ms ease, transform 120ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+}
+
+.goal-adjust-wide:hover {
+  filter: brightness(1.08) saturate(1.15);
+  transform: translateY(-1px);
+}
+
+.goal-adjust-wide:active {
+  filter: brightness(0.94);
+  transform: translateY(1px);
+}
+
+.goal-adjust-wide-open {
+  filter: brightness(1.04) saturate(1.05);
+  transform: translateY(-1px);
+}
+
+.goal-adjust-popover {
+  animation: goal-adjust-popover-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
+
+.goal-adjust-popover-right {
+  transform-origin: right bottom;
+}
+
+.goal-adjust-popover-left {
+  transform-origin: left bottom;
+}
+
+@keyframes goal-adjust-popover-in {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+    filter: blur(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .goal-adjust-popover {
+    animation: none;
+  }
+}
+
+/* ── Round buttons (fallback, for use without wide) ──────────────── */
+.goal-adjust-btn-add {
+  display: flex; align-items: center; justify-content: center;
+  width: 2.5rem; height: 2.5rem;
+  border-radius: 50%;
+  border: 1px solid #e6e9ef;
+  background: #ffffff; color: #065f46;
+  cursor: pointer;
+  transition: background 150ms, border-color 150ms, transform 120ms;
+  flex-shrink: 0;
+}
+.goal-adjust-btn-add:hover {
+  background: #f8fafc; transform: scale(1.04);
+}
+
+.goal-adjust-btn-withdraw {
+  display: flex; align-items: center; justify-content: center;
+  width: 2.5rem; height: 2.5rem;
+  border-radius: 50%;
+  border: 1px solid #e6e9ef;
+  background: #ffffff; color: #86181d;
+  cursor: pointer;
+  transition: background 150ms, border-color 150ms, transform 120ms;
+  flex-shrink: 0;
+}
+.goal-adjust-btn-withdraw:hover {
+  background: #f8fafc; transform: scale(1.04);
+}

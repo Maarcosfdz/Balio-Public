@@ -1,0 +1,578 @@
+/* ══════════════════════════════════════════════════════
+   Dashboard — bento grid layout & special effects
+   ══════════════════════════════════════════════════════ */
+
+/* ── Page background ────────────────────────────────── */
+.app-main.app-main--dashboard {
+  background: linear-gradient(180deg, #fcfcfd 0%, #f5f6f7 100%);
+}
+
+.db-page-bg {
+  position: relative;
+  min-height: 100%;
+  background: linear-gradient(180deg, #fcfcfd 0%, #f5f6f7 100%);
+  overflow: hidden;
+  width: 100vw;
+  margin-top: -1.5rem;
+  margin-bottom: -1.5rem;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+/* Ensure dashboard can bleed full-width even when global app-main caps children */
+.app-main > .db-page-bg {
+  width: 100vw;
+  max-width: none;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+@media (min-width: 768px) {
+  .db-page-bg {
+    margin-top: -2rem;
+    margin-bottom: -2rem;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+}
+
+.db-page-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("../../assets/dashboard-bg.svg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center top;
+  opacity: 0.28;
+  pointer-events: none;
+}
+
+.db-page-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(252, 252, 253, 0.5) 0%,
+    rgba(245, 246, 247, 0.88) 40%,
+    #f5f6f7 100%
+  );
+  pointer-events: none;
+}
+
+/* ── Grid ───────────────────────────────────────────── */
+.db-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 1rem;
+  padding: 1.25rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ── Hero: gradient border wrapper ──────────────────── */
+.db-hero-wrapper {
+  grid-column: 1 / 3;
+  grid-row: 1;
+  background: linear-gradient(
+    134deg,
+    rgba(112, 215, 255, 1) 0%,
+    rgba(103, 245, 214, 1) 55%,
+    rgba(42, 247, 128, 1)  100%
+  );
+  padding: 2px;
+  border-radius: 1.25rem;
+}
+
+.db-hero-inner {
+  background: #ffffff;
+  border-radius: calc(1.25rem - 2px);
+  padding: 1.75rem 2rem;
+  min-height: 196px;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  /* financial chart decoration on the right */
+  background-image: url("../../assets/dashboard-bg.svg");
+  background-repeat: no-repeat;
+  background-size: 58% auto;
+  background-position: right -1rem center;
+}
+
+/* fade SVG chart: full white on left → transparent on right */
+.db-hero-inner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    #ffffff 32%,
+    rgba(255, 255, 255, 0.82) 52%,
+    rgba(255, 255, 255, 0.18) 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* soft teal glow top-right */
+.db-hero-inner::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  right: 0%;
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.08) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.db-hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Animated gradient name ─────────────────────────── */
+.db-hero-name-gradient {
+  background: linear-gradient(
+    134deg,
+    #0ea5e9 0%,      /* sky-500 — slightly darker than the raw gradient */
+    #22d3ee 30%,     /* cyan-400 */
+    #2dd4bf 55%,     /* teal-400 */
+    #4ade80 80%,     /* green-400 */
+    #22c55e 100%     /* green-500 */
+  );
+  background-size: 250% 250%;
+  background-position: 0% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  display: inline-block;
+  animation: name-grad-flow 6s ease infinite;
+}
+
+@keyframes name-grad-flow {
+  0%   { background-position: 0%   50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0%   50%; }
+}
+
+/* ── CTA button sizing ──────────────────────────────── */
+/* Only sizing/spacing — color/border come from btn-primary-gradient or db-cta-ghost */
+.db-cta-btn {
+  padding: 0.5rem 1.125rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  min-height: 34px;
+  white-space: nowrap;
+  gap: 0.375rem;
+  border-radius: 0.5rem;
+}
+
+/* ── Ghost / expense button — draw-border red (pseudo-element mixin) ── */
+/*
+ * Technique: two pseudo-elements anchored at opposite corners.
+ * ::before draws bottom + right borders from the bottom-right corner.
+ * ::after draws top + left borders from the top-left corner, with a
+ * staggered delay so the border "travels" around the button.
+ * Uses scaleX/scaleY from the corner transform-origin.
+ */
+.db-cta-ghost {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1.125rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  min-height: 34px;
+  white-space: nowrap;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  color: #475569;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px #e2e8f0;
+  transition:
+    color 240ms ease,
+    box-shadow 240ms ease,
+    transform 160ms ease;
+}
+
+/* bottom + right — grow from bottom-right corner */
+.db-cta-ghost::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  border-bottom: 1.5px solid #ef4444;
+  border-right:  1.5px solid #ef4444;
+  border-radius: 0.5rem;
+  transform: scaleX(0) scaleY(0);
+  transform-origin: bottom right;
+  transition: transform 180ms ease;
+  pointer-events: none;
+}
+
+/* top + left — grow from top-left corner, delayed */
+.db-cta-ghost::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-top:  1.5px solid #f87171;
+  border-left: 1.5px solid #f87171;
+  border-radius: 0.5rem;
+  transform: scaleX(0) scaleY(0);
+  transform-origin: top left;
+  transition: transform 180ms ease 160ms;
+  pointer-events: none;
+}
+
+.db-cta-ghost:hover {
+  color: #b91c1c;
+  box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.08),
+              0 6px 18px -14px rgba(239, 68, 68, 0.75);
+  transform: translateY(-1px);
+}
+
+.db-cta-ghost:hover::before {
+  transform: scaleX(1) scaleY(1);
+}
+
+.db-cta-ghost:hover::after {
+  transform: scaleX(1) scaleY(1);
+}
+
+/* ── Quick tools ────────────────────────────────────── */
+.db-quick-tools {
+  grid-column: 3;
+  grid-row: 1;
+  border-radius: 1.25rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.db-quick-tool-slot {
+  flex: 1;
+  position: relative;
+  border-radius: 0.875rem;
+  border: 1.5px dashed #e2e8f0;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.35s;
+  min-height: 52px;
+  padding: 0.5rem 0.875rem;
+}
+
+.db-quick-tool-slot:hover {
+  border-color: #38bdf8;
+  background: #f0f9ff;
+  box-shadow: inset 0 0 0.55em 0 rgba(56, 189, 248, 0.36);
+}
+
+.db-quick-tool-slot.filled {
+  border-style: solid;
+  border-color: #e2e8f0;
+  background: white;
+  justify-content: space-between;
+}
+
+.db-quick-tool-slot.filled:hover {
+  border-color: #38bdf8;
+  background: #f0f9ff;
+  box-shadow: inset 0 0 0.55em 0 rgba(56, 189, 248, 0.36);
+}
+
+/* ── Chart row ──────────────────────────────────────── */
+.db-chart-row {
+  grid-column: 1 / 4;
+  grid-row: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+}
+
+.db-card {
+  border-radius: 1.25rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 1.25rem;
+  overflow: hidden;
+}
+
+.db-card-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 1rem;
+}
+
+/* ── "Ver todos" links — wave sweep + sliding arrow ────────── */
+/*
+ * On hover:
+ *  1) gradient wave sweeps through the text (background-clip: text)
+ *  2) The ChevronRight svg child slides right and becomes visible
+ *  3) Button text shifts left via padding-right growth
+ */
+.db-view-all {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #64748b;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition:
+    color 0.3s ease,
+    padding-right 0.45s ease;
+}
+
+.db-view-all-arrow {
+  width: 20px;
+  height: 10px;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.db-view-all-arrow path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.45s ease, stroke 0.35s ease, opacity 0.35s ease;
+}
+
+/* Default state: show a single arrow */
+.db-view-all-arrow path.one {
+  transform: translateX(-8px);
+  opacity: 0;
+}
+
+.db-view-all-arrow path.two {
+  transform: translateX(-5px);
+  opacity: 0;
+}
+
+.db-view-all-arrow path.three {
+  transform: translateX(-3px);
+  opacity: 1;
+}
+
+.db-view-all:hover {
+  padding-right: 2px;
+  background: linear-gradient(
+    90deg,
+    #64748b  0%,
+    #0ea5e9  25%,
+    #22d3ee  50%,
+    #2dd4bf  70%,
+    #0ea5e9  85%,
+    #64748b  100%
+  );
+  background-size: 220% auto;
+  background-position: 100% center;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: view-all-wave 1.8s linear infinite;
+}
+
+.db-view-all:hover .db-view-all-arrow path.one {
+  opacity: 1;
+  transform: translateX(2px);
+  animation: view-all-arrow-pulse 1s infinite 0.2s;
+}
+
+.db-view-all:hover .db-view-all-arrow path.two {
+  opacity: 1;
+  transform: translateX(1px);
+  animation: view-all-arrow-pulse 1s infinite 0.4s;
+}
+
+.db-view-all:hover .db-view-all-arrow path.three {
+  opacity: 1;
+  transform: translateX(0);
+  animation: view-all-arrow-pulse 1s infinite 0.6s;
+}
+
+/* reset when mouse leaves */
+.db-view-all:not(:hover) {
+  -webkit-text-fill-color: unset;
+  animation: none;
+}
+
+@keyframes view-all-wave {
+  0%   { background-position: 100% center; }
+  100% { background-position:   0% center; }
+}
+
+@keyframes view-all-arrow-pulse {
+  0% {
+    stroke: currentColor;
+  }
+  50% {
+    stroke: #0ea5e9;
+  }
+  100% {
+    stroke: currentColor;
+  }
+}
+
+/* ── Chart tooltip — dark blurry ────────────────────── */
+.db-tooltip {
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  color: white;
+  font-size: 0.75rem;
+  pointer-events: none;
+}
+
+/* ── Bottom row ─────────────────────────────────────── */
+.db-bottom-row {
+  grid-column: 1 / 4;
+  grid-row: 3;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+}
+
+/* ── Transaction list ───────────────────────────────── */
+.db-tx-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.db-tx-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.db-tx-item:last-child {
+  border-bottom: none;
+}
+
+/* ── Budget progress ────────────────────────────────── */
+.db-budget-bar-bg {
+  height: 5px;
+  border-radius: 9999px;
+  background: #f1f5f9;
+  overflow: hidden;
+}
+
+.db-budget-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(
+    134deg,
+    rgba(112, 215, 255, 1) 0%,
+    rgba(103, 245, 214, 1) 55%,
+    rgba(42, 247, 128, 1)  100%
+  );
+  transition: width 0.4s ease;
+}
+
+.db-budget-bar-fill.over {
+  background: linear-gradient(90deg, #f97316, #ef4444);
+}
+
+/* ── Responsive ─────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .db-grid {
+    grid-template-columns: 1fr 1fr;
+    padding: 0.75rem;
+  }
+
+  .db-hero-wrapper {
+    grid-column: 1 / 3;
+  }
+
+  .db-quick-tools {
+    grid-column: 1 / 3;
+    grid-row: 2;
+    flex-direction: row;
+  }
+
+  .db-chart-row {
+    grid-column: 1 / 3;
+    grid-row: 3;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .db-chart-row > :last-child {
+    grid-column: 1 / 3;
+  }
+
+  .db-bottom-row {
+    grid-column: 1 / 3;
+    grid-row: 4;
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .db-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .db-hero-wrapper,
+  .db-quick-tools,
+  .db-chart-row,
+  .db-bottom-row {
+    grid-column: 1;
+  }
+
+  .db-chart-row {
+    grid-template-columns: 1fr;
+  }
+
+  .db-chart-row > :last-child {
+    grid-column: 1;
+  }
+
+  .db-bottom-row {
+    grid-template-columns: 1fr;
+  }
+}
