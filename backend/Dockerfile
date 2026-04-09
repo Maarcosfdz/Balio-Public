@@ -13,7 +13,9 @@ WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", \
-  "-Xmx400m", \
-  "-XX:MaxMetaspaceSize=100m", \
+  "-Xmx180m", \
+  "-XX:MaxMetaspaceSize=160m", \
+  "-Xss256k", \
+  "-XX:+UseSerialGC", \
   "-XX:+UseContainerSupport", \
   "-jar", "app.jar"]
