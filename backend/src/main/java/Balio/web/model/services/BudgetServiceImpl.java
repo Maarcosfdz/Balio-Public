@@ -243,6 +243,8 @@ public class BudgetServiceImpl implements BudgetService {
         Transaction tx = transactionDao.findByIdAndUserId(transactionId, userId)
                 .orElseThrow(() -> new InstanceNotFoundException("Transaction", transactionId));
 
+        // If it was previously excluded, remove the exclusion
+        bc.getExcludedTransactions().remove(tx);
         bc.getManualTransactions().add(tx);
         budgetCategoryDao.save(bc);
     }
@@ -259,7 +261,11 @@ public class BudgetServiceImpl implements BudgetService {
         Transaction tx = transactionDao.findByIdAndUserId(transactionId, userId)
                 .orElseThrow(() -> new InstanceNotFoundException("Transaction", transactionId));
 
-        bc.getManualTransactions().remove(tx);
+        boolean wasManual = bc.getManualTransactions().remove(tx);
+        if (!wasManual) {
+            // Auto-linked: add to exclusion list so it is skipped in calculations
+            bc.getExcludedTransactions().add(tx);
+        }
         budgetCategoryDao.save(bc);
     }
 
@@ -286,7 +292,11 @@ public class BudgetServiceImpl implements BudgetService {
         Set<UUID> transactionIds = new HashSet<>();
         BigDecimal total = BigDecimal.ZERO;
 
-        // 1. Auto-linked via transaction categories
+        Set<UUID> excludedIds = category.getExcludedTransactions().stream()
+                .map(Transaction::getId)
+                .collect(Collectors.toSet());
+
+        // 1. Auto-linked via transaction categories (skip excluded)
         List<UUID> linkedCatIds = category.getLinkedCategories().stream()
                 .map(Category::getId)
                 .collect(Collectors.toList());
@@ -297,14 +307,17 @@ public class BudgetServiceImpl implements BudgetService {
                             category.getBudget().getUser().getId(),
                             linkedCatIds, periodStart, periodEnd);
             for (Transaction tx : autoLinked) {
-                transactionIds.add(tx.getId());
-                total = total.add(tx.getAmount());
+                if (!excludedIds.contains(tx.getId())) {
+                    transactionIds.add(tx.getId());
+                    total = total.add(tx.getAmount());
+                }
             }
         }
 
-        // 2. Manually linked transactions (in the period, not already counted)
+        // 2. Manually linked transactions (in the period, not already counted, not excluded)
         for (Transaction tx : category.getManualTransactions()) {
-            if (!transactionIds.contains(tx.getId())
+            if (!excludedIds.contains(tx.getId())
+                    && !transactionIds.contains(tx.getId())
                     && !tx.getDate().isBefore(periodStart)
                     && !tx.getDate().isAfter(periodEnd)) {
                 total = total.add(tx.getAmount());
@@ -321,7 +334,11 @@ public class BudgetServiceImpl implements BudgetService {
         Set<UUID> seenIds = new HashSet<>();
         List<Transaction> result = new ArrayList<>();
 
-        // Auto-linked via transaction categories
+        Set<UUID> excludedIds = category.getExcludedTransactions().stream()
+                .map(Transaction::getId)
+                .collect(Collectors.toSet());
+
+        // Auto-linked via transaction categories (skip excluded)
         List<UUID> linkedCatIds = category.getLinkedCategories().stream()
                 .map(Category::getId)
                 .collect(Collectors.toList());
@@ -330,14 +347,17 @@ public class BudgetServiceImpl implements BudgetService {
             List<Transaction> autoLinked = transactionDao
                     .findExpensesByCategoryIdsAndDateRange(userId, linkedCatIds, periodStart, periodEnd);
             for (Transaction tx : autoLinked) {
-                seenIds.add(tx.getId());
-                result.add(tx);
+                if (!excludedIds.contains(tx.getId())) {
+                    seenIds.add(tx.getId());
+                    result.add(tx);
+                }
             }
         }
 
-        // Manually linked
+        // Manually linked (skip excluded)
         for (Transaction tx : category.getManualTransactions()) {
-            if (!seenIds.contains(tx.getId())
+            if (!excludedIds.contains(tx.getId())
+                    && !seenIds.contains(tx.getId())
                     && !tx.getDate().isBefore(periodStart)
                     && !tx.getDate().isAfter(periodEnd)) {
                 result.add(tx);

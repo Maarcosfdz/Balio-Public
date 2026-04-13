@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,6 +34,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+@Transactional
 @RestController
 @RequestMapping("/budget")
 public class BudgetController {
@@ -50,6 +52,7 @@ public class BudgetController {
     // ── LIST ─────────────────────────────────────────────────────────────
 
     @GetMapping
+    @Transactional(readOnly = true)
     public List<BudgetSummaryDto> getAllBudgets(@RequestAttribute UUID userId) {
         return budgetService.findAllByUserId(userId).stream()
                 .map(budgetConverter::toSummaryDto)
@@ -59,6 +62,7 @@ public class BudgetController {
     // ── DETAIL ───────────────────────────────────────────────────────────
 
     @GetMapping("/{budgetId}")
+    @Transactional(readOnly = true)
     public BudgetResponseDto getBudget(@RequestAttribute UUID userId,
                                        @PathVariable UUID budgetId)
             throws InstanceNotFoundException {
