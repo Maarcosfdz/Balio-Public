@@ -674,6 +674,7 @@
       "noTransactions": "Sen transaccións neste periodo",
       "addTransaction": "Engadir transacción",
       "removeFromCategory": "Quitar da categoría",
+      "autoUnlinkHint": "Enlazada automaticamente por categoría — elimina o enlace de categoría para excluír esta transacción",
       "manualTag": "Manual",
       "autoTag": "Auto",
       "maxCategories": "Alcancaches o máximo de 40 categorías",

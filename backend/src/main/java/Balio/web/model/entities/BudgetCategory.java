@@ -58,6 +58,14 @@ public class BudgetCategory {
     )
     private Set<Transaction> manualTransactions = new HashSet<>();
 
+    @ManyToMany
+    @JoinTable(
+        name = "budget_category_excluded_transactions",
+        joinColumns = @JoinColumn(name = "budget_category_id"),
+        inverseJoinColumns = @JoinColumn(name = "transaction_id")
+    )
+    private Set<Transaction> excludedTransactions = new HashSet<>();
+
     protected BudgetCategory() {}
 
     public BudgetCategory(String name, BigDecimal maxAmount, int displayOrder, Budget budget) {
@@ -96,4 +104,6 @@ public class BudgetCategory {
     public Set<Category> getLinkedCategories() { return linkedCategories; }
 
     public Set<Transaction> getManualTransactions() { return manualTransactions; }
+
+    public Set<Transaction> getExcludedTransactions() { return excludedTransactions; }
 }
