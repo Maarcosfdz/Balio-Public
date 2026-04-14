@@ -47,7 +47,9 @@ public class SecurityConfig {
                                 .includeSubDomains(true))
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/user/signUp", "/user/login", "/user/refreshToken")
+                        .requestMatchers(HttpMethod.GET, "/actuator/health")
+                        .permitAll()
+                .requestMatchers(HttpMethod.POST, "/user/signUp", "/user/login", "/user/refreshToken")
                         .permitAll()
                 .requestMatchers(HttpMethod.GET, "/bank/callback", "/bank/enablebanking/callback")
                         .permitAll()

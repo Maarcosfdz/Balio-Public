@@ -448,3 +448,71 @@
     margin-right: auto;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   14. Vertical layout — dashboard grid: switch to 2 columns sooner
+       The sidebar takes 256px, so the available content area is
+       (viewport − 256px). At 125% DPI on a 1366px laptop the viewport
+       is ~1093px → only 837px for the grid (3 cols ≈ 265px each — cramped).
+       Trigger the 2-column layout at ≤1280px viewport for sidebar mode.
+       The min-width:641px guard preserves the ≤640px single-column layout.
+   ═══════════════════════════════════════════════════════════════ */
+@media (min-width: 641px) and (max-width: 1280px) {
+  .app-layout-vertical .db-grid {
+    grid-template-columns: 1fr 1fr;
+    padding: 0.75rem;
+  }
+
+  .app-layout-vertical .db-hero-wrapper {
+    grid-column: 1 / 3;
+  }
+
+  .app-layout-vertical .db-quick-tools {
+    grid-column: 1 / 3;
+    grid-row: 2;
+    flex-direction: row;
+  }
+
+  .app-layout-vertical .db-chart-row {
+    grid-column: 1 / 3;
+    grid-row: 3;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .app-layout-vertical .db-chart-row > :last-child {
+    grid-column: 1 / 3;
+  }
+
+  .app-layout-vertical .db-bottom-row {
+    grid-column: 1 / 3;
+    grid-row: 4;
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   15. Vertical layout — fix dashboard full-bleed background
+       The full-bleed trick (width:100vw + margin-left:calc(50%-50vw))
+       assumes .app-main fills the entire viewport. In vertical layout
+       the sidebar (256 px) sits beside .app-main, so 100vw overflows
+       .app-main to the right and gets clipped by overflow-x:hidden,
+       cutting off dashboard content — especially visible at 125% DPI.
+       Replace with a padding-escape approach that stays within .app-main.
+   ═══════════════════════════════════════════════════════════════ */
+.app-layout-vertical .db-page-bg,
+.app-layout-vertical .app-main > .db-page-bg {
+  /* Default (mobile + 768–1023 px tablet): padding is 1.5rem each side */
+  width: calc(100% + 3rem);
+  margin-left: -1.5rem;
+  margin-right: 0;
+}
+
+@media (min-width: 1024px) {
+  .app-layout-vertical .db-page-bg,
+  .app-layout-vertical .app-main > .db-page-bg {
+    /* Desktop (≥ 1024 px): padding is p-8 = 2rem each side */
+    width: calc(100% + 4rem);
+    margin-left: -2rem;
+    margin-right: 0;
+  }
+}
