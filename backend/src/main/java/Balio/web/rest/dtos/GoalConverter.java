@@ -1,6 +1,5 @@
 package Balio.web.rest.dtos;
 
-import Balio.web.model.entities.Account;
 import Balio.web.model.entities.Goal;
 
 import org.springframework.stereotype.Component;
