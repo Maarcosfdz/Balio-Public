@@ -2,13 +2,18 @@ package Balio.web.model.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -37,6 +42,14 @@ public class Goal {
     @ManyToOne(optional = false)
     @JoinColumn(name = "user_id")
     private User user;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "goal_accounts",
+            joinColumns = @JoinColumn(name = "goal_id"),
+            inverseJoinColumns = @JoinColumn(name = "account_id")
+    )
+    private Set<Account> linkedAccounts = new HashSet<>();
 
     protected Goal() {}
 
@@ -99,5 +112,13 @@ public class Goal {
 
     public void setCurrentAmount(BigDecimal currentAmount) {
         this.currentAmount = currentAmount;
+    }
+
+    public Set<Account> getLinkedAccounts() {
+        return linkedAccounts;
+    }
+
+    public void setLinkedAccounts(Set<Account> linkedAccounts) {
+        this.linkedAccounts = linkedAccounts == null ? new HashSet<>() : linkedAccounts;
     }
 }

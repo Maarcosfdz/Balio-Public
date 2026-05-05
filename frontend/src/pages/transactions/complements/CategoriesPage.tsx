@@ -471,7 +471,7 @@ export default function CategoriesPage() {
 
   // Auto-refresh 30 s + visibility — silent to preserve in-progress form state
   useEffect(() => {
-    const interval = setInterval(fetchAllSilent, 30_000);
+    const interval = setInterval(fetchAllSilent, 120_000);
     const handleVis = () => {
       if (document.visibilityState === "visible") fetchAllSilent();
     };

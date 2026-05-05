@@ -275,6 +275,7 @@ export interface GoalDto {
   targetAmount: number;
   iconName?: string | null;
   iconBgColor?: string | null;
+  linkedAccountIds?: string[] | null;
 }
 
 export interface GoalUpdateDto {
@@ -282,6 +283,7 @@ export interface GoalUpdateDto {
   targetAmount?: number;
   iconName?: string | null;
   iconBgColor?: string | null;
+  linkedAccountIds?: string[] | null;
 }
 
 export interface GoalSummaryDto {
@@ -291,6 +293,7 @@ export interface GoalSummaryDto {
   currentAmount: number;
   iconName?: string | null;
   iconBgColor?: string | null;
+  linkedAccountIds?: string[];
 }
 
 export interface GoalResponseDto {
@@ -300,6 +303,7 @@ export interface GoalResponseDto {
   currentAmount: number;
   iconName?: string | null;
   iconBgColor?: string | null;
+  linkedAccountIds?: string[];
 }
 
 export interface GoalAmountDto {

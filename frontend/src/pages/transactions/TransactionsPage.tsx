@@ -840,7 +840,7 @@ export default function TransactionsPage() {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  setFiltersOpen(true);
+                  setFiltersOpen((prev) => !prev);
                 }}
                 title={t("txPage.filterTransactions")}
                 aria-expanded={filtersOpen}

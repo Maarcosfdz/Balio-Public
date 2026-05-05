@@ -412,7 +412,7 @@ export default function ScheduledTransactionsPage() {
   }, [fetchItems, t]);
 
   useEffect(() => {
-    const interval = setInterval(() => fetchItems(pageRef.current, false), 30_000);
+    const interval = setInterval(() => fetchItems(pageRef.current, false), 120_000);
     const handleVis = () => {
       if (document.visibilityState === "visible") fetchItems(pageRef.current, false);
     };

@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * DTO for partial update of a goal.
@@ -24,4 +26,6 @@ public class GoalUpdateDto {
 
     @Size(max = 20)
     private String iconBgColor;
+
+    private List<UUID> linkedAccountIds;
 }

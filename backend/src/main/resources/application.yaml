@@ -5,6 +5,15 @@ spring:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:balio}${DB_EXTRA_PARAMS:}
     username: ${DB_USERNAME:balio}
     password: ${DB_PASSWORD:baliopass}   # Override via env var in production
+    hikari:
+      # Neon serverless: keep pool tiny — each idle connection burns compute hours.
+      # For a single-instance app, 2 connections is enough for normal traffic.
+      maximum-pool-size: ${DB_POOL_MAX:2}
+      minimum-idle: ${DB_POOL_MIN_IDLE:0}          # Drop to 0 so Neon can sleep when idle
+      idle-timeout: 60000                           # Release idle connections after 60 s
+      connection-timeout: 10000                     # Fail fast rather than queue forever
+      keepalive-time: 30000                         # Ping every 30 s to prevent Neon timeout
+      max-lifetime: 300000                          # Retire connections after 5 min (< Neon's 5 min idle limit)
 
   flyway:
     enabled: true

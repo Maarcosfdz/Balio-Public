@@ -1,8 +1,11 @@
 package Balio.web.rest.dtos;
 
+import Balio.web.model.entities.Account;
 import Balio.web.model.entities.Goal;
 
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 public class GoalConverter {
@@ -15,6 +18,7 @@ public class GoalConverter {
         dto.setCurrentAmount(goal.getCurrentAmount());
         dto.setIconName(goal.getIconName());
         dto.setIconBgColor(goal.getIconBgColor());
+        dto.setLinkedAccountIds(accountIds(goal));
         return dto;
     }
 
@@ -26,6 +30,13 @@ public class GoalConverter {
         dto.setCurrentAmount(goal.getCurrentAmount());
         dto.setIconName(goal.getIconName());
         dto.setIconBgColor(goal.getIconBgColor());
+        dto.setLinkedAccountIds(accountIds(goal));
         return dto;
+    }
+
+    private List<String> accountIds(Goal goal) {
+        return goal.getLinkedAccounts().stream()
+                .map(a -> a.getId().toString())
+                .toList();
     }
 }
