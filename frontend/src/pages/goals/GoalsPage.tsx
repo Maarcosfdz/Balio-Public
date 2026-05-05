@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import InfoCard from "@/components/ui/InfoCard";
 import {
   CheckCircle2,
+  Landmark,
   Loader2,
   Minus,
   Pencil,
@@ -20,8 +21,9 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import type { GoalSummaryDto } from "@/types";
+import type { AccountSummaryDto, GoalSummaryDto } from "@/types";
 import { goalService } from "@/backend/goalService";
+import { accountService } from "@/backend/accountService";
 import { FieldError } from "@/components/ui/field-error";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { IconAvatar } from "@/components/icons/IconAvatar";
@@ -222,11 +224,12 @@ function AdjustPopover({ direction, onConfirm, wide = false }: AdjustPopoverProp
 interface GoalFormDialogProps {
   open: boolean;
   initial?: GoalSummaryDto | null;
+  accounts: AccountSummaryDto[];
   onClose: () => void;
   onSaved: () => void;
 }
 
-function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps) {
+function GoalFormDialog({ open, initial, accounts, onClose, onSaved }: GoalFormDialogProps) {
   const { t } = useTranslation();
   const isEdit = !!initial;
 
@@ -240,6 +243,9 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
   const [iconBgColor, setIconBgColor] = useState<string>(
     normalizeIconBgColor(initial?.iconBgColor, DEFAULT_ICON_BG_COLOR),
   );
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>(
+    initial?.linkedAccountIds ?? [],
+  );
   const [loading, setLoading] = useState(false);
   const [nameError, setNameError] = useState("");
   const [amountError, setAmountError] = useState("");
@@ -251,6 +257,7 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
       setTargetAmount(initial ? String(initial.targetAmount) : "");
       setIconName(resolveEntityIconName(initial?.iconName, initial?.name ?? "goal"));
       setIconBgColor(normalizeIconBgColor(initial?.iconBgColor, DEFAULT_ICON_BG_COLOR));
+      setSelectedAccountIds(initial?.linkedAccountIds ?? []);
       setNameError("");
       setAmountError("");
       setFormError("");
@@ -261,6 +268,12 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
     () => suggestIconNameFromText(name || initial?.name || "goal"),
     [name, initial?.name],
   );
+
+  const toggleAccount = (id: string) => {
+    setSelectedAccountIds((prev) =>
+      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id],
+    );
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -278,6 +291,7 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
           targetAmount: amount,
           iconName,
           iconBgColor,
+          linkedAccountIds: selectedAccountIds,
         });
       } else {
         await goalService.create({
@@ -285,6 +299,7 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
           targetAmount: amount,
           iconName,
           iconBgColor,
+          linkedAccountIds: selectedAccountIds,
         });
       }
       onSaved();
@@ -355,6 +370,52 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
               <FieldError message={amountError} />
             </div>
 
+            {/* Linked accounts */}
+            {accounts.length > 0 && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-500">
+                  {t("goals.linkedAccounts", "Linked accounts")}
+                </label>
+                <p className="text-[10px] text-slate-400 leading-snug">
+                  {t("goals.linkedAccountsHint", "Limits the total saved amount to the combined balance of selected accounts.")}
+                </p>
+                <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto pr-1">
+                  {accounts.map((acc) => {
+                    const checked = selectedAccountIds.includes(acc.id);
+                    return (
+                      <button
+                        key={acc.id}
+                        type="button"
+                        onClick={() => toggleAccount(acc.id)}
+                        className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-sm transition ${
+                          checked
+                            ? "border-sky-400 bg-sky-50 text-sky-700"
+                            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                        }`}
+                      >
+                        <div
+                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${
+                            checked ? "border-sky-500 bg-sky-500" : "border-slate-300 bg-white"
+                          }`}
+                        >
+                          {checked && (
+                            <svg viewBox="0 0 10 8" className="h-2.5 w-2.5 fill-white">
+                              <path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </div>
+                        <Landmark className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                        <span className="flex-1 truncate font-medium">{acc.name}</span>
+                        <span className="shrink-0 tabular-nums text-xs text-slate-400">
+                          {acc.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {acc.currency}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {formError && <FieldError message={formError} />}
 
             <div className="flex gap-2 pt-1">
@@ -387,12 +448,13 @@ function GoalFormDialog({ open, initial, onClose, onSaved }: GoalFormDialogProps
 
 interface GoalCardProps {
   goal: GoalSummaryDto;
+  accounts: AccountSummaryDto[];
   onEdit: (g: GoalSummaryDto) => void;
   onDelete: (g: GoalSummaryDto) => void;
   onUpdated: (g: GoalSummaryDto) => void;
 }
 
-function GoalCard({ goal, onEdit, onDelete, onUpdated }: GoalCardProps) {
+function GoalCard({ goal, accounts, onEdit, onDelete, onUpdated }: GoalCardProps) {
   const { t } = useTranslation();
   const progress = pct(goal.currentAmount, goal.targetAmount);
   const completed = isCompleted(goal);
@@ -401,6 +463,15 @@ function GoalCard({ goal, onEdit, onDelete, onUpdated }: GoalCardProps) {
   const iconBgColor = normalizeIconBgColor(goal.iconBgColor, DEFAULT_ICON_BG_COLOR);
 
   const ringLabel = completed ? t("goals.completed").toUpperCase() : "SAVED";
+
+  const linkedCount = goal.linkedAccountIds?.length ?? 0;
+  const linkedBalance = useMemo(() => {
+    if (!goal.linkedAccountIds?.length) return null;
+    const total = accounts
+      .filter((a) => goal.linkedAccountIds!.includes(a.id))
+      .reduce((s, a) => s + a.balance, 0);
+    return total;
+  }, [goal.linkedAccountIds, accounts]);
 
   const handleAdjust = async (direction: "add" | "withdraw", amount: number) => {
     let updated;
@@ -471,6 +542,16 @@ function GoalCard({ goal, onEdit, onDelete, onUpdated }: GoalCardProps) {
           <p className="mt-0.5 text-xs text-slate-400">
             de {fmtAmt(goal.targetAmount)}
           </p>
+          {linkedCount > 0 && linkedBalance !== null && (
+            <div className="mt-2 flex items-center justify-center gap-1 text-[10px] text-slate-400">
+              <Landmark className="h-3 w-3" />
+              <span>
+                {linkedCount} {linkedCount === 1 ? t("goals.account", "account") : t("goals.accounts", "accounts")}
+                {" · "}
+                {t("goals.available", "available")}: {fmtAmt(Math.max(0, linkedBalance - goal.currentAmount))}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Adjust buttons or completed banner */}
@@ -525,16 +606,22 @@ export default function GoalsPage() {
   const infoCardItems = t("goals.infoCardItems", { returnObjects: true }) as string[];
 
   const [goals, setGoals] = useState<GoalSummaryDto[]>([]);
+  const [accounts, setAccounts] = useState<AccountSummaryDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<GoalSummaryDto | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  // ── Auto-refresh (30 s + visibility) ──────────────────────────────────
+  // ── Auto-refresh (60 s + visibility) ──────────────────────────────────
   const fetchGoals = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
     try {
-      setGoals(await goalService.getAll());
+      const [fetchedGoals, fetchedAccounts] = await Promise.all([
+        goalService.getAll(),
+        accountService.getAll(),
+      ]);
+      setGoals(fetchedGoals);
+      setAccounts(fetchedAccounts);
     } catch {
       setGoals([]);
     } finally {
@@ -544,7 +631,7 @@ export default function GoalsPage() {
 
   useEffect(() => {
     fetchGoals();
-    const interval = setInterval(() => fetchGoals(false), 30_000);
+    const interval = setInterval(() => fetchGoals(false), 60_000);
     const handleVisibility = () => {
       if (document.visibilityState === "visible") fetchGoals(false);
     };
@@ -704,6 +791,7 @@ export default function GoalsPage() {
                 )}
                 <GoalCard
                   goal={g}
+                  accounts={accounts}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onUpdated={handleUpdated}
@@ -728,6 +816,7 @@ export default function GoalsPage() {
       <GoalFormDialog
         open={formOpen}
         initial={editTarget}
+        accounts={accounts}
         onClose={() => { setFormOpen(false); setEditTarget(null); }}
         onSaved={handleSaved}
       />

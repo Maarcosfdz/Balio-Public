@@ -684,7 +684,7 @@ export default function BudgetsPage() {
 
   useEffect(() => {
     fetchBudgets();
-    const interval = setInterval(() => fetchBudgets(false), 30_000);
+    const interval = setInterval(() => fetchBudgets(false), 120_000);
     const handleVisibility = () => {
       if (document.visibilityState === "visible") fetchBudgets(false);
     };

@@ -764,7 +764,7 @@ export default function BudgetDetailPage() {
   useEffect(() => {
     fetchBudget();
     categoryService.getAll().then(setCategories).catch(() => setCategories([]));
-    const interval = setInterval(() => fetchBudget(false), 30_000);
+    const interval = setInterval(() => fetchBudget(false), 120_000);
     const handleVisibility = () => {
       if (document.visibilityState === "visible") fetchBudget(false);
     };

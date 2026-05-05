@@ -289,7 +289,7 @@ export default function FiltersPage() {
 
   // Auto-refresh 30 s + visibility — silent to preserve in-progress form state
   useEffect(() => {
-    const interval = setInterval(() => fetchFilters(pageRef.current, false), 30_000);
+    const interval = setInterval(() => fetchFilters(pageRef.current, false), 120_000);
     const handleVis = () => {
       if (document.visibilityState === "visible") fetchFilters(pageRef.current, false);
     };
