@@ -20,10 +20,11 @@ public interface GoalService {
      * @throws Balio.web.model.Exceptions.UserNotFoundException if the user does not exist
      * @throws Balio.web.model.Exceptions.GoalInvalidException  if validation fails
      */
-    Goal createGoal(UUID userId, String name, BigDecimal targetAmount, String iconName, String iconBgColor);
+    Goal createGoal(UUID userId, String name, BigDecimal targetAmount,
+                    String iconName, String iconBgColor, List<UUID> linkedAccountIds);
 
     default Goal createGoal(UUID userId, String name, BigDecimal targetAmount) {
-        return createGoal(userId, name, targetAmount, null, null);
+        return createGoal(userId, name, targetAmount, null, null, null);
     }
 
     /**
@@ -34,24 +35,27 @@ public interface GoalService {
     void deleteGoal(UUID userId, UUID goalId) throws InstanceNotFoundException;
 
     /**
-     * Modifies the name and/or targetAmount of a goal. Only non-null parameters are applied.
+     * Modifies the name, targetAmount, icon and/or linked accounts of a goal.
+     * Only non-null parameters are applied.
      *
      * @throws InstanceNotFoundException if the goal does not exist or does not belong to the user
      */
     Goal modifyGoal(UUID userId, UUID goalId, String name, BigDecimal targetAmount,
-                    String iconName, String iconBgColor)
+                    String iconName, String iconBgColor, List<UUID> linkedAccountIds)
             throws InstanceNotFoundException;
 
     default Goal modifyGoal(UUID userId, UUID goalId, String name, BigDecimal targetAmount)
             throws InstanceNotFoundException {
-        return modifyGoal(userId, goalId, name, targetAmount, null, null);
+        return modifyGoal(userId, goalId, name, targetAmount, null, null, null);
     }
 
     /**
      * Adds money to the goal's currentAmount.
+     * Validates that the new total does not exceed the balance of linked accounts.
      *
      * @throws InstanceNotFoundException if the goal does not exist or does not belong to the user
-     * @throws Balio.web.model.Exceptions.GoalInvalidException if amount is not positive
+     * @throws Balio.web.model.Exceptions.GoalInvalidException if amount is not positive or would
+     *         exceed the combined balance of the linked accounts (considering all sharing goals)
      */
     Goal addMoney(UUID userId, UUID goalId, BigDecimal amount) throws InstanceNotFoundException;
 

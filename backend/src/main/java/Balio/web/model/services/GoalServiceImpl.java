@@ -3,6 +3,8 @@ package Balio.web.model.services;
 import Balio.web.model.Exceptions.GoalInvalidException;
 import Balio.web.model.Exceptions.InstanceNotFoundException;
 import Balio.web.model.Exceptions.UserNotFoundException;
+import Balio.web.model.entities.Account;
+import Balio.web.model.entities.AccountDao;
 import Balio.web.model.entities.Goal;
 import Balio.web.model.entities.GoalDao;
 import Balio.web.model.entities.User;
@@ -13,8 +15,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -22,15 +28,17 @@ public class GoalServiceImpl implements GoalService {
 
     private final UserDao userDao;
     private final GoalDao goalDao;
+    private final AccountDao accountDao;
 
-    public GoalServiceImpl(UserDao userDao, GoalDao goalDao) {
+    public GoalServiceImpl(UserDao userDao, GoalDao goalDao, AccountDao accountDao) {
         this.userDao = userDao;
         this.goalDao = goalDao;
+        this.accountDao = accountDao;
     }
 
     @Override
     public Goal createGoal(UUID userId, String name, BigDecimal targetAmount,
-                           String iconName, String iconBgColor) {
+                           String iconName, String iconBgColor, List<UUID> linkedAccountIds) {
 
         User user = userDao.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
@@ -45,13 +53,17 @@ public class GoalServiceImpl implements GoalService {
         Goal goal = new Goal(
                 name.trim(), targetAmount, user,
                 StringUtils.sanitizeOptional(iconName), StringUtils.sanitizeOptional(iconBgColor));
+
+        Set<Account> accounts = resolveAccounts(userId, linkedAccountIds);
+        goal.setLinkedAccounts(accounts);
+
         goalDao.save(goal);
         return goal;
     }
 
     @Override
     public Goal createGoal(UUID userId, String name, BigDecimal targetAmount) {
-        return createGoal(userId, name, targetAmount, null, null);
+        return createGoal(userId, name, targetAmount, null, null, null);
     }
 
     @Override
@@ -65,7 +77,7 @@ public class GoalServiceImpl implements GoalService {
 
     @Override
     public Goal modifyGoal(UUID userId, UUID goalId, String name, BigDecimal targetAmount,
-                           String iconName, String iconBgColor)
+                           String iconName, String iconBgColor, List<UUID> linkedAccountIds)
             throws InstanceNotFoundException {
 
         Goal goal = goalDao.findByIdAndUserId(goalId, userId)
@@ -89,6 +101,9 @@ public class GoalServiceImpl implements GoalService {
         if (iconBgColor != null) {
             goal.setIconBgColor(StringUtils.sanitizeOptional(iconBgColor));
         }
+        if (linkedAccountIds != null) {
+            goal.setLinkedAccounts(resolveAccounts(userId, linkedAccountIds));
+        }
 
         goalDao.save(goal);
         return goal;
@@ -97,7 +112,7 @@ public class GoalServiceImpl implements GoalService {
     @Override
     public Goal modifyGoal(UUID userId, UUID goalId, String name, BigDecimal targetAmount)
             throws InstanceNotFoundException {
-        return modifyGoal(userId, goalId, name, targetAmount, null, null);
+        return modifyGoal(userId, goalId, name, targetAmount, null, null, null);
     }
 
     @Override
@@ -110,7 +125,10 @@ public class GoalServiceImpl implements GoalService {
         Goal goal = goalDao.findByIdAndUserId(goalId, userId)
                 .orElseThrow(() -> new InstanceNotFoundException("Goal", goalId));
 
-        goal.setCurrentAmount(goal.getCurrentAmount().add(amount));
+        BigDecimal newAmount = goal.getCurrentAmount().add(amount);
+        validateLinkedAccountBudget(goal, newAmount, userId);
+
+        goal.setCurrentAmount(newAmount);
         goalDao.save(goal);
         return goal;
     }
@@ -148,4 +166,54 @@ public class GoalServiceImpl implements GoalService {
                 .orElseThrow(() -> new InstanceNotFoundException("Goal", goalId));
     }
 
+    // ── Private helpers ──────────────────────────────────────────────────
+
+    /**
+     * Loads accounts by IDs and validates they belong to the user.
+     */
+    private Set<Account> resolveAccounts(UUID userId, List<UUID> accountIds) {
+        if (accountIds == null || accountIds.isEmpty()) {
+            return Collections.emptySet();
+        }
+        Set<Account> accounts = new HashSet<>();
+        for (UUID accountId : accountIds) {
+            Account account = accountDao.findByIdAndUserId(accountId, userId)
+                    .orElseThrow(() -> new GoalInvalidException(
+                            "Account not found or does not belong to user: " + accountId));
+            accounts.add(account);
+        }
+        return accounts;
+    }
+
+    /**
+     * Validates that setting this goal's currentAmount to {@code newAmount} does not
+     * cause the sum of all goals sharing the same linked accounts to exceed their
+     * combined balance.
+     *
+     * No-op when the goal has no linked accounts.
+     */
+    private void validateLinkedAccountBudget(Goal goal, BigDecimal newAmount, UUID userId) {
+        Set<Account> linked = goal.getLinkedAccounts();
+        if (linked.isEmpty()) {
+            return;
+        }
+
+        BigDecimal totalBalance = linked.stream()
+                .map(Account::getBalance)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        List<UUID> accountIds = linked.stream().map(Account::getId).collect(Collectors.toList());
+
+        BigDecimal otherGoalsTotal = goalDao
+                .findByUserAndLinkedAccounts(userId, accountIds, goal.getId())
+                .stream()
+                .map(Goal::getCurrentAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (otherGoalsTotal.add(newAmount).compareTo(totalBalance) > 0) {
+            throw new GoalInvalidException(
+                    "Total saved amount across goals would exceed the combined balance of linked accounts " +
+                    "(available: " + totalBalance.subtract(otherGoalsTotal).toPlainString() + ")");
+        }
+    }
 }

@@ -70,7 +70,8 @@ public class GoalController {
                                                       @Validated @RequestBody GoalDto dto) {
 
         Goal goal = goalService.createGoal(
-                userId, dto.getName(), dto.getTargetAmount(), dto.getIconName(), dto.getIconBgColor());
+                userId, dto.getName(), dto.getTargetAmount(),
+                dto.getIconName(), dto.getIconBgColor(), dto.getLinkedAccountIds());
 
         log.info("Goal created: goalId={}, userId={}", goal.getId(), userId);
 
@@ -90,7 +91,8 @@ public class GoalController {
             throws InstanceNotFoundException {
 
         Goal goal = goalService.modifyGoal(
-                userId, goalId, dto.getName(), dto.getTargetAmount(), dto.getIconName(), dto.getIconBgColor());
+                userId, goalId, dto.getName(), dto.getTargetAmount(),
+                dto.getIconName(), dto.getIconBgColor(), dto.getLinkedAccountIds());
         return goalConverter.toResponseDto(goal);
     }
 
