@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_DB: ${DB_NAME:-balio}
       POSTGRES_USER: ${DB_USERNAME:-balio}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-baliopass}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change_me_local_password}
       PGDATA: /var/lib/postgresql/data
     ports:
       - "${DB_PORT:-5432}:5432"

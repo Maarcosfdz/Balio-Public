@@ -23,6 +23,8 @@ It allows tracking accounts, transactions, budgets, savings goals, and provides 
 
 This project is built both as a **real-world usable product** and as an **academic project**, focusing on clean architecture, security, and scalability.
 
+The complete academic report is available here: [memoria_tfg.pdf](docs/memoria_tfg.pdf).
+
 ---
 
 ## 🎬 Demo
@@ -131,10 +133,30 @@ This project is built both as a **real-world usable product** and as an **academ
 - ESLint + Checkstyle
 - JaCoCo (coverage)
 - Docker Compose
+- GitHub Actions
+- SonarCloud / local SonarQube
 
 ---
 
 ## ⚙️ Getting Started
+
+### 🔐 Environment Variables
+
+This public version does not include real secrets or deployment credentials.
+Use the example files as templates:
+
+```bash
+cp .env.example .env
+cp frontend/.env.example frontend/.env
+```
+
+For production deployments, use:
+
+```bash
+cp .env.production.example .env.production
+```
+
+Real values such as database credentials, JWT signing keys, Enable Banking credentials, Vercel variables, Render variables, and Sonar tokens must be configured in the target platform, never committed to the repository.
 
 ### 🐳 Option 1: Run with Docker (Recommended)
 
@@ -149,6 +171,12 @@ docker-compose up -d
 
 ```bash
 mvn spring-boot:run 
+```
+
+4. Start frontend (folder frontend):
+
+```bash
+npm run dev
 ```
 
 ### 💾 Option 2: H2 Profile (Memory DB)
@@ -202,6 +230,24 @@ Migrations handled with Flyway
 Access DB manually:
 
 docker exec -it balio-postgres psql -U balio -d balio
+
+## 🔁 CI/CD
+
+The repository includes GitHub Actions workflows prepared for a public setup:
+
+- `CI`: builds the backend, runs tests, validates migrations, checks coverage, and can trigger SonarCloud analysis when the required repository variables are configured.
+- `SonarQube`: runs backend analysis with SonarCloud using repository secrets.
+
+The workflows are designed to avoid hardcoded private values. Configure these in GitHub repository settings when needed:
+
+- `SONAR_TOKEN` as a repository secret.
+- `SONAR_ORGANIZATION`, `SONAR_BACKEND_PROJECT_KEY`, and `SONAR_FRONTEND_PROJECT_KEY` as repository variables.
+
+Deployment can be connected independently:
+
+- Frontend: Vercel can build the `frontend` folder and use `VITE_API_BASE_URL` as an environment variable.
+- Backend: Render, a VPS, or any Docker-capable host can run the Spring Boot API using the variables from `.env.production.example`.
+- Database: any PostgreSQL provider can be used as long as `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`, and optional SSL parameters are configured.
 
 📌 Final Notes
 

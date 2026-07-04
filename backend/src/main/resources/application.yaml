@@ -4,16 +4,16 @@ spring:
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:balio}${DB_EXTRA_PARAMS:}
     username: ${DB_USERNAME:balio}
-    password: ${DB_PASSWORD:baliopass}   # Override via env var in production
+    password: ${DB_PASSWORD:change_me_local_password}   # Override via env var in production
     hikari:
-      # Neon serverless: keep pool tiny — each idle connection burns compute hours.
+      # Serverless-friendly defaults: keep the pool small so idle connections are released.
       # For a single-instance app, 2 connections is enough for normal traffic.
       maximum-pool-size: ${DB_POOL_MAX:2}
-      minimum-idle: ${DB_POOL_MIN_IDLE:0}          # Drop to 0 so Neon can sleep when idle
+      minimum-idle: ${DB_POOL_MIN_IDLE:0}          # Drop to 0 so managed databases can sleep when idle
       idle-timeout: 60000                           # Release idle connections after 60 s
       connection-timeout: 10000                     # Fail fast rather than queue forever
-      keepalive-time: 30000                         # Ping every 30 s to prevent Neon timeout
-      max-lifetime: 300000                          # Retire connections after 5 min (< Neon's 5 min idle limit)
+      keepalive-time: 30000                         # Ping every 30 s to prevent provider idle timeouts
+      max-lifetime: 300000                          # Retire connections after 5 min
 
   flyway:
     enabled: true
@@ -42,7 +42,7 @@ FRONTEND_URL: http://localhost:5173
 
 # ── Enable Banking (Open Banking / PSD2) ─────────────────────
 enable-banking:
-  application-id: ${ENABLE_BANKING_APP_ID:9b6d5e63-03cd-4732-8b7a-75f298dc43fc}
+  application-id: ${ENABLE_BANKING_APP_ID:00000000-0000-0000-0000-000000000000}
   private-key-path: ${ENABLE_BANKING_PRIVATE_KEY_PATH:secrets/enablebanking.pem}
   redirect-uri: ${ENABLE_BANKING_REDIRECT_URI:http://localhost:8080/bank/enablebanking/callback}
   api-base-url: https://api.enablebanking.com

@@ -26,7 +26,7 @@ public class EnableBankingProperties {
     /**
      * Absolute (or home-relative) path to the RSA private key .pem file
      * downloaded when registering the application.
-     * Example: C:/Users/you/Downloads/9b6d5e63-03cd-4732-8b7a-75f298dc43fc.pem
+     * Example: C:/Users/you/Downloads/enablebanking.pem
      */
     private String privateKeyPath;
 

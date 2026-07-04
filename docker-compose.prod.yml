@@ -1,7 +1,7 @@
 # ============================================================
-# Balio — Production (Oracle Cloud Always Free VM)
+# Balio — Production
 # ============================================================
-# Usage on the VM:
+# Usage on the target server:
 #   cp .env.production.example .env.production
 #   nano .env.production          # fill in real values
 #   docker compose -f docker-compose.prod.yml up -d

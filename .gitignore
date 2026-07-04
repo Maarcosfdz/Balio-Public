@@ -43,7 +43,17 @@ frontend/test-results/
 
 ### Environment / Secrets ###
 .env
+.env.*
 *.env
 !.env.example
+!.env.*.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+!frontend/.env.*.example
 *.pem
+*.key
+*.p12
+*.jks
 backend/secrets/*
+!backend/secrets/.gitkeep

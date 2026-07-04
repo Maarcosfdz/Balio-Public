@@ -32,7 +32,7 @@ public class SecurityEnvironmentValidator {
             log.warn("║  Generate with: openssl rand -base64 48                       ║");
             log.warn("╚═══════════════════════════════════════════════════════════════╝");
         }
-        if ("baliopass".equals(dbPassword)) {
+        if ("change_me_local_password".equals(dbPassword)) {
             log.warn("╔═══════════════════════════════════════════════════════════════╗");
             log.warn("║  WARNING: DB_PASSWORD is using the development default.      ║");
             log.warn("║  Set the DB_PASSWORD environment variable before deploying.   ║");

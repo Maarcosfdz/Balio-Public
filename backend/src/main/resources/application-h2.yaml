@@ -50,7 +50,7 @@ FRONTEND_URL: http://localhost:5173
 # Enable Banking (Open Banking / PSD2) – local dev.
 # Get your Application ID and download the .pem from https://enablebanking.com/cp/applications
 enable-banking:
-  application-id: ${ENABLE_BANKING_APP_ID:9b6d5e63-03cd-4732-8b7a-75f298dc43fc}
+  application-id: ${ENABLE_BANKING_APP_ID:00000000-0000-0000-0000-000000000000}
   # Path to the PKCS#8 RSA private key .pem downloaded when registering the app.
   # By default points to backend/secrets/enablebanking.pem 
   private-key-path: ${ENABLE_BANKING_PRIVATE_KEY_PATH:secrets/enablebanking.pem}
