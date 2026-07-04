@@ -122,19 +122,16 @@ export function clearSessionData() {
   localStorage.removeItem(STORAGE_KEYS.lastActivityAt);
 }
 
-// All localStorage keys that belong to a specific user session.
-// Must be kept in sync with every page/component that writes to localStorage.
+// localStorage keys that should be cleared when the authenticated session ends.
+// Durable UI preferences use user-scoped keys and intentionally stay out of this list.
 const USER_STATE_KEYS = [
-  "balio_pinned_filters",
-  "balio_active_tab",
   "balio_tx_last_auto_sync_ms",
-  "dashboard_quick_tools_v2",
   "budgets.primaryId.v1",
   "budgets.cardColors.v1",
   "language",
 ] as const;
 
-/** Clears auth tokens AND all user-specific UI state so nothing leaks to the next session. */
+/** Clears auth tokens and session-scoped UI state. Durable user-scoped preferences remain stored. */
 export function clearAllUserState() {
   clearSessionData();
   for (const key of USER_STATE_KEYS) {

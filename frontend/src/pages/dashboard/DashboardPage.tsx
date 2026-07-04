@@ -46,6 +46,7 @@ import AddTransactionModal from "@/components/transactions/AddTransactionModal";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { ROUTES } from "@/config/routes";
 import { IconAvatar } from "@/components/icons/IconAvatar";
+import { loadUserScopedStorage, userScopedStorageKey } from "@/lib/userScopedStorage";
 import "@/styles/pages/dashboard.css";
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -234,6 +235,37 @@ interface PickerProps {
   onClose: () => void;
 }
 
+function defaultQuickTools(): (QuickToolConfig | null)[] {
+  return [null, null, null];
+}
+
+function isQuickToolConfig(value: unknown): value is QuickToolConfig {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Record<string, unknown>;
+  return (
+    (candidate.kind === "goal" || candidate.kind === "budget" || candidate.kind === "filter")
+    && typeof candidate.refId === "string"
+    && typeof candidate.label === "string"
+  );
+}
+
+function parseQuickTools(value: unknown): (QuickToolConfig | null)[] {
+  if (!Array.isArray(value)) return defaultQuickTools();
+  return defaultQuickTools().map((_, index) => {
+    const item = value[index];
+    return isQuickToolConfig(item) ? item : null;
+  });
+}
+
+function loadQuickTools(storageKey: string): (QuickToolConfig | null)[] {
+  return loadUserScopedStorage({
+    storageKey,
+    legacyKey: STORAGE_KEY,
+    fallback: defaultQuickTools(),
+    parse: parseQuickTools,
+  });
+}
+
 function QuickToolPicker({ slotIndex, goals, budgets, filters, onPick, onClose }: PickerProps) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<QuickToolKind>("goal");
@@ -379,6 +411,7 @@ export default function DashboardPage() {
     () => `dashboard-${DASHBOARD_INFOCARD_VERSION}-${user?.id ?? "guest"}`,
     [user?.id],
   );
+  const quickToolsKey = useMemo(() => userScopedStorageKey(STORAGE_KEY, user?.id), [user?.id]);
   const locale = useMemo(() => resolveLocale(i18n.resolvedLanguage), [i18n.resolvedLanguage]);
 
   // ── Data state ──────────────────────────────────────────────────────
@@ -392,16 +425,13 @@ export default function DashboardPage() {
 
   // ── UI state ────────────────────────────────────────────────────────
   const [addModal, setAddModal] = useState<"INCOME" | "EXPENSE" | null>(null);
-  const [quickTools, setQuickTools] = useState<(QuickToolConfig | null)[]>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? (JSON.parse(stored) as (QuickToolConfig | null)[]) : [null, null, null];
-    } catch {
-      return [null, null, null];
-    }
-  });
+  const [quickTools, setQuickTools] = useState<(QuickToolConfig | null)[]>(() => loadQuickTools(quickToolsKey));
   const [pickerSlot, setPickerSlot] = useState<number | null>(null);
   const [activeDonutIndex, setActiveDonutIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    setQuickTools(loadQuickTools(quickToolsKey));
+  }, [quickToolsKey]);
 
   // ── Fetch data ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -519,20 +549,20 @@ export default function DashboardPage() {
     setQuickTools((prev) => {
       const next = [...prev];
       next[idx] = config;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      localStorage.setItem(quickToolsKey, JSON.stringify(next));
       return next;
     });
     setPickerSlot(null);
-  }, []);
+  }, [quickToolsKey]);
 
   const handleRemoveTool = useCallback((idx: number) => {
     setQuickTools((prev) => {
       const next = [...prev];
       next[idx] = null;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      localStorage.setItem(quickToolsKey, JSON.stringify(next));
       return next;
     });
-  }, []);
+  }, [quickToolsKey]);
 
   const navigateToTool = useCallback(
     (tool: QuickToolConfig) => {

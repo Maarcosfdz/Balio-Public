@@ -89,7 +89,7 @@ describe("persistSession / getters / clearSessionData", () => {
     expect(loadSessionUser()).toBeNull();
   });
 
-  it("clearAllUserState removes auth keys AND ui state keys", () => {
+  it("clearAllUserState removes auth keys and session-scoped ui state only", () => {
     persistSession(MOCK_SESSION);
     localStorage.setItem("language", "es");
     localStorage.setItem("balio_active_tab", "tab1");
@@ -98,7 +98,7 @@ describe("persistSession / getters / clearSessionData", () => {
 
     expect(getAccessToken()).toBeNull();
     expect(localStorage.getItem("language")).toBeNull();
-    expect(localStorage.getItem("balio_active_tab")).toBeNull();
+    expect(localStorage.getItem("balio_active_tab")).toBe("tab1");
   });
 });
 

@@ -68,8 +68,8 @@ function buildLayout(widgets: AnalysisWidget[]): LayoutItem[] {
     const explicit = sanitizeLayout(widget.layout, widget.size);
     let bestX = explicit.x;
     let bestY = explicit.y;
-    let width = explicit.w;
-    let height = explicit.h;
+    const width = explicit.w;
+    const height = explicit.h;
 
     if (!widget.layout) {
       // Find the first position where this widget fits

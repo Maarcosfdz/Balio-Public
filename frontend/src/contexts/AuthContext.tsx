@@ -246,7 +246,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // Ignore logout errors (token expired, etc.)
     } finally {
-      clearAllUserState(); // wipes auth tokens + all user-specific UI state
+      clearAllUserState(); // wipes auth tokens + session-scoped UI state
       setSessionNoticeReason(null);
       setWarningDismissed(false);
       setWarningVisible(false);

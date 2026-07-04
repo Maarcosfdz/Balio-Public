@@ -47,11 +47,15 @@ import FilterPanel, {
 } from "./components/FilterPanel";
 import { ROUTES } from "@/config/routes";
 import { IconAvatar } from "@/components/icons/IconAvatar";
+import { useAuth } from "@/contexts/AuthContext";
+import { loadUserScopedStorage, userScopedStorageKey } from "@/lib/userScopedStorage";
 
 const PAGE_SIZE = 20;
 const AUTO_REFRESH_INTERVAL = 3_600_000; // 1 hour
 const AUTO_SYNC_THROTTLE_MS = 3_600_000; // 1 hour
 const LAST_AUTO_SYNC_KEY = "balio_tx_last_auto_sync_ms";
+const PINNED_FILTERS_STORAGE_KEY = "balio_pinned_filters";
+const ACTIVE_TAB_STORAGE_KEY = "balio_active_tab";
 const CURRENCY_SYMBOLS: Record<string, string> = {
   EUR: "€",
   USD: "$",
@@ -71,8 +75,49 @@ function currencyLabel(code?: string) {
   return CURRENCY_SYMBOLS[upper] ?? upper;
 }
 
+function isFilterSummary(value: unknown): value is FilterSummaryDto {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Record<string, unknown>;
+  return typeof candidate.id === "string" && typeof candidate.name === "string";
+}
+
+function parsePinnedFilters(value: unknown): FilterSummaryDto[] {
+  return Array.isArray(value) ? value.filter(isFilterSummary) : [];
+}
+
+function parseActiveTab(value: unknown): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function loadPinnedFilters(storageKey: string): FilterSummaryDto[] {
+  return loadUserScopedStorage({
+    storageKey,
+    legacyKey: PINNED_FILTERS_STORAGE_KEY,
+    fallback: [],
+    parse: parsePinnedFilters,
+  });
+}
+
+function loadActiveTab(storageKey: string) {
+  return loadUserScopedStorage({
+    storageKey,
+    legacyKey: ACTIVE_TAB_STORAGE_KEY,
+    fallback: null,
+    parse: parseActiveTab,
+  });
+}
+
+function reconcilePinnedFilters(pinned: FilterSummaryDto[], saved: FilterSummaryDto[]) {
+  const savedById = new Map(saved.map((filter) => [filter.id, filter]));
+  return pinned.flatMap((filter) => {
+    const current = savedById.get(filter.id);
+    return current ? [current] : [];
+  });
+}
+
 export default function TransactionsPage() {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const infoCardItems = t("txPage.infoCardItems", { returnObjects: true }) as string[];
   const location = useLocation();
   const navigate = useNavigate();
@@ -114,12 +159,11 @@ export default function TransactionsPage() {
 
   // ── Quick Access Tabs ──
   // Initialized synchronously from localStorage so they're ready on first render.
-  const [pinnedFilters, setPinnedFilters] = useState<FilterSummaryDto[]>(() => {
-    try { return JSON.parse(localStorage.getItem("balio_pinned_filters") ?? "[]"); }
-    catch { return []; }
-  });
+  const pinnedFiltersStorageKey = useMemo(() => userScopedStorageKey(PINNED_FILTERS_STORAGE_KEY, user?.id), [user?.id]);
+  const activeTabStorageKey = useMemo(() => userScopedStorageKey(ACTIVE_TAB_STORAGE_KEY, user?.id), [user?.id]);
+  const [pinnedFilters, setPinnedFilters] = useState<FilterSummaryDto[]>(() => loadPinnedFilters(pinnedFiltersStorageKey));
   const [activeTabId, setActiveTabId] = useState<string | null>(
-    () => localStorage.getItem("balio_active_tab")
+    () => loadActiveTab(activeTabStorageKey)
   );
   const [allSavedFilters, setAllSavedFilters] = useState<FilterSummaryDto[]>([]);
   const [showAddPicker, setShowAddPicker] = useState(false);
@@ -134,17 +178,29 @@ export default function TransactionsPage() {
   const sortDropdownRef = useRef<HTMLDivElement>(null);
   const [sortDropdownPos, setSortDropdownPos] = useState<{ left: number; top: number } | null>(null);
 
+  const handleSavedFiltersLoaded = useCallback((saved: FilterSummaryDto[]) => {
+    const savedIds = new Set(saved.map((filter) => filter.id));
+    setAllSavedFilters(saved);
+    setPinnedFilters((prev) => reconcilePinnedFilters(prev, saved));
+    setActiveTabId((prev) => (prev && !savedIds.has(prev) ? null : prev));
+  }, []);
+
+  useEffect(() => {
+    setPinnedFilters(loadPinnedFilters(pinnedFiltersStorageKey));
+    setActiveTabId(loadActiveTab(activeTabStorageKey));
+  }, [activeTabStorageKey, pinnedFiltersStorageKey]);
+
   // Fetch all saved filters for the add-to-tabs picker
   useEffect(() => {
-    filterService.getAll().then(setAllSavedFilters).catch(() => {});
+    filterService.getAll().then(handleSavedFiltersLoaded).catch(() => {});
     categoryService.getAll().then(setCategories).catch(() => {});
-  }, []);
+  }, [handleSavedFiltersLoaded]);
 
   // Close picker on outside click + refresh list when picker opens
   useEffect(() => {
     if (!showAddPicker) return;
     // Refresh so newly-created filters appear without a page reload
-    filterService.getAll().then(setAllSavedFilters).catch(() => {});
+    filterService.getAll().then(handleSavedFiltersLoaded).catch(() => {});
 
     const updatePosition = () => {
       if (!addPickerRef.current) return;
@@ -176,7 +232,7 @@ export default function TransactionsPage() {
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
-  }, [showAddPicker]);
+  }, [handleSavedFiltersLoaded, showAddPicker]);
 
   // Sort dropdown — position + outside-click close
   useEffect(() => {
@@ -213,14 +269,14 @@ export default function TransactionsPage() {
 
   // Persist pinned filters
   useEffect(() => {
-    localStorage.setItem("balio_pinned_filters", JSON.stringify(pinnedFilters));
-  }, [pinnedFilters]);
+    localStorage.setItem(pinnedFiltersStorageKey, JSON.stringify(pinnedFilters));
+  }, [pinnedFilters, pinnedFiltersStorageKey]);
 
   // Persist active tab
   useEffect(() => {
-    if (activeTabId) localStorage.setItem("balio_active_tab", activeTabId);
-    else localStorage.removeItem("balio_active_tab");
-  }, [activeTabId]);
+    if (activeTabId) localStorage.setItem(activeTabStorageKey, activeTabId);
+    else localStorage.removeItem(activeTabStorageKey);
+  }, [activeTabId, activeTabStorageKey]);
 
   // ── Fetch data ──
   const filtersRef = useRef(filters);
@@ -337,11 +393,8 @@ export default function TransactionsPage() {
           })
           .catch(() => fetchTransactions({}, true, 0));
       } else {
-        const storedTab = localStorage.getItem("balio_active_tab");
-        const storedPinned: FilterSummaryDto[] = (() => {
-          try { return JSON.parse(localStorage.getItem("balio_pinned_filters") ?? "[]"); }
-          catch { return []; }
-        })();
+        const storedTab = loadActiveTab(activeTabStorageKey);
+        const storedPinned = loadPinnedFilters(pinnedFiltersStorageKey);
         if (storedTab && storedPinned.some((p) => p.id === storedTab)) {
           handleApplySavedFilter(storedTab);
         } else {

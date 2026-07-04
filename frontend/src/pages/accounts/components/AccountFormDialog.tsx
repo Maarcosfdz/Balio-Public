@@ -10,6 +10,16 @@ import { GradientButton } from "@/components/ui/gradient-button";
 
 const BALANCE_EPSILON = 0.00001;
 
+function apiErrorMessage(err: unknown): string | undefined {
+  if (typeof err !== "object" || err === null) return undefined;
+  const response = "response" in err ? err.response : undefined;
+  if (typeof response !== "object" || response === null) return undefined;
+  const data = "data" in response ? response.data : undefined;
+  if (typeof data !== "object" || data === null) return undefined;
+  const message = "message" in data ? data.message : undefined;
+  return typeof message === "string" ? message : undefined;
+}
+
 function roundToCents(value: number): number {
   return Math.round(value * 100) / 100;
 }
@@ -170,8 +180,8 @@ export default function AccountFormDialog({ open, initial, onClose, onSaved }: A
         }
         onSaved();
       }
-    } catch (err: any) {
-      setError(err?.response?.data?.message ?? t("common.error"));
+    } catch (err: unknown) {
+      setError(apiErrorMessage(err) ?? t("common.error"));
       setLoading(false);
     }
   };
